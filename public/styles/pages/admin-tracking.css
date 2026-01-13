@@ -1,10 +1,17 @@
-/* Admin Tracking Page Styles */
+/**
+ * Admin Tracking Page Styles
+ *
+ * Tracking links table with events dialog.
+ * Uses: .data-table, .dialog, .status-dot from components.css.
+ */
 
-/* Table Grid */
-.table-header, .table-row {
+/* Table Grid Columns */
+.table-header,
+.table-row {
   grid-template-columns: 2fr 1fr 80px 100px 150px;
 }
 
+/* Cell styling */
 .tracking-tag {
   font-weight: 600;
 }
@@ -15,21 +22,11 @@
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
+/* Status - uses .status, .status-dot from components.css */
 .tracking-status {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--color-text) 30%, transparent);
-}
-
-.status-dot.visited {
-  background: #22c55e;
 }
 
 .tracking-visits {
@@ -37,12 +34,13 @@
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
+/* Actions */
 .tracking-actions {
   display: flex;
   gap: var(--space-xs);
 }
 
-/* Events Dialog */
+/* Events Dialog - extends .dialog */
 .events-dialog {
   max-width: 600px;
   max-height: 80vh;
@@ -84,6 +82,7 @@
   color: color-mix(in srgb, var(--color-text) 50%, transparent);
 }
 
+/* No events state - uses .empty from components.css */
 .no-events {
   padding: var(--space-xl);
   text-align: center;
@@ -91,14 +90,14 @@
   font-style: italic;
 }
 
-/* Dialog actions margin override */
 .events-dialog .dialog-actions {
   margin-top: var(--space-lg);
 }
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .table-header, .table-row {
+  .table-header,
+  .table-row {
     grid-template-columns: 1fr 100px 100px 120px;
   }
 
@@ -109,7 +108,8 @@
 }
 
 @media (max-width: 768px) {
-  .table-header, .table-row {
+  .table-header,
+  .table-row {
     grid-template-columns: 1fr 80px 100px;
   }
 

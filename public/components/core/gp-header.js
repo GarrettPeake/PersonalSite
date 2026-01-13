@@ -3,6 +3,8 @@
  *
  * Displays site title and navigation links.
  * Includes theme toggle button.
+ *
+ * Imports: /styles/web-components.css for shared .logo, .nav-link styles
  */
 class GpHeader extends HTMLElement {
   constructor() {
@@ -16,6 +18,7 @@ class GpHeader extends HTMLElement {
 
   render() {
     this.shadowRoot.innerHTML = `
+      <link rel="stylesheet" href="/styles/web-components.css">
       <style>
         :host {
           display: block;
@@ -31,54 +34,10 @@ class GpHeader extends HTMLElement {
           margin: 0 auto;
         }
 
-        .logo {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm, 0.5rem);
-          text-decoration: none;
-          color: var(--color-text, #1a1a1a);
-        }
-
-        .logo:hover {
-          text-decoration: none;
-        }
-
-        .logo-text {
-          font-weight: 700;
-          font-size: 1.25rem;
-          letter-spacing: -0.02em;
-        }
-
-        .logo-peak {
-          width: 24px;
-          height: 24px;
-        }
-
-        .logo-peak polygon {
-          fill: var(--color-primary, #0066ff);
-        }
-
         nav {
           display: flex;
           align-items: center;
           gap: var(--space-md, 1rem);
-        }
-
-        nav a {
-          color: var(--color-text, #1a1a1a);
-          text-decoration: none;
-          font-weight: 500;
-          padding: var(--space-xs, 0.25rem) var(--space-sm, 0.5rem);
-          border-radius: 4px;
-          transition: background-color 0.15s;
-        }
-
-        nav a:hover {
-          background-color: color-mix(in srgb, var(--color-primary, #0066ff) 10%, transparent);
-        }
-
-        nav a.active {
-          color: var(--color-primary, #0066ff);
         }
 
         @media (max-width: 600px) {
@@ -103,9 +62,9 @@ class GpHeader extends HTMLElement {
         </a>
 
         <nav>
-          <a href="/">Home</a>
-          <a href="/blog">Blog</a>
-          <a href="/about">About</a>
+          <a href="/" class="nav-link">Home</a>
+          <a href="/blog" class="nav-link">Blog</a>
+          <a href="/about" class="nav-link">About</a>
           <gp-theme-toggle></gp-theme-toggle>
         </nav>
       </header>

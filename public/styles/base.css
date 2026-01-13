@@ -1,5 +1,11 @@
 /**
  * Base styles - Reset and foundational styles
+ *
+ * Import order:
+ * 1. theme.css - CSS custom properties
+ * 2. base.css - This file (reset, typography, layout)
+ * 3. components.css - Reusable UI components (optional)
+ * 4. Page-specific CSS
  */
 
 *, *::before, *::after {
@@ -19,6 +25,16 @@ body {
   color: var(--color-text);
   line-height: 1.6;
   min-height: 100vh;
+}
+
+/* Full-height page layout with sticky footer */
+body.page {
+  display: flex;
+  flex-direction: column;
+}
+
+body.page main {
+  flex: 1;
 }
 
 /* Container */

@@ -1,10 +1,9 @@
-/* About Page Styles */
-
-body {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
+/**
+ * About Page Styles
+ *
+ * Bio and contact section styling.
+ * Requires: body.page class on <body> element for flex layout.
+ */
 
 section {
   margin-bottom: var(--space-xl);

@@ -1,9 +1,9 @@
-/* Admin Editor Page Styles */
-
-/* Override sidebar z-index for editor */
-.sidebar {
-  z-index: 100;
-}
+/**
+ * Admin Editor Page Styles
+ *
+ * Split-pane markdown editor with toolbar.
+ * Editor-specific layout - uses .btn from components.css for buttons.
+ */
 
 /* Main Editor Area */
 .editor-main {
@@ -163,7 +163,9 @@
   line-height: 1.8;
 }
 
-.preview-content h1, .preview-content h2, .preview-content h3 {
+.preview-content h1,
+.preview-content h2,
+.preview-content h3 {
   margin-top: var(--space-lg);
 }
 

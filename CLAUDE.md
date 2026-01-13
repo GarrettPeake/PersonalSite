@@ -19,6 +19,8 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Static asset configuration with `run_worker_first` routing
 - [x] Theme CSS variables (light/dark mode)
 - [x] Base CSS reset and typography
+- [x] Unified component CSS (buttons, cards, forms, dialogs, tables)
+- [x] Web components with external shared stylesheet
 - [x] KV helper functions (CRUD for drafts, posts, tracking, sessions)
 - [x] Custom markdown renderer with macro support (server + client)
 - [x] `/Banner` macro implementation
@@ -133,9 +135,11 @@ Worker handles:
     ├── /lib
     │   └── markdown.js   # Client-side markdown renderer for preview
     ├── /styles
-    │   ├── theme.css     # CSS custom properties for theming
-    │   ├── base.css      # Reset and base styles
-    │   ├── admin.css     # Shared admin layout (sidebar, buttons, dialogs)
+    │   ├── theme.css         # CSS custom properties for theming
+    │   ├── base.css          # Reset, typography, layout utilities
+    │   ├── components.css    # Reusable UI components (buttons, cards, forms)
+    │   ├── web-components.css # Shared styles for Shadow DOM components
+    │   ├── admin.css         # Admin-specific layout (sidebar, header)
     │   └── /pages
     │       ├── home.css           # Home page styles
     │       ├── about.css          # About page styles
@@ -208,6 +212,206 @@ Set via `wrangler secret put <name>`:
 | POST | `/api/admin/tracking` | Create tracking slug |
 | GET | `/api/admin/tracking/:slug` | Get tracking with events |
 | DELETE | `/api/admin/tracking/:slug` | Delete tracking slug |
+
+## CSS Architecture
+
+The CSS is organized into layers that build on each other. Always include stylesheets in this order:
+
+### Import Order
+
+```html
+<!-- Required for all pages -->
+<link rel="stylesheet" href="/styles/theme.css">
+<link rel="stylesheet" href="/styles/base.css">
+<link rel="stylesheet" href="/styles/components.css">
+
+<!-- For admin pages, add: -->
+<link rel="stylesheet" href="/styles/admin.css">
+
+<!-- Then page-specific styles -->
+<link rel="stylesheet" href="/styles/pages/[page-name].css">
+```
+
+### Stylesheet Purposes
+
+| File | Purpose | When to Use |
+|------|---------|-------------|
+| `theme.css` | CSS custom properties (colors, spacing, fonts) | Always include first |
+| `base.css` | Reset, typography, containers, `body.page` layout | Always include second |
+| `components.css` | Buttons, cards, forms, dialogs, tables, utilities | When using any UI components |
+| `web-components.css` | Shared styles for Shadow DOM web components | Linked inside Shadow DOM |
+| `admin.css` | Admin sidebar, header, navigation | Admin pages only |
+| `pages/*.css` | Page-specific layouts and overrides | One per page |
+
+### CSS Custom Properties (theme.css)
+
+```css
+/* Colors - switch automatically with data-theme="dark" */
+--color-bg        /* Page background */
+--color-text      /* Text color */
+--color-primary   /* Primary action color (blue/orange) */
+--color-accent    /* Accent color (orange/blue) */
+--color-border    /* Border color */
+
+/* Spacing scale */
+--space-xs: 0.25rem;
+--space-sm: 0.5rem;
+--space-md: 1rem;
+--space-lg: 2rem;
+--space-xl: 4rem;
+
+/* Layout */
+--max-width-prose: 768px;  /* Content width */
+--max-width-wide: 1024px;  /* Full layout width */
+
+/* Typography */
+--font-sans       /* System font stack */
+--font-mono       /* Monospace font stack */
+```
+
+### Component Classes (components.css)
+
+#### Buttons
+
+| Class | Use For | Example |
+|-------|---------|---------|
+| `.btn` | Base button (required) | All buttons |
+| `.btn--primary` | Main actions | Save, Publish, Create |
+| `.btn--secondary` | Secondary actions | Cancel, Preview |
+| `.btn--danger` | Destructive actions | Delete |
+| `.btn--ghost-danger` | Danger on hover only | Inline delete buttons |
+| `.btn--sm` | Compact buttons in tables/lists | Edit, Share |
+| `.btn--block` | Full-width button | Login form submit |
+| `.btn--icon` | 36x36 icon-only button | Theme toggle, social links |
+
+```html
+<button class="btn btn--primary">Publish</button>
+<button class="btn btn--sm">Edit</button>
+<a href="#" class="btn btn--secondary">Cancel</a>
+```
+
+#### Cards
+
+| Class | Use For |
+|-------|---------|
+| `.card` | Base bordered container |
+| `.card--thick` | 3px border variant |
+| `.card--interactive` | Lift effect on hover (blog posts) |
+| `.card--stat` | Centered stat display with `.card__value` and `.card__label` |
+
+#### Forms
+
+| Class | Use For |
+|-------|---------|
+| `.form-group` | Wrapper for label + input |
+| `.form-label` | Standalone label styling |
+| `.form-input` | Standalone input styling |
+| `.form-input--mono` | Monospace input (slugs, URLs) |
+| `.form-help` | Help text below inputs |
+| `.error` | Error message banner |
+
+```html
+<div class="form-group">
+  <label for="name">Name</label>
+  <input type="text" id="name" required>
+  <p class="form-help">Enter your full name</p>
+</div>
+```
+
+#### Data Tables
+
+| Class | Use For |
+|-------|---------|
+| `.data-table` | Table container with border |
+| `.data-table__header` | Table header row (grid) |
+| `.data-table__row` | Table body row (grid) |
+
+Set grid columns in page-specific CSS:
+```css
+.table-header, .table-row {
+  grid-template-columns: 2fr 1fr 150px;
+}
+```
+
+#### Dialogs
+
+| Class | Use For |
+|-------|---------|
+| `.dialog-overlay` | Full-screen backdrop |
+| `.dialog` | Modal container |
+| `.dialog__title` | Dialog heading |
+| `.dialog__content` | Dialog body text |
+| `.dialog__actions` | Button row (right-aligned) |
+
+#### Item Lists
+
+| Class | Use For |
+|-------|---------|
+| `.item-list` | Container with border |
+| `.item-row` | Flex row with dashed separator |
+
+#### Status Indicators
+
+| Class | Use For |
+|-------|---------|
+| `.status-dot` | 8px circular indicator |
+| `.status-dot--active` | Green dot |
+| `.status-dot--warning` | Yellow dot |
+| `.status-dot--danger` | Red dot |
+| `.status` | Container with dot and text |
+
+#### Utilities
+
+| Class | Purpose |
+|-------|---------|
+| `.loading` | Loading state text |
+| `.empty` | Empty state text |
+| `.meta` | Secondary/date text |
+| `.title` | Bold title with link styling |
+| `.untitled` | Italic placeholder text |
+| `.mono` | Monospace text |
+| `.hidden` | Hide element |
+| `.flex-between` | Flex with space-between |
+| `.flex-row` | Flex row with gap |
+| `.flex-col` | Flex column with gap |
+| `.text-center` | Center text |
+| `.grid` | Grid with gap |
+| `.grid--auto` | Auto-fit grid columns |
+
+### Web Component Styles (web-components.css)
+
+These classes are used inside Shadow DOM via `<link rel="stylesheet" href="/styles/web-components.css">`:
+
+| Class | Component | Purpose |
+|-------|-----------|---------|
+| `.icon-btn` | gp-theme-toggle, gp-footer | 36x36 bordered icon button |
+| `.nav-link` | gp-header | Navigation link with hover |
+| `.logo` | gp-header | Logo link with icon |
+| `.footer-links` | gp-footer | Social links container |
+| `.copyright` | gp-footer | Copyright text |
+
+### Page Layout Classes (base.css)
+
+Add `class="page"` to `<body>` for pages with header and footer:
+- Sets `display: flex; flex-direction: column`
+- Footer sticks to bottom on short content
+
+```html
+<body class="page">
+  <gp-header></gp-header>
+  <main class="container">...</main>
+  <gp-footer></gp-footer>
+</body>
+```
+
+### Container Classes (base.css)
+
+| Class | Max Width | Use For |
+|-------|-----------|---------|
+| `.container` | 768px | Prose content |
+| `.container--wide` | 1024px | Full layouts |
+
+---
 
 ## Design Decisions
 
