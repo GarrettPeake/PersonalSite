@@ -4,12 +4,110 @@
 
 A personal website built on Cloudflare Workers with a neo-brutalist aesthetic, featuring a portfolio, blog, and admin CRM with a macro-enriched markdown editor.
 
+**Domain:** `gpeake.com`
+
 **Tech Stack:**
 - Frontend: Vanilla HTML, CSS, JS with Web Components (no build step)
 - Backend: Cloudflare Workers (TypeScript)
 - Storage: Cloudflare KV (single-table design)
 - Files: Cloudflare R2 (images, uploads)
 - Analytics: Workers Analytics Engine
+- Static Serving: Workers Static Assets (most requests bypass Worker)
+
+---
+
+## Cloudflare Infrastructure Setup
+
+### Required Resources (Create in Dashboard)
+
+Before development, create these resources in the Cloudflare dashboard:
+
+1. **KV Namespace**
+   - Name: `gpeake-data`
+   - Note the namespace ID after creation
+
+2. **R2 Bucket**
+   - Name: `gpeake-uploads`
+   - Enable public access via custom domain: `files.gpeake.com`
+
+3. **Analytics Engine Dataset**
+   - Name: `page_views`
+   - Created automatically when first used, but binding must be configured
+
+4. **Environment Variables / Secrets**
+   - `ADMIN_USERNAME` - Admin login username
+   - `ADMIN_PASSWORD_HASH` - Bcrypt hash of admin password
+   - `SESSION_SECRET` - Random string for signing session tokens
+
+### wrangler.toml Configuration
+
+```toml
+name = "gpeake-site"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Static assets configuration
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+# Only invoke Worker for API routes, tracking, and dynamic pages
+run_worker_first = [
+  "/api/*",
+  "/s/*",
+  "/blog/*",
+  "/draft/*",
+  "/admin/*"
+]
+
+# KV Namespace binding
+[[kv_namespaces]]
+binding = "KV"
+id = "<YOUR_KV_NAMESPACE_ID>"
+preview_id = "<YOUR_KV_NAMESPACE_ID>"
+
+# R2 Bucket binding
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "gpeake-uploads"
+
+# Analytics Engine binding
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "page_views"
+
+# Environment variables (non-secret)
+[vars]
+SITE_URL = "https://gpeake.com"
+
+# Routes
+[[routes]]
+pattern = "gpeake.com/*"
+custom_domain = true
+```
+
+### Secrets (set via wrangler CLI)
+
+```bash
+# Set these after project setup
+wrangler secret put ADMIN_USERNAME
+wrangler secret put ADMIN_PASSWORD_HASH
+wrangler secret put SESSION_SECRET
+```
+
+### Static Asset Routing Behavior
+
+With `run_worker_first` configured:
+- `/` → Serves `public/pages/index.html` directly (no Worker)
+- `/about` → Serves `public/pages/about.html` directly (no Worker)
+- `/styles/*` → Serves static CSS files directly
+- `/components/*` → Serves static JS files directly
+- `/api/*` → Invokes Worker for API handling
+- `/s/:slug` → Invokes Worker for tracking redirect
+- `/blog/:slug` → Invokes Worker to fetch post and render
+- `/admin/*` → Invokes Worker for auth check + page serving
+
+This means most static assets are served at edge speed without Worker invocation.
 
 ---
 
@@ -80,7 +178,7 @@ A personal website built on Cloudflare Workers with a neo-brutalist aesthetic, f
 - UUID is one-time generated, revocable
 
 #### 6. Tracking Redirect (`/s/:slug`)
-- 5-character slug (e.g., `/s/asfq3`)
+- Short slug (e.g., `/s/asfq3` or `/s/fb`)
 - On visit:
   1. Save slug to `localStorage` for cross-page tracking
   2. Send tracking event to backend (timestamp, user-agent, referrer)
@@ -95,8 +193,10 @@ A personal website built on Cloudflare Workers with a neo-brutalist aesthetic, f
 Generate unique shareable links to track whether specific recruiters/contacts actually visit the site.
 
 ### Flow
-1. Admin creates tracking slug with tag (e.g., "Facebook" → `asfq3`)
-2. Admin shares `https://garrettpeake.com/s/asfq3` with recruiter
+1. Admin creates tracking slug with tag (e.g., "Facebook")
+   - System suggests random 5-char slug (e.g., `asfq3`)
+   - Admin can override with custom slug (e.g., `fb` for a cleaner URL)
+2. Admin shares `https://gpeake.com/s/asfq3` (or `/s/fb`) with recruiter
 3. Recruiter clicks link:
    - Frontend stores `asfq3` in `localStorage.trackingSlug`
    - POST to `/api/track` with slug + metadata
@@ -114,7 +214,7 @@ interface TrackingEvent {
 }
 
 interface TrackingSlug {
-  slug: string;           // 5-char identifier
+  slug: string;           // Short identifier (custom or random 5-char)
   tag: string;            // Human label (e.g., "Facebook")
   createdAt: string;
   visited: boolean;
@@ -168,7 +268,11 @@ interface TrackingSlug {
 - Actions: Save Draft, Preview, Publish
 
 #### 6. Tracking Links (`/admin/tracking`)
-- Create new tracking slug: enter tag name → generate 5-char slug
+- Create new tracking slug:
+  - Enter tag name (e.g., "Facebook Recruiter")
+  - System suggests random 5-char slug
+  - Optional: override with custom slug (e.g., `fb`)
+  - Validation: slug must be unique, alphanumeric, 2-10 chars
 - Table of all tracking slugs:
   - Columns: tag, slug, created, visited (yes/no), view count, last visit
   - Actions: Copy Link, View Events, Delete
@@ -180,47 +284,48 @@ interface TrackingSlug {
 
 ### Syntax Design
 
-**Recommendation:** Use a registry-based approach where macro names are pre-defined as either inline or block. The parser knows from the macro name how to handle it.
+**Convention:**
+- **camelCase** = inline (flows with text as `<span>`)
+- **PascalCase** = block (breaks onto own line/section as block element)
 
 ```
 Inline syntax:  /macroName(args)
 Block syntax:   /MacroName(args)
 ```
 
-**Convention:**
-- **camelCase** = inline (flows with text)
-- **PascalCase** = block (breaks onto own line/section)
+This is intuitive and requires no special markers—the parser determines behavior from the first character's case.
 
-This is intuitive and requires no special markers.
+### MVP Scope
 
-### Inline Macros (camelCase)
-Render as styled `<span>` elements within paragraph flow.
+For the initial release, only `/Banner` is implemented. The macro system is designed to be extensible for future additions.
 
-| Macro | Usage | Output |
-|-------|-------|--------|
-| `/mention("url")` | Link to person/repo | Styled pill link |
-| `/highlight("text")` | Emphasized text | Highlighted span |
-| `/kbd("Ctrl+C")` | Keyboard shortcut | Styled kbd element |
-| `/tag("typescript")` | Topic tag | Colored tag pill |
-
-### Block Macros (PascalCase)
-Render as full-width block elements, breaking text flow.
+### Block Macros (PascalCase) - MVP
 
 | Macro | Usage | Output |
 |-------|-------|--------|
 | `/Banner(height, text, subtext, color)` | Hero banner | Full-width banner section |
-| `/Callout(type, title, content)` | Info/warning box | Styled callout block |
-| `/Code(language, code)` | Code block | Syntax-highlighted block |
-| `/Image(src, alt, caption)` | Image with caption | Figure element |
-| `/ProjectCard(title, desc, image, link)` | Project showcase | Card component |
-| `/Divider(style)` | Section break | Styled hr with peak motif |
+
+### Future Macros (Post-MVP)
+
+**Inline (camelCase):**
+- `/mention("url")` → Styled pill link
+- `/highlight("text")` → Highlighted span
+- `/kbd("Ctrl+C")` → Styled kbd element
+- `/tag("typescript")` → Colored tag pill
+
+**Block (PascalCase):**
+- `/Callout(type, title, content)` → Info/warning box
+- `/Code(language, code)` → Syntax-highlighted block
+- `/Image(src, alt, caption)` → Figure element
+- `/ProjectCard(title, desc, image, link)` → Project showcase card
+- `/Divider(style)` → Section break with peak motif
 
 ### Macro Parsing Flow
-1. Parse markdown to AST
-2. Walk AST and identify macro patterns via regex: `/([a-zA-Z]+)\(([^)]*)\)/`
+1. Parse markdown to HTML
+2. Identify macro patterns via regex: `/([a-zA-Z]+)\(([^)]*)\)/`
 3. Check first character case to determine inline vs block
-4. Replace with appropriate HTML/component
-5. Render final HTML
+4. Look up macro in registry, render with arguments
+5. Insert rendered HTML in place of macro syntax
 
 ---
 
@@ -327,9 +432,9 @@ All data stored in one KV namespace with prefixed keys:
 - Trade-off: slight write overhead for fast reads
 
 **Cloudflare R2:**
-- Bucket: `uploads`
+- Bucket: `gpeake-uploads`
 - Key format: `{timestamp}-{random}.{ext}`
-- Public URL: `https://files.garrettpeake.com/{key}`
+- Public URL: `https://files.gpeake.com/{key}` (via R2 custom domain)
 - Used for: images, PDFs, any dropped files
 
 **Workers Analytics Engine:**
@@ -364,10 +469,7 @@ All data stored in one KV namespace with prefixed keys:
       gp-project-card.js # Portfolio project card
       gp-post-view.js    # Full post renderer
     /macros
-      gp-banner.js       # Banner macro component
-      gp-callout.js      # Callout macro component
-      gp-mention.js      # Mention macro component
-      gp-tag.js          # Tag pill component
+      gp-banner.js       # Banner macro component (MVP)
     /admin
       gp-editor.js       # Markdown editor with drag-drop upload
       gp-preview.js      # Live preview pane
