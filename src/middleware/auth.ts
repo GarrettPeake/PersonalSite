@@ -6,7 +6,7 @@
  */
 
 import { Env } from '../types';
-import { createSession, getSession, deleteSession } from '../lib/kv';
+import { createSession, getSession, deleteSession } from '../dao/session.dao';
 
 const SESSION_COOKIE = 'gp_session';
 const SESSION_TTL = 60 * 60 * 24 * 7; // 7 days
