@@ -39,6 +39,8 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Admin drafts list page
 - [x] Admin tracking management page
 - [x] Client-side markdown renderer for editor preview
+- [x] Modular backend architecture (DAOs, handlers, templates)
+- [x] Vitest testing infrastructure for Workers
 
 ### Not Yet Implemented
 
@@ -102,16 +104,42 @@ Worker handles:
 ├── wrangler.toml         # Cloudflare config with bindings
 ├── package.json
 ├── tsconfig.json
+├── vitest.config.ts      # Vitest configuration for Workers testing
 ├── DESIGN.md             # Full design spec (end goal)
 ├── CLAUDE.md             # This file (current state)
 ├── /src
-│   ├── index.ts          # Worker entry point
+│   ├── index.ts          # Worker entry point (router only)
 │   ├── types.ts          # TypeScript types and KV prefixes
+│   ├── /dao              # Data Access Objects (one per entity)
+│   │   ├── base.ts       # Shared index management utilities
+│   │   ├── draft.dao.ts  # Draft CRUD + sharing operations
+│   │   ├── post.dao.ts   # Post CRUD + publish/unpublish
+│   │   ├── tracking.dao.ts # Tracking CRUD + events
+│   │   └── session.dao.ts  # Session CRUD
+│   ├── /handlers
+│   │   ├── /api
+│   │   │   ├── public.ts    # GET /api/posts, POST /api/track
+│   │   │   ├── auth.ts      # POST /api/auth/login|logout
+│   │   │   ├── drafts.ts    # /api/admin/drafts/* endpoints
+│   │   │   ├── posts.ts     # /api/admin/posts/* endpoints
+│   │   │   └── tracking.ts  # /api/admin/tracking/* endpoints
+│   │   └── /pages
+│   │       ├── blog.ts      # /blog/:slug handler
+│   │       ├── draft.ts     # /draft/share/:token handler
+│   │       ├── tracking.ts  # /s/:slug handler
+│   │       └── admin.ts     # /admin/* auth guard
+│   ├── /templates
+│   │   ├── post.ts          # Blog post page template
+│   │   └── tracking-redirect.ts # Tracking redirect page template
 │   ├── /lib
-│   │   ├── kv.ts         # KV helper functions (CRUD operations)
-│   │   └── markdown.ts   # Custom markdown renderer with macros
-│   └── /middleware
-│       └── auth.ts       # Authentication helpers (login, session, cookies)
+│   │   ├── kv.ts         # DEPRECATED: Use DAOs instead
+│   │   ├── markdown.ts   # Custom markdown renderer with macros
+│   │   ├── response.ts   # HTTP response helpers (jsonResponse, corsHeaders)
+│   │   └── utils.ts      # Shared utilities (escapeHtml, formatDate, etc.)
+│   ├── /middleware
+│   │   └── auth.ts       # Authentication helpers (login, session, cookies)
+│   └── /__tests__
+│       └── router.test.ts # Router unit tests
 └── /public
     ├── index.html        # Home page
     ├── about.html        # About page
@@ -163,9 +191,12 @@ Worker handles:
 ## Development Commands
 
 ```bash
-npm run dev        # Start local development server
-npm run deploy     # Deploy to Cloudflare
-npm run typecheck  # Run TypeScript type checking
+npm run dev           # Start local development server
+npm run deploy        # Deploy to Cloudflare
+npm run typecheck     # Run TypeScript type checking
+npm test              # Run tests once
+npm run test:watch    # Run tests in watch mode
+npm run test:coverage # Run tests with coverage report
 ```
 
 ## Secrets Required
@@ -442,13 +473,37 @@ This separation ensures:
 | Accent | `#ff6b00` (orange) | `#0066ff` (blue) |
 | Text | `#1a1a1a` | `#ffffff` |
 
-### KV Helper Functions (`src/lib/kv.ts`)
-- `getDraft`, `listDrafts`, `createDraft`, `updateDraft`, `deleteDraft`
-- `createShareToken`, `getDraftByShareToken`, `revokeShareToken`
-- `getPost`, `getPostBySlug`, `listPosts`, `publishDraft`, `updatePost`, `deletePost`, `unpublishPost`
-- `getTrackingSlug`, `listTrackingSlugs`, `createTrackingSlug`, `recordTrackingEvent`, `deleteTrackingSlug`
-- `createSession`, `getSession`, `deleteSession`
-- `slugify` utility for URL-friendly slugs
+### Backend Architecture
+
+The backend is organized into modular, testable components:
+
+**Data Access Objects (`src/dao/`)**
+Each entity has its own DAO file with CRUD operations:
+- `draft.dao.ts`: Draft operations + sharing (`getDraft`, `listDrafts`, `createDraft`, `updateDraft`, `deleteDraft`, `createShareToken`, `getDraftByShareToken`)
+- `post.dao.ts`: Post operations + publishing (`getPost`, `getPostBySlug`, `listPosts`, `updatePost`, `deletePost`, `publishDraft`, `unpublishPost`)
+- `tracking.dao.ts`: Tracking operations + events (`getTrackingSlug`, `listTrackingSlugs`, `createTrackingSlug`, `deleteTrackingSlug`, `recordTrackingEvent`)
+- `session.dao.ts`: Session operations (`createSession`, `getSession`, `deleteSession`)
+- `base.ts`: Shared index management (`getIndex`, `addToIndex`, `removeFromIndex`)
+
+**Handlers (`src/handlers/`)**
+Request handlers are split by route type:
+- `api/public.ts`: Public API endpoints
+- `api/auth.ts`: Authentication endpoints
+- `api/drafts.ts`: Admin draft endpoints
+- `api/posts.ts`: Admin post endpoints
+- `api/tracking.ts`: Admin tracking endpoints
+- `pages/*.ts`: Page rendering handlers
+
+**Templates (`src/templates/`)**
+HTML templates for server-rendered pages:
+- `post.ts`: Blog post and draft preview pages
+- `tracking-redirect.ts`: Tracking redirect page
+
+**Utilities (`src/lib/`)**
+Shared utility functions:
+- `utils.ts`: `escapeHtml`, `escapeJs`, `formatDate`, `getExcerpt`, `slugify`, `generateRandomSlug`
+- `response.ts`: `jsonResponse`, `htmlResponse`, `corsHeaders`
+- `markdown.ts`: Custom markdown renderer
 
 ### Markdown Renderer (`src/lib/markdown.ts`)
 - Supports: headings, paragraphs, lists, blockquotes, code blocks, links, images, bold, italic
@@ -472,6 +527,12 @@ This separation ensures:
 - Mirrors server-side renderer for consistent preview
 - Used in editor for live preview
 - Supports same macro syntax as server
+
+### Testing (`src/__tests__/`)
+- Uses Vitest with `@cloudflare/vitest-pool-workers` for Workers-compatible testing
+- Tests run in the actual Workers runtime environment
+- Router tests verify request dispatch to correct handlers
+- Handlers can be mocked to test routing logic in isolation
 
 ## Next Steps
 
