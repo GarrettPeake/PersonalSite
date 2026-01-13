@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="About Garrett Peake - Software Engineer">
+  <title>About | Garrett Peake</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/styles/theme.css">
+  <link rel="stylesheet" href="/styles/base.css">
+
+  <!-- Web Components -->
+  <script type="module" src="/components/core/gp-theme-toggle.js"></script>
+  <script type="module" src="/components/core/gp-header.js"></script>
+  <script type="module" src="/components/core/gp-footer.js"></script>
+  <script type="module" src="/components/core/gp-peak-divider.js"></script>
+  <script type="module" src="/components/tracking/gp-tracker.js"></script>
+</head>
+<body>
+  <gp-tracker></gp-tracker>
+  <gp-header></gp-header>
+
+  <main class="container">
+    <h1>About</h1>
+
+    <gp-peak-divider height="30px"></gp-peak-divider>
+
+    <section class="bio">
+      <h2>Hi, I'm Garrett</h2>
+      <p>
+        I'm a software engineer passionate about building great products.
+        This site is currently under construction.
+      </p>
+    </section>
+
+    <section class="contact">
+      <h2>Get in Touch</h2>
+      <ul>
+        <li>GitHub: <a href="https://github.com/GarrettPeake" target="_blank" rel="noopener">@GarrettPeake</a></li>
+        <li>LinkedIn: <a href="https://linkedin.com/in/garrettpeake" target="_blank" rel="noopener">garrettpeake</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <gp-footer></gp-footer>
+
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    section {
+      margin-bottom: var(--space-xl);
+    }
+
+    .bio p {
+      font-size: 1.125rem;
+      line-height: 1.7;
+    }
+
+    .contact ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .contact li {
+      margin-bottom: var(--space-sm);
+    }
+  </style>
+</body>
+</html>

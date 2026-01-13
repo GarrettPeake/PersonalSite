@@ -1,0 +1,42 @@
+name = "gpeake-site"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Static assets configuration
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+# Only invoke Worker for API routes, tracking, and dynamic pages
+run_worker_first = [
+  "/api/*",
+  "/s/*",
+  "/blog/*",
+  "/draft/*",
+  "/admin/*"
+]
+
+# KV Namespace binding
+[[kv_namespaces]]
+binding = "KV"
+id = "255ea6f6b3514decb5483765d99cf66a"
+preview_id = "255ea6f6b3514decb5483765d99cf66a"
+
+# R2 Bucket binding
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "gpeake-files"
+
+# Analytics Engine binding
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "page_views"
+
+# Environment variables (non-secret)
+[vars]
+SITE_URL = "https://gpeake.com"
+
+# Routes (uncomment when ready to deploy to custom domain)
+# [[routes]]
+# pattern = "gpeake.com/*"
+# custom_domain = true
