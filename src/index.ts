@@ -23,7 +23,10 @@ import {
   handleDeleteDraft,
   handlePublishDraft,
   handleShareDraft,
+  handleRevokeShareDraft,
+  handleGetDraftByShareToken,
 } from './handlers/api/drafts';
+import { handleUpload } from './handlers/api/upload';
 import {
   handleAdminListPosts,
   handleAdminGetPost,
@@ -109,6 +112,12 @@ export async function handleApi(request: Request, env: Env, path: string): Promi
       return handleTrack(request, env);
     }
 
+    // GET /api/draft/share/:token - Get draft by share token (public)
+    if (path.match(/^\/api\/draft\/share\/[^/]+$/) && method === 'GET') {
+      const token = path.replace('/api/draft/share/', '');
+      return handleGetDraftByShareToken(env, token);
+    }
+
     // =========================================================================
     // Auth Endpoints
     // =========================================================================
@@ -178,6 +187,12 @@ export async function handleApi(request: Request, env: Env, path: string): Promi
         return handleShareDraft(env, id);
       }
 
+      // DELETE /api/admin/drafts/:id/share - Revoke share token
+      if (path.match(/^\/api\/admin\/drafts\/[^/]+\/share$/) && method === 'DELETE') {
+        const id = path.replace('/api/admin/drafts/', '').replace('/share', '');
+        return handleRevokeShareDraft(env, id);
+      }
+
       // -----------------------------------------------------------------------
       // Posts
       // -----------------------------------------------------------------------
@@ -235,6 +250,15 @@ export async function handleApi(request: Request, env: Env, path: string): Promi
       if (path.match(/^\/api\/admin\/tracking\/[^/]+$/) && method === 'DELETE') {
         const slug = path.replace('/api/admin/tracking/', '');
         return handleDeleteTracking(env, slug);
+      }
+
+      // -----------------------------------------------------------------------
+      // Upload
+      // -----------------------------------------------------------------------
+
+      // POST /api/admin/upload - Upload file to R2
+      if (path === '/api/admin/upload' && method === 'POST') {
+        return handleUpload(request, env);
       }
     }
 
