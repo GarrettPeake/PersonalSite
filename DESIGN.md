@@ -27,7 +27,7 @@ Before development, create these resources in the Cloudflare dashboard:
    - Note the namespace ID after creation
 
 2. **R2 Bucket**
-   - Name: `gpeake-uploads`
+   - Name: `gpeake-files`
    - Enable public access via custom domain: `files.gpeake.com`
 
 3. **Analytics Engine Dataset**
@@ -69,7 +69,7 @@ preview_id = "<YOUR_KV_NAMESPACE_ID>"
 # R2 Bucket binding
 [[r2_buckets]]
 binding = "R2"
-bucket_name = "gpeake-uploads"
+bucket_name = "gpeake-files"
 
 # Analytics Engine binding
 [[analytics_engine_datasets]]
@@ -432,7 +432,7 @@ All data stored in one KV namespace with prefixed keys:
 - Trade-off: slight write overhead for fast reads
 
 **Cloudflare R2:**
-- Bucket: `gpeake-uploads`
+- Bucket: `gpeake-files`
 - Key format: `{timestamp}-{random}.{ext}`
 - Public URL: `https://files.gpeake.com/{key}` (via R2 custom domain)
 - Used for: images, PDFs, any dropped files
