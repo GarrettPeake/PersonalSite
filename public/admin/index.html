@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Admin Dashboard | Garrett Peake</title>
+  <link rel="stylesheet" href="/styles/theme.css">
+  <link rel="stylesheet" href="/styles/base.css">
+  <script type="module" src="/components/core/gp-theme-toggle.js"></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="logo">GP</a>
+        <span class="admin-badge">Admin</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin/" class="nav-item active">Dashboard</a>
+        <a href="/admin/posts" class="nav-item">Posts</a>
+        <a href="/admin/drafts" class="nav-item">Drafts</a>
+        <a href="/admin/tracking" class="nav-item">Tracking</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <gp-theme-toggle></gp-theme-toggle>
+        <button id="logout-btn" class="btn-logout">Logout</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1>Dashboard</h1>
+        <a href="/admin/editor" class="btn-primary">+ New Post</a>
+      </header>
+
+      <div class="stats-grid" id="stats">
+        <div class="stat-card">
+          <div class="stat-value" id="post-count">-</div>
+          <div class="stat-label">Published Posts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="draft-count">-</div>
+          <div class="stat-label">Drafts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="tracking-count">-</div>
+          <div class="stat-label">Tracking Links</div>
+        </div>
+      </div>
+
+      <section class="recent-section">
+        <h2>Recent Drafts</h2>
+        <div id="recent-drafts" class="item-list">
+          <p class="empty">Loading...</p>
+        </div>
+      </section>
+
+      <section class="recent-section">
+        <h2>Recent Posts</h2>
+        <div id="recent-posts" class="item-list">
+          <p class="empty">Loading...</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: var(--color-bg);
+      border-right: 3px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+    }
+
+    .sidebar-header {
+      padding: var(--space-lg);
+      border-bottom: 2px dashed var(--color-border);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+
+    .admin-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: var(--space-xs) var(--space-sm);
+      border: 2px solid var(--color-text);
+      background: var(--color-accent);
+      color: var(--color-bg);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: var(--space-md);
+    }
+
+    .nav-item {
+      display: block;
+      padding: var(--space-sm) var(--space-md);
+      color: var(--color-text);
+      text-decoration: none;
+      font-weight: 500;
+      border: 2px solid transparent;
+      margin-bottom: var(--space-xs);
+      transition: all 0.1s;
+    }
+
+    .nav-item:hover {
+      border-color: var(--color-border);
+      background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    }
+
+    .nav-item.active {
+      border-color: var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    }
+
+    .sidebar-footer {
+      padding: var(--space-md);
+      border-top: 2px dashed var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-logout {
+      padding: var(--space-xs) var(--space-sm);
+      border: 2px solid var(--color-text);
+      background: transparent;
+      color: var(--color-text);
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+
+    .btn-logout:hover {
+      background: var(--color-text);
+      color: var(--color-bg);
+    }
+
+    /* Main Content */
+    .admin-main {
+      flex: 1;
+      margin-left: 240px;
+      padding: var(--space-xl);
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-xl);
+      padding-bottom: var(--space-lg);
+      border-bottom: 3px solid var(--color-border);
+    }
+
+    .admin-header h1 {
+      margin: 0;
+    }
+
+    .btn-primary {
+      padding: var(--space-sm) var(--space-lg);
+      border: 3px solid var(--color-text);
+      background: var(--color-primary);
+      color: var(--color-bg);
+      font-weight: 700;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .btn-primary:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--color-text);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-lg);
+      margin-bottom: var(--space-xl);
+    }
+
+    .stat-card {
+      border: 3px solid var(--color-border);
+      padding: var(--space-lg);
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--color-primary);
+      line-height: 1;
+    }
+
+    .stat-label {
+      margin-top: var(--space-sm);
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: color-mix(in srgb, var(--color-text) 70%, transparent);
+    }
+
+    /* Recent Sections */
+    .recent-section {
+      margin-bottom: var(--space-xl);
+    }
+
+    .recent-section h2 {
+      margin-bottom: var(--space-md);
+      font-size: 1.25rem;
+    }
+
+    .item-list {
+      border: 2px solid var(--color-border);
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-md);
+      border-bottom: 1px dashed var(--color-border);
+    }
+
+    .item-row:last-child {
+      border-bottom: none;
+    }
+
+    .item-title {
+      font-weight: 600;
+    }
+
+    .item-date {
+      font-size: 0.875rem;
+      color: color-mix(in srgb, var(--color-text) 60%, transparent);
+    }
+
+    .empty {
+      padding: var(--space-lg);
+      text-align: center;
+      color: color-mix(in srgb, var(--color-text) 50%, transparent);
+      font-style: italic;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        position: relative;
+        border-right: none;
+        border-bottom: 3px solid var(--color-border);
+      }
+
+      .admin-main {
+        margin-left: 0;
+      }
+
+      .admin-layout {
+        flex-direction: column;
+      }
+    }
+  </style>
+
+  <script>
+    // Logout handler
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/admin/login';
+    });
+
+    // Load dashboard data
+    async function loadDashboard() {
+      try {
+        const [draftsRes, postsRes, trackingRes] = await Promise.all([
+          fetch('/api/admin/drafts'),
+          fetch('/api/admin/posts'),
+          fetch('/api/admin/tracking'),
+        ]);
+
+        if (!draftsRes.ok || !postsRes.ok || !trackingRes.ok) {
+          // Probably not authenticated
+          window.location.href = '/admin/login';
+          return;
+        }
+
+        const drafts = await draftsRes.json();
+        const posts = await postsRes.json();
+        const tracking = await trackingRes.json();
+
+        // Update stats
+        document.getElementById('post-count').textContent = posts.length;
+        document.getElementById('draft-count').textContent = drafts.length;
+        document.getElementById('tracking-count').textContent = tracking.length;
+
+        // Render recent drafts
+        const draftsContainer = document.getElementById('recent-drafts');
+        if (drafts.length === 0) {
+          draftsContainer.innerHTML = '<p class="empty">No drafts yet</p>';
+        } else {
+          draftsContainer.innerHTML = drafts.slice(0, 5).map(d => `
+            <div class="item-row">
+              <span class="item-title">${escapeHtml(d.title || 'Untitled')}</span>
+              <span class="item-date">${formatDate(d.updatedAt)}</span>
+            </div>
+          `).join('');
+        }
+
+        // Render recent posts
+        const postsContainer = document.getElementById('recent-posts');
+        if (posts.length === 0) {
+          postsContainer.innerHTML = '<p class="empty">No posts yet</p>';
+        } else {
+          postsContainer.innerHTML = posts.slice(0, 5).map(p => `
+            <div class="item-row">
+              <span class="item-title">${escapeHtml(p.title)}</span>
+              <span class="item-date">${formatDate(p.publishedAt)}</span>
+            </div>
+          `).join('');
+        }
+
+      } catch (err) {
+        console.error('Failed to load dashboard:', err);
+      }
+    }
+
+    function formatDate(iso) {
+      return new Date(iso).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>
