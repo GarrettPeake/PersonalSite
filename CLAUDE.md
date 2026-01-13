@@ -20,7 +20,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Theme CSS variables (light/dark mode)
 - [x] Base CSS reset and typography
 - [x] KV helper functions (CRUD for drafts, posts, tracking, sessions)
-- [x] Custom markdown renderer with macro support
+- [x] Custom markdown renderer with macro support (server + client)
 - [x] `/Banner` macro implementation
 - [x] Core web components (header, footer, theme toggle, peak divider)
 - [x] Tracking component (gp-tracker)
@@ -32,12 +32,14 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Admin authentication (session-based with cookies)
 - [x] Admin login page
 - [x] Admin dashboard with stats
+- [x] Admin editor UI with split-pane live preview
+- [x] Admin posts list page
+- [x] Admin drafts list page
+- [x] Admin tracking management page
+- [x] Client-side markdown renderer for editor preview
 
 ### Not Yet Implemented
 
-- [ ] Admin editor UI (create/edit posts)
-- [ ] Admin posts/drafts list pages
-- [ ] Admin tracking management page
 - [ ] File upload to R2
 - [ ] Analytics Engine integration
 
@@ -114,7 +116,13 @@ Worker handles:
     ├── blog.html         # Blog listing page
     ├── /admin
     │   ├── index.html    # Admin dashboard
-    │   └── login.html    # Admin login page
+    │   ├── login.html    # Admin login page
+    │   ├── editor.html   # Post/draft editor with live preview
+    │   ├── posts.html    # Published posts list
+    │   ├── drafts.html   # Drafts list
+    │   └── tracking.html # Tracking links management
+    ├── /lib
+    │   └── markdown.js   # Client-side markdown renderer for preview
     ├── /styles
     │   ├── theme.css     # CSS custom properties for theming
     │   └── base.css      # Reset and base styles
@@ -215,13 +223,25 @@ Set via `wrangler secret put <name>`:
 - Sessions stored in KV with TTL (7 days default)
 - Simple SHA-256 password hashing (format: `$simple$<salt>$<hash>`)
 
+### Admin UI Pages
+- **Dashboard** (`/admin/`): Stats overview, recent drafts/posts
+- **Editor** (`/admin/editor`): Split-pane markdown editor with live preview, toolbar, keyboard shortcuts (Ctrl+S, Ctrl+B, Ctrl+I), auto-generated slugs
+- **Posts** (`/admin/posts`): List published posts with edit/unpublish/delete actions
+- **Drafts** (`/admin/drafts`): List drafts with edit/share/publish/delete actions
+- **Tracking** (`/admin/tracking`): Create/manage tracking links, view event timelines
+
+### Client-side Markdown Renderer (`public/lib/markdown.js`)
+- Mirrors server-side renderer for consistent preview
+- Used in editor for live preview
+- Supports same macro syntax as server
+
 ## Next Steps
 
-1. Create admin editor page with split-pane preview
-2. Create admin posts/drafts list pages
-3. Create admin tracking management page
-4. Implement file upload to R2
-5. Add Analytics Engine integration
+1. Implement file upload to R2 (drag-and-drop in editor)
+2. Add Analytics Engine integration for page views
+3. Add auto-save for drafts in editor
+4. Mobile responsiveness improvements
+5. SEO meta tags for blog posts
 
 ---
 

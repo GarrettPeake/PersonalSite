@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Tracking | Admin | Garrett Peake</title>
+  <link rel="stylesheet" href="/styles/theme.css">
+  <link rel="stylesheet" href="/styles/base.css">
+  <script type="module" src="/components/core/gp-theme-toggle.js"></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="logo">GP</a>
+        <span class="admin-badge">Admin</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin/" class="nav-item">Dashboard</a>
+        <a href="/admin/posts" class="nav-item">Posts</a>
+        <a href="/admin/drafts" class="nav-item">Drafts</a>
+        <a href="/admin/tracking" class="nav-item active">Tracking</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <gp-theme-toggle></gp-theme-toggle>
+        <button id="logout-btn" class="btn-logout">Logout</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1>Tracking Links</h1>
+        <button id="create-btn" class="btn-primary">+ New Link</button>
+      </header>
+
+      <div id="tracking-list" class="data-table">
+        <p class="loading">Loading tracking links...</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Dialog -->
+  <div id="create-dialog" class="dialog-overlay" hidden>
+    <div class="dialog">
+      <h3>Create Tracking Link</h3>
+      <form id="create-form">
+        <div class="form-group">
+          <label for="tag-input">Tag Name</label>
+          <input type="text" id="tag-input" placeholder="e.g., Facebook Recruiter" required>
+          <p class="help-text">A label to identify who this link is for</p>
+        </div>
+        <div class="form-group">
+          <label for="slug-input">Custom Slug (optional)</label>
+          <input type="text" id="slug-input" placeholder="e.g., fb">
+          <p class="help-text">Leave empty for a random 5-character slug</p>
+        </div>
+        <div id="create-error" class="error" hidden></div>
+        <div class="dialog-actions">
+          <button type="button" id="create-cancel" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm Dialog -->
+  <div id="confirm-dialog" class="dialog-overlay" hidden>
+    <div class="dialog">
+      <h3 id="dialog-title">Confirm Action</h3>
+      <p id="dialog-message">Are you sure?</p>
+      <div class="dialog-actions">
+        <button id="dialog-cancel" class="btn-secondary">Cancel</button>
+        <button id="dialog-confirm" class="btn-danger">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Events Dialog -->
+  <div id="events-dialog" class="dialog-overlay" hidden>
+    <div class="dialog events-dialog">
+      <h3 id="events-title">Events</h3>
+      <div id="events-list" class="events-list"></div>
+      <div class="dialog-actions">
+        <button id="events-close" class="btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: var(--color-bg);
+      border-right: 3px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+    }
+
+    .sidebar-header {
+      padding: var(--space-lg);
+      border-bottom: 2px dashed var(--color-border);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+
+    .admin-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: var(--space-xs) var(--space-sm);
+      border: 2px solid var(--color-text);
+      background: var(--color-accent);
+      color: var(--color-bg);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: var(--space-md);
+    }
+
+    .nav-item {
+      display: block;
+      padding: var(--space-sm) var(--space-md);
+      color: var(--color-text);
+      text-decoration: none;
+      font-weight: 500;
+      border: 2px solid transparent;
+      margin-bottom: var(--space-xs);
+      transition: all 0.1s;
+    }
+
+    .nav-item:hover {
+      border-color: var(--color-border);
+      background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    }
+
+    .nav-item.active {
+      border-color: var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    }
+
+    .sidebar-footer {
+      padding: var(--space-md);
+      border-top: 2px dashed var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-logout {
+      padding: var(--space-xs) var(--space-sm);
+      border: 2px solid var(--color-text);
+      background: transparent;
+      color: var(--color-text);
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+
+    .btn-logout:hover {
+      background: var(--color-text);
+      color: var(--color-bg);
+    }
+
+    /* Main Content */
+    .admin-main {
+      flex: 1;
+      margin-left: 240px;
+      padding: var(--space-xl);
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-xl);
+      padding-bottom: var(--space-lg);
+      border-bottom: 3px solid var(--color-border);
+    }
+
+    .admin-header h1 {
+      margin: 0;
+    }
+
+    .btn-primary {
+      padding: var(--space-sm) var(--space-lg);
+      border: 3px solid var(--color-text);
+      background: var(--color-primary);
+      color: var(--color-bg);
+      font-weight: 700;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .btn-primary:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--color-text);
+    }
+
+    /* Data Table */
+    .data-table {
+      border: 3px solid var(--color-border);
+    }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 2fr 1fr 80px 100px 150px;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+      border-bottom: 2px solid var(--color-border);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 80px 100px 150px;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      border-bottom: 1px dashed var(--color-border);
+      align-items: center;
+    }
+
+    .table-row:last-child {
+      border-bottom: none;
+    }
+
+    .table-row:hover {
+      background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+    }
+
+    .tracking-tag {
+      font-weight: 600;
+    }
+
+    .tracking-url {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      color: color-mix(in srgb, var(--color-text) 60%, transparent);
+    }
+
+    .tracking-status {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--color-text) 30%, transparent);
+    }
+
+    .status-dot.visited {
+      background: #22c55e;
+    }
+
+    .tracking-visits {
+      font-size: 0.875rem;
+      color: color-mix(in srgb, var(--color-text) 60%, transparent);
+    }
+
+    .tracking-actions {
+      display: flex;
+      gap: var(--space-xs);
+    }
+
+    .btn-action {
+      padding: var(--space-xs) var(--space-sm);
+      border: 2px solid var(--color-border);
+      background: transparent;
+      color: var(--color-text);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.1s;
+    }
+
+    .btn-action:hover {
+      background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    }
+
+    .btn-action.danger:hover {
+      background: #ff4444;
+      border-color: #ff4444;
+      color: white;
+    }
+
+    .loading, .empty {
+      padding: var(--space-xl);
+      text-align: center;
+      color: color-mix(in srgb, var(--color-text) 50%, transparent);
+      font-style: italic;
+    }
+
+    /* Dialog */
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .dialog {
+      background: var(--color-bg);
+      border: 3px solid var(--color-border);
+      padding: var(--space-xl);
+      max-width: 500px;
+      width: 90%;
+    }
+
+    .dialog h3 {
+      margin: 0 0 var(--space-lg);
+    }
+
+    .dialog p {
+      margin: 0 0 var(--space-lg);
+    }
+
+    .form-group {
+      margin-bottom: var(--space-md);
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: var(--space-xs);
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: var(--space-sm) var(--space-md);
+      border: 2px solid var(--color-border);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 1rem;
+      font-family: inherit;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 4px 4px 0 var(--color-primary);
+    }
+
+    .help-text {
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--color-text) 60%, transparent);
+      margin: var(--space-xs) 0 0;
+    }
+
+    .error {
+      background: #ff4444;
+      color: white;
+      padding: var(--space-sm) var(--space-md);
+      margin-bottom: var(--space-md);
+      font-weight: 500;
+    }
+
+    .dialog-actions {
+      display: flex;
+      gap: var(--space-sm);
+      justify-content: flex-end;
+      margin-top: var(--space-lg);
+    }
+
+    .btn-secondary {
+      padding: var(--space-sm) var(--space-md);
+      border: 2px solid var(--color-border);
+      background: transparent;
+      color: var(--color-text);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+
+    .btn-secondary:hover {
+      background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    }
+
+    .btn-danger {
+      padding: var(--space-sm) var(--space-md);
+      border: 2px solid #ff4444;
+      background: #ff4444;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+
+    .btn-danger:hover {
+      background: #cc3333;
+      border-color: #cc3333;
+    }
+
+    /* Events Dialog */
+    .events-dialog {
+      max-width: 600px;
+      max-height: 80vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .events-list {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: var(--space-md);
+      border: 2px solid var(--color-border);
+      max-height: 400px;
+    }
+
+    .event-item {
+      padding: var(--space-md);
+      border-bottom: 1px dashed var(--color-border);
+    }
+
+    .event-item:last-child {
+      border-bottom: none;
+    }
+
+    .event-time {
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--color-text) 60%, transparent);
+      margin-bottom: var(--space-xs);
+    }
+
+    .event-page {
+      font-weight: 600;
+      margin-bottom: var(--space-xs);
+    }
+
+    .event-details {
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--color-text) 50%, transparent);
+    }
+
+    .no-events {
+      padding: var(--space-xl);
+      text-align: center;
+      color: color-mix(in srgb, var(--color-text) 50%, transparent);
+      font-style: italic;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .table-header, .table-row {
+        grid-template-columns: 1fr 100px 100px 120px;
+      }
+
+      .table-header > *:nth-child(2),
+      .table-row > *:nth-child(2) {
+        display: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        position: relative;
+        border-right: none;
+        border-bottom: 3px solid var(--color-border);
+      }
+
+      .admin-main {
+        margin-left: 0;
+      }
+
+      .admin-layout {
+        flex-direction: column;
+      }
+
+      .table-header, .table-row {
+        grid-template-columns: 1fr 80px 100px;
+      }
+
+      .table-header > *:nth-child(4),
+      .table-row > *:nth-child(4) {
+        display: none;
+      }
+    }
+  </style>
+
+  <script>
+    // Elements
+    const trackingList = document.getElementById('tracking-list');
+    const createBtn = document.getElementById('create-btn');
+    const createDialog = document.getElementById('create-dialog');
+    const createForm = document.getElementById('create-form');
+    const createCancel = document.getElementById('create-cancel');
+    const createError = document.getElementById('create-error');
+    const tagInput = document.getElementById('tag-input');
+    const slugInput = document.getElementById('slug-input');
+    const confirmDialog = document.getElementById('confirm-dialog');
+    const dialogTitle = document.getElementById('dialog-title');
+    const dialogMessage = document.getElementById('dialog-message');
+    const dialogCancel = document.getElementById('dialog-cancel');
+    const dialogConfirm = document.getElementById('dialog-confirm');
+    const eventsDialog = document.getElementById('events-dialog');
+    const eventsTitle = document.getElementById('events-title');
+    const eventsList = document.getElementById('events-list');
+    const eventsClose = document.getElementById('events-close');
+
+    // State
+    let pendingAction = null;
+    let trackingData = [];
+
+    // Load tracking links on page load
+    async function loadTracking() {
+      try {
+        const res = await fetch('/api/admin/tracking');
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            window.location.href = '/admin/login';
+            return;
+          }
+          throw new Error('Failed to load tracking');
+        }
+
+        trackingData = await res.json();
+        renderTracking(trackingData);
+
+      } catch (err) {
+        console.error('Failed to load tracking:', err);
+        trackingList.innerHTML = '<p class="empty">Failed to load tracking links</p>';
+      }
+    }
+
+    // Render tracking table
+    function renderTracking(items) {
+      if (items.length === 0) {
+        trackingList.innerHTML = `
+          <p class="empty">No tracking links yet. Create one to start tracking visitors.</p>
+        `;
+        return;
+      }
+
+      // Sort by created date descending
+      items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      trackingList.innerHTML = `
+        <div class="table-header">
+          <div>Tag</div>
+          <div>Link</div>
+          <div>Status</div>
+          <div>Visits</div>
+          <div>Actions</div>
+        </div>
+        ${items.map(item => {
+          const visited = item.events && item.events.length > 0;
+          const visitCount = item.events ? item.events.length : 0;
+          return `
+            <div class="table-row" data-slug="${item.slug}">
+              <div class="tracking-tag">${escapeHtml(item.tag)}</div>
+              <div class="tracking-url">/s/${escapeHtml(item.slug)}</div>
+              <div class="tracking-status">
+                <span class="status-dot ${visited ? 'visited' : ''}"></span>
+                <span>${visited ? 'Visited' : 'Not visited'}</span>
+              </div>
+              <div class="tracking-visits">${visitCount} ${visitCount === 1 ? 'visit' : 'visits'}</div>
+              <div class="tracking-actions">
+                <button class="btn-action" data-action="copy" data-slug="${item.slug}">Copy</button>
+                <button class="btn-action" data-action="events" data-slug="${item.slug}" ${!visited ? 'disabled' : ''}>Events</button>
+                <button class="btn-action danger" data-action="delete" data-slug="${item.slug}">Delete</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      `;
+
+      // Add event listeners for action buttons
+      trackingList.querySelectorAll('[data-action]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!btn.disabled) {
+            handleAction(btn.dataset.action, btn.dataset.slug);
+          }
+        });
+      });
+    }
+
+    // Handle action buttons
+    function handleAction(action, slug) {
+      if (action === 'copy') {
+        copyLink(slug);
+      } else if (action === 'events') {
+        showEvents(slug);
+      } else if (action === 'delete') {
+        const item = trackingData.find(t => t.slug === slug);
+        showConfirmDialog(
+          'Delete Tracking Link',
+          `Are you sure you want to delete the tracking link for "${item?.tag || slug}"? This will also delete all event data.`,
+          () => deleteTracking(slug)
+        );
+      }
+    }
+
+    // Copy link to clipboard
+    async function copyLink(slug) {
+      const url = `${window.location.origin}/s/${slug}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        // Show feedback
+        const btn = trackingList.querySelector(`[data-action="copy"][data-slug="${slug}"]`);
+        if (btn) {
+          const originalText = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 2000);
+        }
+      } catch (err) {
+        prompt('Copy this link:', url);
+      }
+    }
+
+    // Show events dialog
+    async function showEvents(slug) {
+      const item = trackingData.find(t => t.slug === slug);
+      if (!item) return;
+
+      eventsTitle.textContent = `Events for "${item.tag}"`;
+
+      if (!item.events || item.events.length === 0) {
+        eventsList.innerHTML = '<p class="no-events">No events recorded yet</p>';
+      } else {
+        // Sort events by time descending
+        const sortedEvents = [...item.events].sort((a, b) =>
+          new Date(b.timestamp) - new Date(a.timestamp)
+        );
+
+        eventsList.innerHTML = sortedEvents.map(event => `
+          <div class="event-item">
+            <div class="event-time">${formatDateTime(event.timestamp)}</div>
+            <div class="event-page">Page: ${escapeHtml(event.page)}</div>
+            <div class="event-details">
+              ${event.referrer ? `Referrer: ${escapeHtml(event.referrer)}<br>` : ''}
+              ${event.userAgent ? `Browser: ${escapeHtml(truncate(event.userAgent, 60))}` : ''}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      eventsDialog.hidden = false;
+    }
+
+    // Create dialog handlers
+    createBtn.addEventListener('click', () => {
+      createDialog.hidden = false;
+      tagInput.value = '';
+      slugInput.value = '';
+      createError.hidden = true;
+      tagInput.focus();
+    });
+
+    createCancel.addEventListener('click', () => {
+      createDialog.hidden = true;
+    });
+
+    createDialog.addEventListener('click', (e) => {
+      if (e.target === createDialog) {
+        createDialog.hidden = true;
+      }
+    });
+
+    createForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      createError.hidden = true;
+
+      const tag = tagInput.value.trim();
+      const slug = slugInput.value.trim();
+
+      if (!tag) {
+        createError.textContent = 'Tag name is required';
+        createError.hidden = false;
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/tracking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tag, slug: slug || undefined }),
+        });
+
+        if (res.ok) {
+          createDialog.hidden = true;
+          loadTracking();
+        } else {
+          const err = await res.json();
+          createError.textContent = err.error || 'Failed to create tracking link';
+          createError.hidden = false;
+        }
+      } catch (err) {
+        createError.textContent = 'Failed to create tracking link';
+        createError.hidden = false;
+      }
+    });
+
+    // Confirm dialog handlers
+    function showConfirmDialog(title, message, onConfirm) {
+      dialogTitle.textContent = title;
+      dialogMessage.textContent = message;
+      pendingAction = onConfirm;
+      confirmDialog.hidden = false;
+    }
+
+    function hideConfirmDialog() {
+      confirmDialog.hidden = true;
+      pendingAction = null;
+    }
+
+    dialogCancel.addEventListener('click', hideConfirmDialog);
+    dialogConfirm.addEventListener('click', async () => {
+      if (pendingAction) {
+        await pendingAction();
+      }
+      hideConfirmDialog();
+    });
+
+    confirmDialog.addEventListener('click', (e) => {
+      if (e.target === confirmDialog) {
+        hideConfirmDialog();
+      }
+    });
+
+    // Events dialog handlers
+    eventsClose.addEventListener('click', () => {
+      eventsDialog.hidden = true;
+    });
+
+    eventsDialog.addEventListener('click', (e) => {
+      if (e.target === eventsDialog) {
+        eventsDialog.hidden = true;
+      }
+    });
+
+    // Delete tracking
+    async function deleteTracking(slug) {
+      try {
+        const res = await fetch(`/api/admin/tracking/${slug}`, {
+          method: 'DELETE',
+        });
+
+        if (res.ok) {
+          loadTracking();
+        } else {
+          const err = await res.json();
+          alert(err.error || 'Failed to delete');
+        }
+      } catch (err) {
+        alert('Failed to delete tracking link');
+      }
+    }
+
+    // Utility functions
+    function formatDateTime(iso) {
+      return new Date(iso).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+
+    function truncate(text, maxLength) {
+      if (text.length <= maxLength) return text;
+      return text.substring(0, maxLength) + '...';
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Logout handler
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/admin/login';
+    });
+
+    // Initialize
+    loadTracking();
+  </script>
+</body>
+</html>
