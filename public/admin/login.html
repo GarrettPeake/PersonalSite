@@ -7,6 +7,7 @@
   <title>Admin Login | Garrett Peake</title>
   <link rel="stylesheet" href="/styles/theme.css">
   <link rel="stylesheet" href="/styles/base.css">
+  <link rel="stylesheet" href="/styles/pages/login.css">
   <script type="module" src="/components/core/gp-theme-toggle.js"></script>
 </head>
 <body>
@@ -48,134 +49,6 @@
     </div>
   </main>
 
-  <style>
-    body {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--color-bg);
-    }
-
-    .login-container {
-      width: 100%;
-      max-width: 400px;
-      padding: var(--space-md);
-    }
-
-    .login-box {
-      border: 3px solid var(--color-border);
-      padding: var(--space-xl);
-      background: var(--color-bg);
-    }
-
-    .login-box h1 {
-      text-align: center;
-      margin-bottom: var(--space-xl);
-      font-size: 2rem;
-    }
-
-    .form-group {
-      margin-bottom: var(--space-md);
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: var(--space-xs);
-      font-weight: 600;
-      font-size: 0.875rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: var(--space-sm) var(--space-md);
-      border: 2px solid var(--color-border);
-      background: var(--color-bg);
-      color: var(--color-text);
-      font-size: 1rem;
-      font-family: inherit;
-    }
-
-    .form-group input:focus {
-      outline: none;
-      border-color: var(--color-primary);
-      box-shadow: 4px 4px 0 var(--color-primary);
-    }
-
-    .error {
-      background: #ff4444;
-      color: white;
-      padding: var(--space-sm) var(--space-md);
-      margin-bottom: var(--space-md);
-      font-weight: 500;
-    }
-
-    .btn-primary {
-      width: 100%;
-      padding: var(--space-md);
-      border: 3px solid var(--color-text);
-      background: var(--color-primary);
-      color: var(--color-bg);
-      font-size: 1rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.1s;
-    }
-
-    .btn-primary:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 4px 4px 0 var(--color-text);
-    }
-
-    .btn-primary:active {
-      transform: translate(0, 0);
-      box-shadow: none;
-    }
-
-    .theme-toggle-wrapper {
-      display: flex;
-      justify-content: center;
-      margin-top: var(--space-xl);
-      padding-top: var(--space-lg);
-      border-top: 2px dashed var(--color-border);
-    }
-  </style>
-
-  <script>
-    const form = document.getElementById('login-form');
-    const errorEl = document.getElementById('error');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorEl.hidden = true;
-
-      const username = form.username.value;
-      const password = form.password.value;
-
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          window.location.href = '/admin/';
-        } else {
-          errorEl.textContent = data.error || 'Login failed';
-          errorEl.hidden = false;
-        }
-      } catch (err) {
-        errorEl.textContent = 'Connection error. Please try again.';
-        errorEl.hidden = false;
-      }
-    });
-  </script>
+  <script src="/js/admin/login.js"></script>
 </body>
 </html>

@@ -1,0 +1,52 @@
+/* Blog Page Styles */
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.posts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.loading, .empty {
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  font-style: italic;
+}
+
+.post-card {
+  padding: var(--space-md);
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.post-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0 var(--color-primary);
+}
+
+.post-card h2 {
+  margin-bottom: var(--space-sm);
+}
+
+.post-card h2 a {
+  color: var(--color-text);
+}
+
+.post-card h2 a:hover {
+  color: var(--color-primary);
+}
+
+.post-meta {
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  margin-bottom: var(--space-sm);
+}
+
+.post-excerpt {
+  margin-bottom: 0;
+}

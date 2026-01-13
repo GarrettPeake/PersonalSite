@@ -9,6 +9,7 @@
   <!-- Styles -->
   <link rel="stylesheet" href="/styles/theme.css">
   <link rel="stylesheet" href="/styles/base.css">
+  <link rel="stylesheet" href="/styles/pages/blog.css">
 
   <!-- Web Components -->
   <script type="module" src="/components/core/gp-theme-toggle.js"></script>
@@ -33,113 +34,6 @@
 
   <gp-footer></gp-footer>
 
-  <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    .posts {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-lg);
-    }
-
-    .loading, .empty {
-      color: color-mix(in srgb, var(--color-text) 60%, transparent);
-      font-style: italic;
-    }
-
-    .post-card {
-      padding: var(--space-md);
-      border: 2px solid var(--color-border);
-      border-radius: 4px;
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-
-    .post-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 4px 4px 0 var(--color-primary);
-    }
-
-    .post-card h2 {
-      margin-bottom: var(--space-sm);
-    }
-
-    .post-card h2 a {
-      color: var(--color-text);
-    }
-
-    .post-card h2 a:hover {
-      color: var(--color-primary);
-    }
-
-    .post-meta {
-      font-size: 0.875rem;
-      color: color-mix(in srgb, var(--color-text) 60%, transparent);
-      margin-bottom: var(--space-sm);
-    }
-
-    .post-excerpt {
-      margin-bottom: 0;
-    }
-  </style>
-
-  <script type="module">
-    async function loadPosts() {
-      const container = document.getElementById('posts');
-
-      try {
-        const response = await fetch('/api/posts');
-        if (!response.ok) throw new Error('Failed to fetch posts');
-
-        const posts = await response.json();
-
-        if (posts.length === 0) {
-          container.innerHTML = '<p class="empty">No posts yet. Check back soon!</p>';
-          return;
-        }
-
-        container.innerHTML = posts.map(post => `
-          <article class="post-card">
-            <h2><a href="/blog/${post.slug}">${escapeHtml(post.title)}</a></h2>
-            <p class="post-meta">${formatDate(post.publishedAt)}</p>
-            <p class="post-excerpt">${escapeHtml(getExcerpt(post.content))}</p>
-          </article>
-        `).join('');
-      } catch (error) {
-        container.innerHTML = '<p class="empty">No posts yet. Check back soon!</p>';
-      }
-    }
-
-    function formatDate(isoString) {
-      return new Date(isoString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    }
-
-    function getExcerpt(content, maxLength = 200) {
-      // Strip markdown and get first paragraph
-      const text = content
-        .replace(/^#+\s+.+$/gm, '') // Remove headings
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links
-        .replace(/[*_`]/g, '') // Remove formatting
-        .trim();
-
-      if (text.length <= maxLength) return text;
-      return text.substring(0, maxLength).trim() + '...';
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    loadPosts();
-  </script>
+  <script src="/js/blog.js"></script>
 </body>
 </html>

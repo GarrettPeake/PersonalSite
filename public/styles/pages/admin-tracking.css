@@ -1,0 +1,120 @@
+/* Admin Tracking Page Styles */
+
+/* Table Grid */
+.table-header, .table-row {
+  grid-template-columns: 2fr 1fr 80px 100px 150px;
+}
+
+.tracking-tag {
+  font-weight: 600;
+}
+
+.tracking-url {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+.tracking-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-text) 30%, transparent);
+}
+
+.status-dot.visited {
+  background: #22c55e;
+}
+
+.tracking-visits {
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+.tracking-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+/* Events Dialog */
+.events-dialog {
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.events-list {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: var(--space-md);
+  border: 2px solid var(--color-border);
+  max-height: 400px;
+}
+
+.event-item {
+  padding: var(--space-md);
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.event-item:last-child {
+  border-bottom: none;
+}
+
+.event-time {
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  margin-bottom: var(--space-xs);
+}
+
+.event-page {
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+.event-details {
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+
+.no-events {
+  padding: var(--space-xl);
+  text-align: center;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+  font-style: italic;
+}
+
+/* Dialog actions margin override */
+.events-dialog .dialog-actions {
+  margin-top: var(--space-lg);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .table-header, .table-row {
+    grid-template-columns: 1fr 100px 100px 120px;
+  }
+
+  .table-header > *:nth-child(2),
+  .table-row > *:nth-child(2) {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-header, .table-row {
+    grid-template-columns: 1fr 80px 100px;
+  }
+
+  .table-header > *:nth-child(4),
+  .table-row > *:nth-child(4) {
+    display: none;
+  }
+}

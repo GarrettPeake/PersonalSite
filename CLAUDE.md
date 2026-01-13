@@ -121,11 +121,31 @@ Worker handles:
     │   ├── posts.html    # Published posts list
     │   ├── drafts.html   # Drafts list
     │   └── tracking.html # Tracking links management
+    ├── /js
+    │   ├── blog.js       # Blog listing page logic
+    │   └── /admin
+    │       ├── login.js      # Login form handling
+    │       ├── dashboard.js  # Dashboard stats and recent items
+    │       ├── editor.js     # Markdown editor with toolbar and auto-save
+    │       ├── posts.js      # Posts list management
+    │       ├── drafts.js     # Drafts list management
+    │       └── tracking.js   # Tracking links management
     ├── /lib
     │   └── markdown.js   # Client-side markdown renderer for preview
     ├── /styles
     │   ├── theme.css     # CSS custom properties for theming
-    │   └── base.css      # Reset and base styles
+    │   ├── base.css      # Reset and base styles
+    │   ├── admin.css     # Shared admin layout (sidebar, buttons, dialogs)
+    │   └── /pages
+    │       ├── home.css           # Home page styles
+    │       ├── about.css          # About page styles
+    │       ├── blog.css           # Blog listing styles
+    │       ├── login.css          # Admin login page styles
+    │       ├── admin-dashboard.css # Admin dashboard styles
+    │       ├── admin-editor.css   # Editor page styles
+    │       ├── admin-posts.css    # Posts list styles
+    │       ├── admin-drafts.css   # Drafts list styles
+    │       └── admin-tracking.css # Tracking page styles
     └── /components
         ├── /core
         │   ├── gp-header.js       # Site header with nav
@@ -190,6 +210,20 @@ Set via `wrangler secret put <name>`:
 | DELETE | `/api/admin/tracking/:slug` | Delete tracking slug |
 
 ## Design Decisions
+
+### Code Organization Requirements
+
+**IMPORTANT:** HTML files MUST only contain HTML markup. All JavaScript and CSS must be in separate files:
+
+- **JavaScript** must be in `/public/js/` or `/public/js/admin/` directories
+- **CSS** must be in `/public/styles/` or `/public/styles/pages/` directories
+- **HTML** files should only contain markup and reference external JS/CSS via `<link>` and `<script>` tags
+
+This separation ensures:
+- Better maintainability and readability
+- Easier code reuse (e.g., `admin.css` is shared across all admin pages)
+- Cleaner git diffs when making changes
+- Browser caching benefits for external resources
 
 ### Macro Syntax (from DESIGN.md)
 - **camelCase** = inline macro (renders as `<span>`)
