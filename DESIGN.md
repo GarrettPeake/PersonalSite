@@ -7,7 +7,9 @@ A personal website built on Cloudflare Workers with a neo-brutalist aesthetic, f
 **Tech Stack:**
 - Frontend: Vanilla HTML, CSS, JS with Web Components (no build step)
 - Backend: Cloudflare Workers (TypeScript)
-- Storage: Cloudflare KV (content) + D1 (structured data)
+- Storage: Cloudflare KV (single-table design)
+- Files: Cloudflare R2 (images, uploads)
+- Analytics: Workers Analytics Engine
 
 ---
 
@@ -77,6 +79,49 @@ A personal website built on Cloudflare Workers with a neo-brutalist aesthetic, f
 - No indexing (noindex meta tag)
 - UUID is one-time generated, revocable
 
+#### 6. Tracking Redirect (`/s/:slug`)
+- 5-character slug (e.g., `/s/asfq3`)
+- On visit:
+  1. Save slug to `localStorage` for cross-page tracking
+  2. Send tracking event to backend (timestamp, user-agent, referrer)
+  3. Redirect to `/`
+- All subsequent page views include slug in analytics if present in localStorage
+
+---
+
+## Recruiter / Visitor Tracking
+
+### Purpose
+Generate unique shareable links to track whether specific recruiters/contacts actually visit the site.
+
+### Flow
+1. Admin creates tracking slug with tag (e.g., "Facebook" → `asfq3`)
+2. Admin shares `https://garrettpeake.com/s/asfq3` with recruiter
+3. Recruiter clicks link:
+   - Frontend stores `asfq3` in `localStorage.trackingSlug`
+   - POST to `/api/track` with slug + metadata
+   - Redirect to `/`
+4. As recruiter navigates, each page view sends tracking data with slug
+5. Admin dashboard shows which slugs have been visited and activity
+
+### Tracked Data
+```typescript
+interface TrackingEvent {
+  timestamp: string;      // ISO timestamp
+  page: string;           // URL path visited
+  referrer?: string;      // HTTP referrer on first visit
+  userAgent?: string;     // Browser info
+}
+
+interface TrackingSlug {
+  slug: string;           // 5-char identifier
+  tag: string;            // Human label (e.g., "Facebook")
+  createdAt: string;
+  visited: boolean;
+  events: TrackingEvent[];
+}
+```
+
 ---
 
 ## Admin-Facing CRM
@@ -94,10 +139,11 @@ A personal website built on Cloudflare Workers with a neo-brutalist aesthetic, f
 - Rate limiting on failed attempts
 
 #### 2. Dashboard (`/admin`)
-- Quick stats: draft count, post count
+- Quick stats: draft count, post count, active tracking slugs
 - Recent drafts list
 - Recent posts list
-- Quick actions: New Draft, View Site
+- Tracking slugs overview (tag, visited status)
+- Quick actions: New Draft, New Tracking Link, View Site
 
 #### 3. Drafts List (`/admin/drafts`)
 - Table/list of all drafts
@@ -110,12 +156,23 @@ A personal website built on Cloudflare Workers with a neo-brutalist aesthetic, f
 - Actions: Edit, Unpublish (to draft), Delete
 
 #### 5. Editor (`/admin/editor/:id?`)
-- WYSIWYG markdown editor with live preview
-- Split pane: editor left, preview right
+- Custom markdown editor with live preview
+- Split pane: raw markdown left, rendered preview right
 - Toolbar for common formatting + macro insertion
+- **Drag-and-drop file upload:**
+  - Drop image/file onto editor
+  - Upload to R2, receive URL
+  - Auto-insert markdown link at cursor position
 - Auto-save drafts
 - Fields: title, slug (auto-generated, editable), content
 - Actions: Save Draft, Preview, Publish
+
+#### 6. Tracking Links (`/admin/tracking`)
+- Create new tracking slug: enter tag name → generate 5-char slug
+- Table of all tracking slugs:
+  - Columns: tag, slug, created, visited (yes/no), view count, last visit
+  - Actions: Copy Link, View Events, Delete
+- Click row to expand event timeline for that slug
 
 ---
 
@@ -187,7 +244,6 @@ interface Post {
   title: string;
   slug: string;         // URL-friendly, unique
   content: string;      // Raw markdown with macros
-  renderedHtml: string; // Pre-rendered HTML (cached)
   publishedAt: string;
   updatedAt: string;
 }
@@ -195,6 +251,20 @@ interface Post {
 interface Session {
   token: string;
   expiresAt: string;
+}
+
+interface TrackingSlug {
+  slug: string;         // 5-char identifier
+  tag: string;          // Human label (e.g., "Facebook")
+  createdAt: string;
+  events: TrackingEvent[];
+}
+
+interface TrackingEvent {
+  timestamp: string;
+  page: string;
+  referrer?: string;
+  userAgent?: string;
 }
 ```
 
@@ -207,6 +277,7 @@ interface Session {
 | GET | `/api/posts` | List published posts (paginated) |
 | GET | `/api/posts/:slug` | Get single post by slug |
 | GET | `/api/draft/share/:token` | Get draft by share token |
+| POST | `/api/track` | Record tracking event (slug in body) |
 
 #### Admin (requires auth)
 
@@ -226,17 +297,46 @@ interface Session {
 | PUT | `/api/admin/posts/:id` | Update post |
 | DELETE | `/api/admin/posts/:id` | Delete post |
 | POST | `/api/admin/posts/:id/unpublish` | Unpublish post → draft |
+| POST | `/api/admin/upload` | Upload file to R2, returns URL |
+| GET | `/api/admin/tracking` | List all tracking slugs |
+| POST | `/api/admin/tracking` | Create new tracking slug |
+| GET | `/api/admin/tracking/:slug` | Get tracking slug with events |
+| DELETE | `/api/admin/tracking/:slug` | Delete tracking slug |
 
 ### Storage Strategy
 
-**Cloudflare D1 (SQLite):**
-- Drafts table
-- Posts table
-- Sessions table
+**Single-Table KV Design**
 
-**Cloudflare KV:**
-- Rendered HTML cache (key: `post:${slug}`)
-- Share tokens lookup (key: `share:${token}` → draft ID)
+All data stored in one KV namespace with prefixed keys:
+
+| Prefix | Key Format | Value |
+|--------|------------|-------|
+| `draft:` | `draft:{uuid}` | Draft JSON |
+| `post:` | `post:{uuid}` | Post JSON |
+| `post-slug:` | `post-slug:{slug}` | Post UUID (lookup) |
+| `share:` | `share:{token}` | Draft UUID (lookup) |
+| `session:` | `session:{token}` | Session JSON |
+| `tracking:` | `tracking:{slug}` | TrackingSlug JSON |
+| `index:drafts` | `index:drafts` | Array of draft UUIDs |
+| `index:posts` | `index:posts` | Array of post UUIDs |
+| `index:tracking` | `index:tracking` | Array of tracking slugs |
+
+**Index Management:**
+- Maintain index arrays for listing operations
+- Update index on create/delete operations
+- Trade-off: slight write overhead for fast reads
+
+**Cloudflare R2:**
+- Bucket: `uploads`
+- Key format: `{timestamp}-{random}.{ext}`
+- Public URL: `https://files.garrettpeake.com/{key}`
+- Used for: images, PDFs, any dropped files
+
+**Workers Analytics Engine:**
+- Dataset: `page_views`
+- Blobs: page path, tracking slug (if present)
+- Doubles: timestamp
+- Used for: per-post view counts, general analytics
 
 ---
 
@@ -269,10 +369,13 @@ interface Session {
       gp-mention.js      # Mention macro component
       gp-tag.js          # Tag pill component
     /admin
-      gp-editor.js       # Markdown editor
+      gp-editor.js       # Markdown editor with drag-drop upload
       gp-preview.js      # Live preview pane
       gp-draft-list.js   # Drafts table
       gp-post-list.js    # Posts table
+      gp-tracking-list.js # Tracking slugs table
+    /tracking
+      gp-tracker.js      # Client-side tracking (localStorage + beacon)
 ```
 
 ### Example Web Component
@@ -377,11 +480,14 @@ Components use these CSS custom properties, allowing theme switching without com
 │   │   ├── auth.ts         # Authentication logic
 │   │   ├── posts.ts        # Post CRUD operations
 │   │   ├── drafts.ts       # Draft CRUD operations
-│   │   └── macros.ts       # Macro parser & renderer
-│   ├── /middleware
-│   │   └── auth.ts         # Auth middleware
-│   └── /utils
-│       └── markdown.ts     # Markdown processing
+│   │   ├── tracking.ts     # Tracking slug operations
+│   │   ├── upload.ts       # R2 file upload
+│   │   └── analytics.ts    # Analytics Engine writes
+│   ├── /lib
+│   │   ├── kv.ts           # KV helpers (get, put, index ops)
+│   │   └── markdown.ts     # Custom markdown renderer
+│   └── /middleware
+│       └── auth.ts         # Auth middleware
 ├── /public
 │   ├── /components         # Web components (as above)
 │   ├── /styles
@@ -398,12 +504,15 @@ Components use these CSS custom properties, allowing theme switching without com
 │   │       ├── dashboard.html
 │   │       ├── drafts.html
 │   │       ├── posts.html
-│   │       └── editor.html
+│   │       ├── editor.html
+│   │       └── tracking.html
+│   ├── /lib
+│   │   └── markdown.js     # Client-side markdown renderer (shared logic)
 │   └── /assets
 │       ├── favicon.svg     # Peak favicon
 │       └── /images
-└── /migrations
-    └── 0001_initial.sql    # D1 schema
+└── /scripts
+    └── seed.ts             # Optional: seed KV with test data
 ```
 
 ---
@@ -411,46 +520,59 @@ Components use these CSS custom properties, allowing theme switching without com
 ## Implementation Phases
 
 ### Phase 1: Foundation
-- [ ] Cloudflare Workers project setup
-- [ ] D1 database schema
-- [ ] Basic routing
+- [ ] Cloudflare Workers project setup (wrangler.toml, bindings)
+- [ ] KV namespace + R2 bucket configuration
+- [ ] Basic routing structure
+- [ ] KV helper functions (single-table operations)
 - [ ] Theme CSS + base styles
 - [ ] Core web components (header, footer, theme toggle)
 
-### Phase 2: Public Site
+### Phase 2: Custom Markdown Renderer
+- [ ] Basic markdown parsing (headings, paragraphs, lists, links, code)
+- [ ] Macro syntax parsing (camelCase inline, PascalCase block)
+- [ ] Macro registry and rendering
+- [ ] Shared renderer for server (TS) and client (JS)
+
+### Phase 3: Public Site
 - [ ] Home/portfolio page
 - [ ] Blog listing page
-- [ ] Single post page
+- [ ] Single post page with rendered markdown
 - [ ] About page
 - [ ] Post API endpoints
+- [ ] Analytics Engine integration (page views)
 
-### Phase 3: Admin CRM
-- [ ] Authentication system
+### Phase 4: Admin CRM
+- [ ] Authentication system (login, sessions)
 - [ ] Admin dashboard
 - [ ] Drafts CRUD + UI
 - [ ] Posts CRUD + UI
 - [ ] Share link functionality
 
-### Phase 4: Editor & Macros
-- [ ] Markdown editor component
-- [ ] Live preview component
-- [ ] Macro parser
-- [ ] Individual macro components
-- [ ] WYSIWYG toolbar
+### Phase 5: Editor
+- [ ] Split-pane editor component (textarea + preview)
+- [ ] Live markdown preview using client-side renderer
+- [ ] Drag-and-drop file upload to R2
+- [ ] Auto-insert uploaded file links
+- [ ] Toolbar for formatting + macro insertion
+- [ ] Auto-save drafts
 
-### Phase 5: Polish
+### Phase 6: Tracking System
+- [ ] Tracking slug CRUD
+- [ ] `/s/:slug` redirect page with localStorage
+- [ ] Client-side tracker component (beacon on page views)
+- [ ] Admin tracking dashboard with event timeline
+
+### Phase 7: Polish
 - [ ] Mobile responsiveness
 - [ ] Performance optimization
 - [ ] SEO meta tags
-- [ ] Error pages
-- [ ] Rate limiting
+- [ ] Error pages (404, 500)
+- [ ] Rate limiting on auth endpoints
 
 ---
 
 ## Open Questions
 
-1. **Editor Library:** Build custom or use existing (e.g., CodeMirror, Monaco)?
-2. **Markdown Parser:** marked.js, markdown-it, or custom?
-3. **Image Hosting:** Cloudflare Images, R2, or external (imgur, etc.)?
-4. **Analytics:** Cloudflare Web Analytics or none?
-5. **Comments:** Future consideration or out of scope?
+1. **Comments:** Future consideration or out of scope?
+2. **RSS Feed:** Include for blog posts?
+3. **Search:** Client-side search across posts or out of scope?
