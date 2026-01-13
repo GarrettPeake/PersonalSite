@@ -1,0 +1,488 @@
+/**
+ * Unified Component Styles
+ *
+ * This file contains reusable component styles used across the site.
+ * Import after theme.css and base.css.
+ */
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+
+/**
+ * Base button styles
+ * Usage: <button class="btn btn--primary">Action</button>
+ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.btn:hover {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  text-decoration: none;
+}
+
+/* Primary button - main actions */
+.btn--primary {
+  padding: var(--space-sm) var(--space-lg);
+  border: 3px solid var(--color-text);
+  background: var(--color-primary);
+  color: var(--color-bg);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn--primary:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 var(--color-text);
+  background: var(--color-primary);
+}
+
+.btn--primary:active {
+  transform: translate(0, 0);
+  box-shadow: none;
+}
+
+/* Secondary button - alternative actions */
+.btn--secondary {
+  border-color: var(--color-border);
+}
+
+.btn--secondary:hover {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+/* Danger button - destructive actions */
+.btn--danger {
+  border-color: #ff4444;
+  background: #ff4444;
+  color: white;
+}
+
+.btn--danger:hover {
+  background: #cc3333;
+  border-color: #cc3333;
+}
+
+/* Ghost danger - danger on hover only */
+.btn--ghost-danger:hover {
+  background: #ff4444;
+  border-color: #ff4444;
+  color: white;
+}
+
+/* Small button - compact actions in tables/lists */
+.btn--sm {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.75rem;
+}
+
+/* Full width button */
+.btn--block {
+  width: 100%;
+}
+
+/* Icon button - square button for icons only */
+.btn--icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 4px;
+}
+
+.btn--icon svg {
+  width: 20px;
+  height: 20px;
+  fill: var(--color-text);
+}
+
+/* ==========================================================================
+   CARDS
+   ========================================================================== */
+
+/**
+ * Base card styles
+ * Usage: <article class="card">Content</article>
+ */
+.card {
+  padding: var(--space-md);
+  border: 2px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+/* Thick border variant */
+.card--thick {
+  border-width: 3px;
+}
+
+/* Interactive card - lifts on hover */
+.card--interactive {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card--interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0 var(--color-primary);
+}
+
+/* Stat card - centered content for numbers */
+.card--stat {
+  text-align: center;
+  padding: var(--space-lg);
+  border-width: 3px;
+}
+
+.card--stat .card__value {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.card--stat .card__label {
+  margin-top: var(--space-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+
+/* ==========================================================================
+   FORMS
+   ========================================================================== */
+
+/**
+ * Form group - wraps label and input
+ * Usage: <div class="form-group"><label>...</label><input>...</div>
+ */
+.form-group {
+  margin-bottom: var(--space-md);
+}
+
+.form-group label,
+.form-label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select,
+.form-input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus,
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 4px 4px 0 var(--color-primary);
+}
+
+/* Help text - small hint below inputs */
+.form-help {
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  margin: var(--space-xs) 0 0;
+}
+
+/* Monospace input - for slugs, code, URLs */
+.form-input--mono {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+/* ==========================================================================
+   DATA TABLES
+   ========================================================================== */
+
+/**
+ * Data table - grid-based table layout
+ * Usage: <div class="data-table">...</div>
+ */
+.data-table {
+  border: 3px solid var(--color-border);
+}
+
+.data-table__header {
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border-bottom: 2px solid var(--color-border);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.data-table__row {
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border-bottom: 1px dashed var(--color-border);
+  align-items: center;
+}
+
+.data-table__row:last-child {
+  border-bottom: none;
+}
+
+.data-table__row:hover {
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+}
+
+/* ==========================================================================
+   LIST ITEMS
+   ========================================================================== */
+
+/**
+ * Item list - bordered list with rows
+ * Usage: <div class="item-list"><div class="item-row">...</div></div>
+ */
+.item-list {
+  border: 2px solid var(--color-border);
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md);
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.item-row:last-child {
+  border-bottom: none;
+}
+
+/* ==========================================================================
+   DIALOGS
+   ========================================================================== */
+
+/**
+ * Dialog - modal overlay with content
+ * Usage: <div class="dialog-overlay"><div class="dialog">...</div></div>
+ */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: var(--color-bg);
+  border: 3px solid var(--color-border);
+  padding: var(--space-xl);
+  max-width: 500px;
+  width: 90%;
+}
+
+.dialog__title {
+  margin: 0 0 var(--space-md);
+}
+
+.dialog__content {
+  margin: 0 0 var(--space-lg);
+}
+
+.dialog__actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+/* ==========================================================================
+   TEXT UTILITIES
+   ========================================================================== */
+
+/* Meta text - secondary info like dates, slugs */
+.meta {
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+/* Title in lists/tables */
+.title {
+  font-weight: 600;
+}
+
+.title a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.title a:hover {
+  color: var(--color-primary);
+}
+
+/* Untitled/placeholder state */
+.untitled {
+  font-style: italic;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+
+/* Monospace text */
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   STATUS INDICATORS
+   ========================================================================== */
+
+/**
+ * Status dot - small circular indicator
+ * Usage: <span class="status-dot status-dot--active"></span>
+ */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-text) 30%, transparent);
+}
+
+.status-dot--active {
+  background: #22c55e;
+}
+
+.status-dot--warning {
+  background: #f59e0b;
+}
+
+.status-dot--danger {
+  background: #ff4444;
+}
+
+/* Status badge with text */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* ==========================================================================
+   ACTION GROUPS
+   ========================================================================== */
+
+/**
+ * Actions - group of action buttons
+ * Usage: <div class="actions"><button class="btn btn--sm">...</button></div>
+ */
+.actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.actions--wrap {
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   STATE CLASSES
+   ========================================================================== */
+
+/* Loading state */
+.loading {
+  padding: var(--space-xl);
+  text-align: center;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+  font-style: italic;
+}
+
+/* Empty state */
+.empty {
+  padding: var(--space-xl);
+  text-align: center;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+  font-style: italic;
+}
+
+/* Error message */
+.error {
+  background: #ff4444;
+  color: white;
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
+  font-weight: 500;
+}
+
+/* Hidden utility */
+.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   LAYOUT UTILITIES
+   ========================================================================== */
+
+/* Flex row with space between */
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Flex row with gap */
+.flex-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* Flex column */
+.flex-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* Center content */
+.text-center {
+  text-align: center;
+}
+
+/* Grid utilities */
+.grid {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.grid--auto {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}

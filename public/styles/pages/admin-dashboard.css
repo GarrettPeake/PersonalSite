@@ -1,4 +1,9 @@
-/* Admin Dashboard Page Styles */
+/**
+ * Admin Dashboard Page Styles
+ *
+ * Stats grid and recent items.
+ * Uses: .item-list, .item-row from components.css.
+ */
 
 /* Stats Grid */
 .stats-grid {
@@ -8,6 +13,7 @@
   margin-bottom: var(--space-xl);
 }
 
+/* Stat Card - dashboard-specific card styling */
 .stat-card {
   border: 3px solid var(--color-border);
   padding: var(--space-lg);
@@ -40,22 +46,7 @@
   font-size: 1.25rem;
 }
 
-.item-list {
-  border: 2px solid var(--color-border);
-}
-
-.item-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-md);
-  border-bottom: 1px dashed var(--color-border);
-}
-
-.item-row:last-child {
-  border-bottom: none;
-}
-
+/* Item styling */
 .item-title {
   font-weight: 600;
 }

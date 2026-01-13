@@ -3,6 +3,8 @@
  *
  * Switches between light and dark themes.
  * Persists preference to localStorage.
+ *
+ * Imports: /styles/web-components.css for shared .icon-btn styles
  */
 class GpThemeToggle extends HTMLElement {
   constructor() {
@@ -17,39 +19,13 @@ class GpThemeToggle extends HTMLElement {
 
   render() {
     this.shadowRoot.innerHTML = `
+      <link rel="stylesheet" href="/styles/web-components.css">
       <style>
         :host {
           display: inline-flex;
         }
 
-        button {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 36px;
-          height: 36px;
-          padding: 0;
-          border: 2px solid var(--color-border, #0066ff);
-          border-radius: 4px;
-          background: transparent;
-          cursor: pointer;
-          transition: background-color 0.15s, transform 0.15s;
-        }
-
-        button:hover {
-          background-color: color-mix(in srgb, var(--color-primary, #0066ff) 10%, transparent);
-        }
-
-        button:active {
-          transform: scale(0.95);
-        }
-
-        svg {
-          width: 20px;
-          height: 20px;
-          fill: var(--color-text, #1a1a1a);
-        }
-
+        /* Theme-specific icon visibility */
         .sun { display: none; }
         .moon { display: block; }
 
@@ -57,7 +33,7 @@ class GpThemeToggle extends HTMLElement {
         :host([theme="dark"]) .moon { display: none; }
       </style>
 
-      <button aria-label="Toggle theme" title="Toggle theme">
+      <button class="icon-btn" aria-label="Toggle theme" title="Toggle theme">
         <svg class="sun" viewBox="0 0 24 24">
           <path d="M12 7a5 5 0 100 10 5 5 0 000-10zM12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
         </svg>

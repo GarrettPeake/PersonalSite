@@ -1,11 +1,15 @@
-/* Login Page Styles */
+/**
+ * Login Page Styles
+ *
+ * Centered login form layout.
+ * Uses: .form-group, .error, .btn from components.css.
+ */
 
 body {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg);
 }
 
 .login-container {
@@ -24,67 +28,6 @@ body {
   text-align: center;
   margin-bottom: var(--space-xl);
   font-size: 2rem;
-}
-
-.form-group {
-  margin-bottom: var(--space-md);
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: var(--space-xs);
-  font-weight: 600;
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.form-group input {
-  width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  border: 2px solid var(--color-border);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-size: 1rem;
-  font-family: inherit;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 4px 4px 0 var(--color-primary);
-}
-
-.error {
-  background: #ff4444;
-  color: white;
-  padding: var(--space-sm) var(--space-md);
-  margin-bottom: var(--space-md);
-  font-weight: 500;
-}
-
-.btn-primary {
-  width: 100%;
-  padding: var(--space-md);
-  border: 3px solid var(--color-text);
-  background: var(--color-primary);
-  color: var(--color-bg);
-  font-size: 1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-
-.btn-primary:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0 var(--color-text);
-}
-
-.btn-primary:active {
-  transform: translate(0, 0);
-  box-shadow: none;
 }
 
 .theme-toggle-wrapper {

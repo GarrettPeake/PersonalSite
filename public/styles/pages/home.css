@@ -1,10 +1,9 @@
-/* Home Page Styles */
-
-body {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
+/**
+ * Home Page Styles
+ *
+ * Hero section and page-specific layout.
+ * Requires: body.page class on <body> element for flex layout.
+ */
 
 .hero {
   text-align: center;
@@ -22,21 +21,7 @@ body {
   font-weight: 500;
 }
 
-.projects, .blog-preview {
+.projects,
+.blog-preview {
   padding: var(--space-lg) 0;
-}
-
-.cta {
-  display: inline-block;
-  margin-top: var(--space-md);
-  padding: var(--space-sm) var(--space-md);
-  border: 2px solid var(--color-primary);
-  border-radius: 4px;
-  font-weight: 500;
-  transition: background-color 0.15s;
-}
-
-.cta:hover {
-  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  text-decoration: none;
 }
