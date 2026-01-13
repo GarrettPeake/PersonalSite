@@ -19,18 +19,22 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Static asset configuration with `run_worker_first` routing
 - [x] Theme CSS variables (light/dark mode)
 - [x] Base CSS reset and typography
+- [x] KV helper functions (CRUD for drafts, posts, tracking, sessions)
+- [x] Custom markdown renderer with macro support
+- [x] `/Banner` macro implementation
+- [x] Core web components (header, footer, theme toggle, peak divider)
+- [x] Tracking component (gp-tracker)
+- [x] Public pages (home, blog listing, about)
+- [x] Tracking redirect page (`/s/:slug`)
 
 ### Not Yet Implemented
 
-- [ ] Custom markdown renderer
-- [ ] Macro system (only `/Banner` in MVP scope)
-- [ ] Blog post pages
+- [ ] Blog post detail pages (Worker-rendered)
 - [ ] Admin authentication
 - [ ] Admin CRM (drafts, posts, editor)
-- [ ] Recruiter tracking system
 - [ ] File upload to R2
 - [ ] Analytics Engine integration
-- [ ] Web components
+- [ ] API endpoints (currently return 501)
 
 ## Tech Stack
 
@@ -72,6 +76,7 @@ All data uses prefixed keys in a single KV namespace:
 Static assets served directly (no Worker) for:
 - `/` → `public/index.html`
 - `/about` → `public/about.html`
+- `/blog` → `public/blog.html`
 - `/styles/*`, `/components/*`, `/assets/*`
 
 Worker handles:
@@ -92,12 +97,25 @@ Worker handles:
 ├── CLAUDE.md             # This file (current state)
 ├── /src
 │   ├── index.ts          # Worker entry point
-│   └── types.ts          # TypeScript types and KV prefixes
+│   ├── types.ts          # TypeScript types and KV prefixes
+│   └── /lib
+│       ├── kv.ts         # KV helper functions (CRUD operations)
+│       └── markdown.ts   # Custom markdown renderer with macros
 └── /public
-    ├── index.html        # Placeholder home page
-    └── /styles
-        ├── theme.css     # CSS custom properties for theming
-        └── base.css      # Reset and base styles
+    ├── index.html        # Home page
+    ├── about.html        # About page
+    ├── blog.html         # Blog listing page
+    ├── /styles
+    │   ├── theme.css     # CSS custom properties for theming
+    │   └── base.css      # Reset and base styles
+    └── /components
+        ├── /core
+        │   ├── gp-header.js       # Site header with nav
+        │   ├── gp-footer.js       # Site footer
+        │   ├── gp-theme-toggle.js # Dark/light mode switch
+        │   └── gp-peak-divider.js # Mountain peak separator
+        └── /tracking
+            └── gp-tracker.js      # Silent page view tracker
 ```
 
 ## Development Commands
@@ -130,11 +148,39 @@ Set via `wrangler secret put <name>`:
 | Accent | `#ff6b00` (orange) | `#0066ff` (blue) |
 | Text | `#1a1a1a` | `#ffffff` |
 
+### KV Helper Functions (`src/lib/kv.ts`)
+- `getDraft`, `listDrafts`, `createDraft`, `updateDraft`, `deleteDraft`
+- `createShareToken`, `getDraftByShareToken`, `revokeShareToken`
+- `getPost`, `getPostBySlug`, `listPosts`, `publishDraft`, `updatePost`, `deletePost`, `unpublishPost`
+- `getTrackingSlug`, `listTrackingSlugs`, `createTrackingSlug`, `recordTrackingEvent`, `deleteTrackingSlug`
+- `createSession`, `getSession`, `deleteSession`
+- `slugify` utility for URL-friendly slugs
+
+### Markdown Renderer (`src/lib/markdown.ts`)
+- Supports: headings, paragraphs, lists, blockquotes, code blocks, links, images, bold, italic
+- Block macros: `/MacroName(args)` on own line
+- Inline macros: `/macroName(args)` within text
+- Currently only `/Banner` macro implemented
+
 ## Next Steps
 
-1. Implement KV helper functions (`src/lib/kv.ts`)
-2. Build custom markdown renderer (`src/lib/markdown.ts`)
-3. Create core web components (header, footer, theme toggle)
-4. Implement public pages (home, blog, about)
-5. Build admin authentication system
-6. Create editor with live preview
+1. Implement API endpoints for posts (`GET /api/posts`, `GET /api/posts/:slug`)
+2. Implement tracking API endpoint (`POST /api/track`)
+3. Build blog post detail page (Worker-rendered HTML)
+4. Build admin authentication system
+5. Create admin dashboard and editor UI
+6. Implement file upload to R2
+
+---
+
+## Contribution Guidelines
+
+**IMPORTANT:** Every contribution to this repository MUST update this CLAUDE.md file to reflect the current state of the project. This includes:
+
+- Adding newly implemented features to the "Implemented" checklist
+- Removing completed items from "Not Yet Implemented"
+- Updating the "File Structure" section when new files are added
+- Documenting any new patterns, conventions, or design decisions
+- Keeping "Next Steps" current
+
+This ensures CLAUDE.md remains an accurate representation of what exists in the codebase right now, as distinct from DESIGN.md which represents the end goal.

@@ -3,14 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Garrett Peake - Software Engineer">
   <title>Garrett Peake</title>
+
+  <!-- Styles -->
   <link rel="stylesheet" href="/styles/theme.css">
   <link rel="stylesheet" href="/styles/base.css">
+
+  <!-- Web Components -->
+  <script type="module" src="/components/core/gp-theme-toggle.js"></script>
+  <script type="module" src="/components/core/gp-header.js"></script>
+  <script type="module" src="/components/core/gp-footer.js"></script>
+  <script type="module" src="/components/core/gp-peak-divider.js"></script>
+  <script type="module" src="/components/tracking/gp-tracker.js"></script>
 </head>
 <body>
+  <gp-tracker></gp-tracker>
+  <gp-header></gp-header>
+
   <main class="container">
-    <h1>Garrett Peake</h1>
-    <p>Site under construction.</p>
+    <!-- Hero Section -->
+    <section class="hero">
+      <h1>Garrett Peake</h1>
+      <p class="tagline">Software Engineer</p>
+    </section>
+
+    <gp-peak-divider></gp-peak-divider>
+
+    <!-- Projects Section -->
+    <section class="projects">
+      <h2>Recent Projects</h2>
+      <p>Coming soon...</p>
+    </section>
+
+    <gp-peak-divider inverted></gp-peak-divider>
+
+    <!-- Blog Preview -->
+    <section class="blog-preview">
+      <h2>Latest Posts</h2>
+      <p>Coming soon...</p>
+      <a href="/blog" class="cta">View all posts &rarr;</a>
+    </section>
   </main>
+
+  <gp-footer></gp-footer>
+
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .hero {
+      text-align: center;
+      padding: var(--space-xl) 0;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: var(--space-sm);
+    }
+
+    .tagline {
+      font-size: 1.25rem;
+      color: var(--color-primary);
+      font-weight: 500;
+    }
+
+    .projects, .blog-preview {
+      padding: var(--space-lg) 0;
+    }
+
+    .cta {
+      display: inline-block;
+      margin-top: var(--space-md);
+      padding: var(--space-sm) var(--space-md);
+      border: 2px solid var(--color-primary);
+      border-radius: 4px;
+      font-weight: 500;
+      transition: background-color 0.15s;
+    }
+
+    .cta:hover {
+      background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+      text-decoration: none;
+    }
+  </style>
 </body>
 </html>
