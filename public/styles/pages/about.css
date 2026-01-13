@@ -1,0 +1,25 @@
+/* About Page Styles */
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+section {
+  margin-bottom: var(--space-xl);
+}
+
+.bio p {
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+
+.contact ul {
+  list-style: none;
+  padding: 0;
+}
+
+.contact li {
+  margin-bottom: var(--space-sm);
+}

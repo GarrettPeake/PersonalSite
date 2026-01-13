@@ -1,0 +1,58 @@
+/* Admin Posts Page Styles */
+
+/* Table Grid */
+.table-header, .table-row {
+  grid-template-columns: 2fr 1fr 1fr 150px;
+}
+
+.post-title {
+  font-weight: 600;
+}
+
+.post-title a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.post-title a:hover {
+  color: var(--color-primary);
+}
+
+.post-slug {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+.post-date {
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+.post-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .table-header, .table-row {
+    grid-template-columns: 1fr 1fr 120px;
+  }
+
+  .table-header > *:nth-child(2),
+  .table-row > *:nth-child(2) {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-header, .table-row {
+    grid-template-columns: 1fr 100px;
+  }
+
+  .table-header > *:nth-child(3),
+  .table-row > *:nth-child(3) {
+    display: none;
+  }
+}
