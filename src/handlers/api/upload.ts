@@ -51,12 +51,15 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
     const formData = await request.formData();
     const file = formData.get('file');
 
-    if (!file || !(file instanceof File)) {
+    if (!file || typeof file === 'string') {
       return jsonResponse({ error: 'No file provided' }, corsHeaders, 400);
     }
 
+    // Cast to File type after validation
+    const uploadedFile = file as File;
+
     // Validate file type
-    const mimeType = file.type;
+    const mimeType = uploadedFile.type;
     const ext = ALLOWED_TYPES[mimeType];
 
     if (!ext) {
@@ -68,7 +71,7 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
     }
 
     // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
+    if (uploadedFile.size > MAX_FILE_SIZE) {
       return jsonResponse(
         { error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
         corsHeaders,
@@ -80,7 +83,7 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
     const filename = generateFilename(ext);
 
     // Upload to R2
-    const arrayBuffer = await file.arrayBuffer();
+    const arrayBuffer = await uploadedFile.arrayBuffer();
     await env.R2.put(filename, arrayBuffer, {
       httpMetadata: {
         contentType: mimeType,

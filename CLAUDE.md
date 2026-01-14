@@ -48,6 +48,10 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] File upload to R2 (`POST /api/admin/upload`)
 - [x] Comprehensive test coverage for all backend modules (449 tests)
 - [x] Optional post descriptions for blog listing (replaces auto-generated excerpts)
+- [x] Admin photo management page with upload, edit, delete
+- [x] Photo CRUD API endpoints (public and admin)
+- [x] EXIF stripping on photo upload for privacy
+- [x] Public photography page loads from API
 
 ### Not Yet Implemented
 
@@ -84,9 +88,11 @@ All data uses prefixed keys in a single KV namespace:
 | `share:{token}` | Share token → draft UUID lookup |
 | `session:{token}` | Auth session data |
 | `tracking:{slug}` | Tracking slug data + events |
+| `photo:{uuid}` | Photo metadata |
 | `index:drafts` | Array of all draft UUIDs |
 | `index:posts` | Array of all post UUIDs |
 | `index:tracking` | Array of all tracking slugs |
+| `index:photos` | Array of all photo UUIDs |
 
 ## Routing
 
@@ -122,7 +128,8 @@ Worker handles:
 │   │   ├── draft.dao.ts  # Draft CRUD + sharing operations
 │   │   ├── post.dao.ts   # Post CRUD + publish/unpublish
 │   │   ├── tracking.dao.ts # Tracking CRUD + events
-│   │   └── session.dao.ts  # Session CRUD
+│   │   ├── session.dao.ts  # Session CRUD
+│   │   └── photo.dao.ts  # Photo CRUD operations
 │   ├── /handlers
 │   │   ├── /api
 │   │   │   ├── public.ts    # GET /api/posts, POST /api/track
@@ -130,7 +137,8 @@ Worker handles:
 │   │   │   ├── drafts.ts    # /api/admin/drafts/* endpoints
 │   │   │   ├── posts.ts     # /api/admin/posts/* endpoints
 │   │   │   ├── tracking.ts  # /api/admin/tracking/* endpoints
-│   │   │   └── upload.ts    # POST /api/admin/upload
+│   │   │   ├── upload.ts    # POST /api/admin/upload
+│   │   │   └── photos.ts    # /api/photos and /api/admin/photos/* endpoints
 │   │   └── /pages
 │   │       ├── blog.ts      # /blog/:slug handler
 │   │       ├── draft.ts     # /draft/share/:token handler
@@ -143,7 +151,8 @@ Worker handles:
 │   │   ├── kv.ts         # DEPRECATED: Use DAOs instead
 │   │   ├── markdown.ts   # Custom markdown renderer with macros
 │   │   ├── response.ts   # HTTP response helpers (jsonResponse, corsHeaders)
-│   │   └── utils.ts      # Shared utilities (escapeHtml, formatDate, etc.)
+│   │   ├── utils.ts      # Shared utilities (escapeHtml, formatDate, etc.)
+│   │   └── exif.ts       # EXIF stripping utility for JPEG images
 │   ├── /middleware
 │   │   └── auth.ts       # Authentication helpers (login, session, cookies)
 │   └── /__tests__
@@ -153,7 +162,8 @@ Worker handles:
 │       │   ├── draft.dao.test.ts
 │       │   ├── post.dao.test.ts
 │       │   ├── tracking.dao.test.ts
-│       │   └── session.dao.test.ts
+│       │   ├── session.dao.test.ts
+│       │   └── photo.dao.test.ts
 │       ├── /handlers
 │       │   ├── /api
 │       │   │   ├── public.test.ts
@@ -161,7 +171,8 @@ Worker handles:
 │       │   │   ├── drafts.test.ts
 │       │   │   ├── posts.test.ts
 │       │   │   ├── tracking.test.ts
-│       │   │   └── upload.test.ts
+│       │   │   ├── upload.test.ts
+│       │   │   └── photos.test.ts
 │       │   └── /pages
 │       │       ├── blog.test.ts
 │       │       ├── draft.test.ts
@@ -170,7 +181,8 @@ Worker handles:
 │       ├── /lib
 │       │   ├── utils.test.ts
 │       │   ├── markdown.test.ts
-│       │   └── response.test.ts
+│       │   ├── response.test.ts
+│       │   └── exif.test.ts
 │       ├── /middleware
 │       │   └── auth.test.ts
 │       └── /templates
@@ -187,6 +199,7 @@ Worker handles:
     │   ├── editor.html   # Post/draft editor with live preview
     │   ├── posts.html    # Published posts list
     │   ├── drafts.html   # Drafts list
+    │   ├── photos.html   # Photo management
     │   └── tracking.html # Tracking links management
     ├── /js
     │   ├── blog.js       # Blog listing page logic
@@ -198,6 +211,7 @@ Worker handles:
     │       ├── editor.js     # Markdown editor with toolbar and auto-save
     │       ├── posts.js      # Posts list management
     │       ├── drafts.js     # Drafts list management
+    │       ├── photos.js     # Photo management
     │       └── tracking.js   # Tracking links management
     ├── /lib
     │   └── markdown.js   # Client-side markdown renderer for preview
@@ -217,6 +231,7 @@ Worker handles:
     │       ├── admin-editor.css   # Editor page styles
     │       ├── admin-posts.css    # Posts list styles
     │       ├── admin-drafts.css   # Drafts list styles
+    │       ├── admin-photos.css   # Photo management styles
     │       └── admin-tracking.css # Tracking page styles
     └── /components
         ├── /core
@@ -259,6 +274,7 @@ Set via `wrangler secret put <name>`:
 | GET | `/api/posts/:slug` | Get single post by slug |
 | POST | `/api/track` | Record tracking event |
 | GET | `/api/draft/share/:token` | Get draft by share token |
+| GET | `/api/photos` | List all photos |
 
 ### Auth
 
@@ -289,6 +305,11 @@ Set via `wrangler secret put <name>`:
 | GET | `/api/admin/tracking/:slug` | Get tracking with events |
 | DELETE | `/api/admin/tracking/:slug` | Delete tracking slug |
 | POST | `/api/admin/upload` | Upload file to R2 |
+| GET | `/api/admin/photos` | List all photos |
+| POST | `/api/admin/photos` | Upload new photo (strips EXIF) |
+| GET | `/api/admin/photos/:id` | Get photo by ID |
+| PUT | `/api/admin/photos/:id` | Update photo metadata |
+| DELETE | `/api/admin/photos/:id` | Delete photo |
 
 ## CSS Architecture
 
@@ -549,6 +570,7 @@ Each entity has its own DAO file with CRUD operations:
 - `post.dao.ts`: Post operations + publishing (`getPost`, `getPostBySlug`, `listPosts`, `updatePost`, `deletePost`, `publishDraft`, `unpublishPost`)
 - `tracking.dao.ts`: Tracking operations + events (`getTrackingSlug`, `listTrackingSlugs`, `createTrackingSlug`, `deleteTrackingSlug`, `recordTrackingEvent`)
 - `session.dao.ts`: Session operations (`createSession`, `getSession`, `deleteSession`)
+- `photo.dao.ts`: Photo operations (`getPhoto`, `listPhotos`, `createPhoto`, `updatePhoto`, `deletePhoto`)
 - `base.ts`: Shared index management (`getIndex`, `addToIndex`, `removeFromIndex`)
 
 **Handlers (`src/handlers/`)**
@@ -558,6 +580,7 @@ Request handlers are split by route type:
 - `api/drafts.ts`: Admin draft endpoints
 - `api/posts.ts`: Admin post endpoints
 - `api/tracking.ts`: Admin tracking endpoints
+- `api/photos.ts`: Photo endpoints (public and admin)
 - `pages/*.ts`: Page rendering handlers
 
 **Templates (`src/templates/`)**
@@ -570,6 +593,7 @@ Shared utility functions:
 - `utils.ts`: `escapeHtml`, `escapeJs`, `formatDate`, `getExcerpt`, `slugify`, `generateRandomSlug`
 - `response.ts`: `jsonResponse`, `htmlResponse`, `corsHeaders`
 - `markdown.ts`: Custom markdown renderer
+- `exif.ts`: EXIF stripping for JPEG images (`isJpeg`, `stripExif`)
 
 ### Markdown Renderer (`src/lib/markdown.ts`)
 - Supports: headings, paragraphs, lists, blockquotes, code blocks, links, images, bold, italic
@@ -587,6 +611,7 @@ Shared utility functions:
 - **Editor** (`/admin/editor`): Split-pane markdown editor with live preview, toolbar, keyboard shortcuts (Ctrl+S, Ctrl+B, Ctrl+I), auto-generated slugs, optional description field for blog listing
 - **Posts** (`/admin/posts`): List published posts with edit/unpublish/delete actions
 - **Drafts** (`/admin/drafts`): List drafts with edit/share/publish/delete actions
+- **Photos** (`/admin/photos`): Grid-based photo management with upload (EXIF stripped), edit metadata, and delete. First item is "+" upload button.
 - **Tracking** (`/admin/tracking`): Create/manage tracking links, view event timelines
 
 ### Client-side Markdown Renderer (`public/lib/markdown.js`)
@@ -607,8 +632,7 @@ Shared utility functions:
 3. Add auto-save for drafts in editor
 4. SEO meta tags for blog posts
 5. Add actual project URLs/iframes to home page shelf
-6. Add real photos to photography page
-7. Add profile image to about page
+6. Add profile image to about page
 
 ---
 

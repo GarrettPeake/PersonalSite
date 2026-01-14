@@ -1,0 +1,240 @@
+/**
+ * Admin Photos Page Styles
+ *
+ * Grid layout for managing photography gallery.
+ */
+
+/* Photo Grid */
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
+}
+
+.photos-grid .loading,
+.photos-grid .empty {
+  grid-column: 1 / -1;
+  padding: var(--space-xl);
+  text-align: center;
+  background: var(--color-bg);
+}
+
+/* Photo Item */
+.photo-item {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-medium);
+}
+
+.photo-item:hover img {
+  transform: scale(1.05);
+}
+
+/* Photo Overlay with Actions */
+.photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.photo-item:hover .photo-overlay {
+  opacity: 1;
+}
+
+.photo-overlay .btn {
+  min-width: 80px;
+}
+
+/* Add Photo Button */
+.photo-add {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--color-bg);
+  border: 2px dashed var(--color-border);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  transition: all var(--transition-fast);
+}
+
+.photo-add:hover {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+}
+
+.photo-add svg {
+  width: 48px;
+  height: 48px;
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
+}
+
+.photo-add:hover svg {
+  color: var(--color-primary);
+}
+
+.photo-add span {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
+}
+
+.photo-add:hover span {
+  color: var(--color-primary);
+}
+
+/* Dialog Variations */
+.dialog--wide {
+  max-width: 500px;
+  width: 90%;
+}
+
+/* Photo Form */
+.photo-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.photo-form .form-group {
+  margin-bottom: 0;
+}
+
+.photo-form label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-weight: 500;
+}
+
+.photo-form input[type="text"],
+.photo-form textarea {
+  width: 100%;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 1rem;
+  border-radius: 0;
+}
+
+.photo-form input[type="text"]:focus,
+.photo-form textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.photo-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* File Upload Area */
+.file-upload-area {
+  position: relative;
+  aspect-ratio: 16/9;
+  border: 2px dashed var(--color-border);
+  background: var(--color-bg-secondary);
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.file-upload-area:hover,
+.file-upload-area.dragover {
+  border-color: var(--color-primary);
+}
+
+.file-upload-area input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-upload-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  color: var(--color-text-muted);
+}
+
+.file-upload-placeholder svg {
+  width: 48px;
+  height: 48px;
+}
+
+.file-upload-placeholder span {
+  font-size: 0.875rem;
+}
+
+.file-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--color-bg);
+}
+
+/* Edit Preview */
+.edit-preview-container {
+  aspect-ratio: 16/9;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.edit-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .photos-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .dialog--wide {
+    max-width: 100%;
+    margin: var(--space-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .photos-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

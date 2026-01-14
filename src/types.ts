@@ -33,7 +33,36 @@ export const KV_PREFIX = {
   SHARE: 'share:',
   SESSION: 'session:',
   TRACKING: 'tracking:',
+  PHOTO: 'photo:',
   INDEX_DRAFTS: 'index:drafts',
   INDEX_POSTS: 'index:posts',
   INDEX_TRACKING: 'index:tracking',
+  INDEX_PHOTOS: 'index:photos',
 } as const;
+
+// ============================================================================
+// Photo Types
+// ============================================================================
+
+/**
+ * Photo entity stored in KV
+ */
+export interface Photo {
+  id: string;
+  url: string;           // R2 URL (files.gpeake.com/...)
+  filename: string;      // Filename in R2
+  location: string;      // Location name
+  description: string;   // Photo description
+  publishedAt: string;   // ISO timestamp
+  updatedAt: string;     // ISO timestamp
+}
+
+/**
+ * Input for creating a new photo
+ */
+export type PhotoCreateInput = Omit<Photo, 'id' | 'publishedAt' | 'updatedAt'>;
+
+/**
+ * Input for updating photo metadata
+ */
+export type PhotoUpdateInput = Pick<Photo, 'location' | 'description'>;
