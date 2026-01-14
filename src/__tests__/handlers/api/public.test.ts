@@ -36,21 +36,38 @@ describe('Public API Handlers', () => {
       expect(data).toEqual([]);
     });
 
-    it('should return posts with excerpts', async () => {
+    it('should return posts with description if provided', async () => {
       const draft = await createDraft(env.KV, {
         title: 'Test Post',
         slug: 'test-post',
-        content: 'This is a long piece of content that should be excerpted.',
+        content: 'This is the full content.',
+        description: 'A short description for the listing.',
       });
       await publishDraft(env.KV, draft.id);
 
       const response = await handleListPosts(env);
 
       expect(response.status).toBe(200);
-      const data = await response.json() as Array<{ title: string; excerpt: string }>;
+      const data = await response.json() as Array<{ title: string; description?: string }>;
       expect(data).toHaveLength(1);
       expect(data[0].title).toBe('Test Post');
-      expect(data[0].excerpt).toBeDefined();
+      expect(data[0].description).toBe('A short description for the listing.');
+    });
+
+    it('should return undefined description if not provided', async () => {
+      const draft = await createDraft(env.KV, {
+        title: 'Test Post',
+        slug: 'test-post',
+        content: 'This is the full content.',
+      });
+      await publishDraft(env.KV, draft.id);
+
+      const response = await handleListPosts(env);
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as Array<{ title: string; description?: string }>;
+      expect(data).toHaveLength(1);
+      expect(data[0].description).toBeUndefined();
     });
 
     it('should not include full content in list response', async () => {

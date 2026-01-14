@@ -8,20 +8,19 @@ import { Env } from '../../types';
 import { listPosts, getPostBySlug } from '../../dao/post.dao';
 import { getTrackingSlug, recordTrackingEvent } from '../../dao/tracking.dao';
 import { jsonResponse, corsHeaders } from '../../lib/response';
-import { getExcerpt } from '../../lib/utils';
 
 /**
  * GET /api/posts - List all published posts
  */
 export async function handleListPosts(env: Env): Promise<Response> {
   const posts = await listPosts(env.KV);
-  const summaries = posts.map(({ id, title, slug, publishedAt, updatedAt, content }) => ({
+  const summaries = posts.map(({ id, title, slug, publishedAt, updatedAt, description }) => ({
     id,
     title,
     slug,
     publishedAt,
     updatedAt,
-    excerpt: getExcerpt(content),
+    description,
   }));
   return jsonResponse(summaries, corsHeaders);
 }

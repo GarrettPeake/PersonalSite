@@ -10,6 +10,7 @@ let autoSaveTimer = null;
 // Elements
 const titleInput = document.getElementById('title');
 const slugInput = document.getElementById('slug');
+const descriptionInput = document.getElementById('description');
 const contentInput = document.getElementById('content');
 const previewEl = document.getElementById('preview');
 const saveStatus = document.getElementById('save-status');
@@ -33,6 +34,7 @@ async function init() {
   // Set up event listeners
   titleInput.addEventListener('input', handleTitleChange);
   slugInput.addEventListener('input', handleChange);
+  descriptionInput.addEventListener('input', handleChange);
   contentInput.addEventListener('input', handleContentChange);
 
   // Toolbar buttons
@@ -76,6 +78,7 @@ async function loadDraft(id) {
     isDraft = true;
     titleInput.value = draft.title || '';
     slugInput.value = draft.slug || '';
+    descriptionInput.value = draft.description || '';
     contentInput.value = draft.content || '';
     updatePreview();
     publishBtn.textContent = 'Publish';
@@ -102,6 +105,7 @@ async function loadPost(id) {
     isDraft = false;
     titleInput.value = post.title || '';
     slugInput.value = post.slug || '';
+    descriptionInput.value = post.description || '';
     contentInput.value = post.content || '';
     updatePreview();
     publishBtn.textContent = 'Update';
@@ -158,6 +162,7 @@ async function autoSave() {
       body: JSON.stringify({
         title: titleInput.value,
         slug: slugInput.value,
+        description: descriptionInput.value,
         content: contentInput.value,
       }),
     });
@@ -186,6 +191,7 @@ async function handleSave() {
     const data = {
       title: titleInput.value,
       slug: slugInput.value,
+      description: descriptionInput.value,
       content: contentInput.value,
     };
 
@@ -254,6 +260,7 @@ async function handlePublish() {
           body: JSON.stringify({
             title: titleInput.value,
             slug: slugInput.value,
+            description: descriptionInput.value,
             content: contentInput.value,
           }),
         });
@@ -268,6 +275,7 @@ async function handlePublish() {
           body: JSON.stringify({
             title: titleInput.value,
             slug: slugInput.value,
+            description: descriptionInput.value,
             content: contentInput.value,
           }),
         });
@@ -299,6 +307,7 @@ async function handlePublish() {
         body: JSON.stringify({
           title: titleInput.value,
           slug: slugInput.value,
+          description: descriptionInput.value,
           content: contentInput.value,
         }),
       });

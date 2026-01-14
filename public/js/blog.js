@@ -18,7 +18,7 @@ async function loadPosts() {
       <article class="post-card">
         <h2><a href="/blog/${post.slug}">${escapeHtml(post.title)}</a></h2>
         <p class="post-meta">${formatDate(post.publishedAt)}</p>
-        <p class="post-excerpt">${escapeHtml(post.excerpt)}</p>
+        ${post.description ? `<p class="post-excerpt">${escapeHtml(post.description)}</p>` : ''}
       </article>
     `).join('');
   } catch (error) {
