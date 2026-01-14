@@ -234,5 +234,17 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
   window.location.href = '/admin/login';
 });
 
+// Keyboard handlers
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (!confirmDialog.hidden) {
+      hideConfirmDialog();
+    }
+    if (!shareDialog.hidden) {
+      shareDialog.hidden = true;
+    }
+  }
+});
+
 // Initialize
 loadDrafts();
