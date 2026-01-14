@@ -17,6 +17,7 @@ export interface Post {
   title: string;
   slug: string;
   content: string;
+  description?: string;
   publishedAt: string;
   updatedAt: string;
 }
@@ -130,6 +131,7 @@ export async function publishDraft(kv: KVNamespace, draftId: string): Promise<Po
     title: draft.title,
     slug: draft.slug,
     content: draft.content,
+    description: draft.description,
     publishedAt: now,
     updatedAt: now,
   };
@@ -157,6 +159,7 @@ export async function unpublishPost(kv: KVNamespace, postId: string): Promise<Dr
     title: post.title,
     slug: post.slug,
     content: post.content,
+    description: post.description,
   });
 
   // Delete the post

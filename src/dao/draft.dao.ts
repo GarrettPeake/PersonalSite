@@ -16,6 +16,7 @@ export interface Draft {
   title: string;
   slug: string;
   content: string;
+  description?: string;
   createdAt: string;
   updatedAt: string;
   shareToken?: string;

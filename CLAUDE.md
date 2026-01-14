@@ -46,7 +46,8 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Modular backend architecture (DAOs, handlers, templates)
 - [x] Vitest testing infrastructure for Workers
 - [x] File upload to R2 (`POST /api/admin/upload`)
-- [x] Comprehensive test coverage for all backend modules (448 tests)
+- [x] Comprehensive test coverage for all backend modules (449 tests)
+- [x] Optional post descriptions for blog listing (replaces auto-generated excerpts)
 
 ### Not Yet Implemented
 
@@ -583,7 +584,7 @@ Shared utility functions:
 
 ### Admin UI Pages
 - **Dashboard** (`/admin/`): Stats overview, recent drafts/posts
-- **Editor** (`/admin/editor`): Split-pane markdown editor with live preview, toolbar, keyboard shortcuts (Ctrl+S, Ctrl+B, Ctrl+I), auto-generated slugs
+- **Editor** (`/admin/editor`): Split-pane markdown editor with live preview, toolbar, keyboard shortcuts (Ctrl+S, Ctrl+B, Ctrl+I), auto-generated slugs, optional description field for blog listing
 - **Posts** (`/admin/posts`): List published posts with edit/unpublish/delete actions
 - **Drafts** (`/admin/drafts`): List drafts with edit/share/publish/delete actions
 - **Tracking** (`/admin/tracking`): Create/manage tracking links, view event timelines
