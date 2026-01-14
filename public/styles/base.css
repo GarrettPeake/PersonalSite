@@ -27,6 +27,15 @@ body {
   min-height: 100vh;
 }
 
+/* Prevent FOUC (Flash of Unstyled Content) for web components */
+gp-header:not(:defined),
+gp-footer:not(:defined),
+gp-peak-divider:not(:defined),
+gp-theme-toggle:not(:defined),
+gp-tracker:not(:defined) {
+  display: none;
+}
+
 /* Full-height page layout with sticky footer */
 body.page {
   display: flex;
