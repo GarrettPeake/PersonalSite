@@ -57,25 +57,87 @@
   box-shadow: none;
 }
 
-/* Secondary button - alternative actions */
-.btn--secondary {
-  border-color: var(--color-border);
+/* Alias: btn-primary (used in admin) */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-lg);
+  border: 3px solid var(--color-text);
+  background: var(--color-primary);
+  color: var(--color-bg);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.1s ease;
 }
 
-.btn--secondary:hover {
+.btn-primary:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 var(--color-text);
+  background: var(--color-primary);
+  text-decoration: none;
+}
+
+.btn-primary:active {
+  transform: translate(0, 0);
+  box-shadow: none;
+}
+
+/* Secondary button - alternative actions */
+.btn--secondary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.btn--secondary:hover,
+.btn-secondary:hover {
   background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  text-decoration: none;
 }
 
 /* Danger button - destructive actions */
-.btn--danger {
-  border-color: #ff4444;
+.btn--danger,
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid #ff4444;
   background: #ff4444;
   color: white;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.1s ease;
 }
 
-.btn--danger:hover {
+.btn--danger:hover,
+.btn-danger:hover {
   background: #cc3333;
   border-color: #cc3333;
+  text-decoration: none;
 }
 
 /* Ghost danger - danger on hover only */
@@ -108,6 +170,80 @@
   width: 20px;
   height: 20px;
   fill: var(--color-text);
+}
+
+/* Action button - small buttons used in tables/lists */
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs) var(--space-sm);
+  border: 2px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.btn-action:hover {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  text-decoration: none;
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-action:disabled:hover {
+  background: transparent;
+}
+
+.btn-action.primary {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-action.primary:hover {
+  background: var(--color-primary);
+  color: var(--color-bg);
+}
+
+.btn-action.danger {
+  border-color: #ff4444;
+  color: #ff4444;
+}
+
+.btn-action.danger:hover {
+  background: #ff4444;
+  color: white;
+}
+
+/* Logout button */
+.btn-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs) var(--space-sm);
+  border: 2px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.btn-logout:hover {
+  background: #ff4444;
+  border-color: #ff4444;
+  color: white;
 }
 
 /* ==========================================================================
@@ -207,7 +343,8 @@
 }
 
 /* Help text - small hint below inputs */
-.form-help {
+.form-help,
+.help-text {
   font-size: 0.75rem;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
   margin: var(--space-xs) 0 0;
@@ -231,7 +368,8 @@
   border: 3px solid var(--color-border);
 }
 
-.data-table__header {
+.data-table__header,
+.table-header {
   display: grid;
   gap: var(--space-md);
   padding: var(--space-md);
@@ -243,7 +381,8 @@
   letter-spacing: 0.1em;
 }
 
-.data-table__row {
+.data-table__row,
+.table-row {
   display: grid;
   gap: var(--space-md);
   padding: var(--space-md);
@@ -251,11 +390,13 @@
   align-items: center;
 }
 
-.data-table__row:last-child {
+.data-table__row:last-child,
+.table-row:last-child {
   border-bottom: none;
 }
 
-.data-table__row:hover {
+.data-table__row:hover,
+.table-row:hover {
   background: color-mix(in srgb, var(--color-primary) 5%, transparent);
 }
 
@@ -283,6 +424,29 @@
   border-bottom: none;
 }
 
+/* Clickable item row */
+.item-row--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.item-row--link:hover {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  text-decoration: none;
+}
+
+.item-row .item-title {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.item-row .item-date {
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
 /* ==========================================================================
    DIALOGS
    ========================================================================== */
@@ -290,6 +454,8 @@
 /**
  * Dialog - modal overlay with content
  * Usage: <div class="dialog-overlay"><div class="dialog">...</div></div>
+ *
+ * IMPORTANT: Use the [hidden] attribute to hide dialogs.
  */
 .dialog-overlay {
   position: fixed;
@@ -302,6 +468,11 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+}
+
+/* Critical: Ensure hidden attribute works with flexbox */
+.dialog-overlay[hidden] {
+  display: none !important;
 }
 
 .dialog {
@@ -377,7 +548,8 @@
   background: color-mix(in srgb, var(--color-text) 30%, transparent);
 }
 
-.status-dot--active {
+.status-dot--active,
+.status-dot.visited {
   background: #22c55e;
 }
 
@@ -387,6 +559,10 @@
 
 .status-dot--danger {
   background: #ff4444;
+}
+
+.status-dot--inactive {
+  background: color-mix(in srgb, var(--color-text) 30%, transparent);
 }
 
 /* Status badge with text */
