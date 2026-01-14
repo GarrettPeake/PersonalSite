@@ -30,9 +30,12 @@ body {
 /* Prevent FOUC (Flash of Unstyled Content) for web components */
 gp-header:not(:defined),
 gp-footer:not(:defined),
+gp-site-header:not(:defined),
+gp-site-footer:not(:defined),
 gp-peak-divider:not(:defined),
 gp-theme-toggle:not(:defined),
-gp-tracker:not(:defined) {
+gp-tracker:not(:defined),
+gp-photo-modal:not(:defined) {
   display: none;
 }
 

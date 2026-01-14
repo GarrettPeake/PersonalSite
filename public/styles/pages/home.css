@@ -1,27 +1,719 @@
 /**
  * Home Page Styles
  *
- * Hero section and page-specific layout.
- * Requires: body.page class on <body> element for flex layout.
+ * Neo-brutalist three-panel layout with shelf and carousel.
+ * Desktop: Left content panel, right shelf/controls
+ * Mobile: Stacked layout with hamburger menu
  */
 
-.hero {
-  text-align: center;
-  padding: var(--space-xl) 0;
+/* ==========================================================================
+   BASE LAYOUT
+   ========================================================================== */
+
+body.home-page {
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
-.hero h1 {
-  font-size: 3rem;
-  margin-bottom: var(--space-sm);
+/* Desktop shows desktop-layout, hides mobile-layout */
+.desktop-layout {
+  display: flex;
+  min-height: 100vh;
 }
 
-.tagline {
-  font-size: 1.25rem;
+.mobile-layout {
+  display: none;
+}
+
+/* ==========================================================================
+   DESKTOP: CONTENT PANEL (LEFT)
+   ========================================================================== */
+
+.content-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.content-inner {
+  display: flex;
+  height: 100vh;
+  padding: var(--space-xl);
+}
+
+/* Hero Section */
+.hero-section {
+  flex-shrink: 0;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-right: var(--space-xl);
+  position: relative;
+  z-index: 2;
+}
+
+/* Background gradient for hero */
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: -100vh;
+  left: -100vw;
+  right: 0;
+  bottom: -100vh;
+  background: linear-gradient(
+    to right,
+    var(--color-bg) 0%,
+    var(--color-bg) 60%,
+    transparent 100%
+  );
+  z-index: -1;
+}
+
+/* Hero Name Typography */
+.hero-name {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.name-line {
+  display: block;
+}
+
+/* Navigation Links */
+.hero-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-top: var(--space-lg);
+}
+
+.hero-nav .nav-link {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.hero-nav .nav-link:hover {
   color: var(--color-primary);
-  font-weight: 500;
 }
 
-.projects,
-.blog-preview {
-  padding: var(--space-lg) 0;
+/* Social Links */
+.social-links {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.social-links a {
+  color: var(--color-text);
+  opacity: 0.6;
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+}
+
+.social-links a:hover {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
+.social-links svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ==========================================================================
+   DESKTOP: PROJECT DISPLAY
+   ========================================================================== */
+
+.project-display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+}
+
+.project-frame {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 16/10;
+}
+
+/* Guidelines - dotted accent lines */
+.guideline {
+  position: absolute;
+  border-style: dashed;
+  border-color: var(--color-accent);
+  border-width: 0;
+  opacity: 0.6;
+}
+
+.guideline-top {
+  top: -20px;
+  left: 50%;
+  right: -100vw;
+  border-top-width: 1px;
+}
+
+.guideline-bottom {
+  bottom: -20px;
+  left: 50%;
+  right: -100vw;
+  border-bottom-width: 1px;
+}
+
+.guideline-left {
+  left: -20px;
+  top: 50%;
+  bottom: -100vh;
+  border-left-width: 1px;
+}
+
+.guideline-right {
+  right: -20px;
+  top: 50%;
+  bottom: -100vh;
+  border-right-width: 1px;
+}
+
+/* Carousel */
+.carousel {
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+}
+
+.carousel-track {
+  display: flex;
+  height: 100%;
+  transition: transform var(--transition-medium);
+}
+
+.carousel-slide {
+  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-medium);
+}
+
+.carousel-slide.active {
+  opacity: 1;
+}
+
+.carousel-slide iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.slide-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   DESKTOP: RIGHT PANEL
+   ========================================================================== */
+
+.right-panel {
+  width: var(--panel-right-width);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--color-accent);
+}
+
+/* Controls Panel */
+.controls-panel {
+  height: 120px;
+  position: relative;
+  background: var(--color-bg);
+  cursor: pointer;
+}
+
+.theme-toggle-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Mountains SVG */
+.mountains {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mountain {
+  fill: var(--color-accent);
+  transition: fill var(--transition-medium);
+}
+
+/* Celestial Bodies */
+.celestial-body {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: top var(--transition-slow), opacity var(--transition-medium);
+}
+
+.celestial-body.sun {
+  background: #ff6b00;
+  box-shadow: 0 0 30px rgba(255, 107, 0, 0.5);
+  top: 15px;
+  opacity: 1;
+}
+
+.celestial-body.moon {
+  background: #0066ff;
+  box-shadow: 0 0 20px rgba(0, 102, 255, 0.4);
+  top: 120px;
+  opacity: 0;
+}
+
+/* Dark mode: swap sun and moon */
+[data-theme="dark"] .celestial-body.sun {
+  top: 120px;
+  opacity: 0;
+}
+
+[data-theme="dark"] .celestial-body.moon {
+  top: 15px;
+  opacity: 1;
+}
+
+/* Shelf Panel */
+.shelf-panel {
+  flex: 1;
+  background: var(--color-accent);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-md);
+}
+
+.shelf-items {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+  flex: 1;
+}
+
+.shelf-item {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.shelf-item:hover {
+  transform: scale(1.02);
+}
+
+.shelf-item.active .shelf-item-icon {
+  border-color: var(--color-bg);
+  background: color-mix(in srgb, var(--color-bg) 20%, transparent);
+}
+
+/* Shelf Item Icon */
+.shelf-item-icon {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-bg);
+  background: transparent;
+  position: relative;
+}
+
+/* Guidelines extending from icons */
+.shelf-item-icon::before,
+.shelf-item-icon::after {
+  content: '';
+  position: absolute;
+  border-style: dashed;
+  border-color: var(--color-bg);
+  border-width: 0;
+  opacity: 0.4;
+}
+
+.shelf-item-icon::before {
+  top: 50%;
+  left: -100%;
+  right: 100%;
+  width: 100%;
+  border-top-width: 1px;
+}
+
+.shelf-item-icon::after {
+  left: 50%;
+  top: -100%;
+  bottom: 100%;
+  height: 100%;
+  border-left-width: 1px;
+}
+
+.shelf-item-icon svg {
+  width: 40%;
+  height: 40%;
+  color: var(--color-bg);
+}
+
+/* Shelf Item Legend */
+.shelf-item-legend {
+  position: absolute;
+  top: -8px;
+  left: 8px;
+  background: var(--color-accent);
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--color-bg);
+  white-space: nowrap;
+  border: 1px solid var(--color-bg);
+}
+
+/* Shelf Description */
+.shelf-description {
+  margin-top: var(--space-md);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-bg);
+  min-height: 60px;
+}
+
+.description-text {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--color-bg);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   MOBILE LAYOUT
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .desktop-layout {
+    display: none;
+  }
+
+  .mobile-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Mobile Header */
+  .mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    background: var(--color-bg);
+    z-index: var(--z-sticky);
+  }
+
+  .mobile-logo {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--color-text);
+  }
+
+  /* Hamburger Button */
+  .mobile-menu-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+  }
+
+  .mobile-menu-btn span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: var(--color-text);
+    transition: transform var(--transition-fast), opacity var(--transition-fast);
+  }
+
+  .mobile-menu-btn.open span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+  }
+
+  .mobile-menu-btn.open span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .mobile-menu-btn.open span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+  }
+
+  /* Mobile Menu */
+  .mobile-menu {
+    display: none;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .mobile-menu.open {
+    display: flex;
+  }
+
+  .mobile-nav-link {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    color: var(--color-text);
+    text-decoration: none;
+    padding: var(--space-sm) 0;
+  }
+
+  .mobile-nav-link:hover {
+    color: var(--color-primary);
+  }
+
+  /* Mobile Theme Toggle */
+  .mobile-theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    cursor: pointer;
+  }
+
+  .theme-label {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+
+  .mini-mountains {
+    position: relative;
+    width: 60px;
+    height: 30px;
+    overflow: hidden;
+  }
+
+  .mini-mountains svg {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .mini-mountains polygon {
+    fill: var(--color-border);
+  }
+
+  .mini-celestial {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: top var(--transition-medium), opacity var(--transition-medium);
+  }
+
+  .mini-celestial.sun {
+    background: #ff6b00;
+    top: 2px;
+    opacity: 1;
+  }
+
+  .mini-celestial.moon {
+    background: #0066ff;
+    top: 30px;
+    opacity: 0;
+  }
+
+  [data-theme="dark"] .mini-celestial.sun {
+    top: 30px;
+    opacity: 0;
+  }
+
+  [data-theme="dark"] .mini-celestial.moon {
+    top: 2px;
+    opacity: 1;
+  }
+
+  /* Mobile Content */
+  .mobile-content {
+    flex: 1;
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .mobile-hero-name {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: var(--space-xl);
+  }
+
+  .mobile-hero-name span {
+    display: block;
+  }
+
+  /* Mobile Projects */
+  .mobile-projects {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+    margin-bottom: var(--space-xl);
+  }
+
+  .mobile-project-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--color-bg);
+  }
+
+  .mobile-project-card .project-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+
+  .mobile-project-card .project-icon svg {
+    width: 24px;
+    height: 24px;
+    color: var(--color-text);
+  }
+
+  .mobile-project-card .project-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-project-card .project-info h3 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+  }
+
+  .mobile-project-card .project-info p {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .mobile-project-card .open-link {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    flex-shrink: 0;
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+
+  .mobile-project-card .open-link:hover {
+    background: var(--color-primary);
+    color: var(--color-bg);
+    border-color: var(--color-primary);
+  }
+
+  .mobile-project-card .open-link svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Mobile Social */
+  .mobile-social {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-md);
+  }
+
+  .mobile-social a {
+    color: var(--color-text);
+    opacity: 0.6;
+    transition: opacity var(--transition-fast);
+  }
+
+  .mobile-social a:hover {
+    opacity: 1;
+  }
+
+  .mobile-social svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* ==========================================================================
+   MEDIUM SCREENS
+   ========================================================================== */
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .hero-name {
+    font-size: 3.5rem;
+  }
+
+  .hero-section {
+    width: 240px;
+  }
+
+  .right-panel {
+    width: 280px;
+  }
+
+  .shelf-item-icon svg {
+    width: 35%;
+    height: 35%;
+  }
 }

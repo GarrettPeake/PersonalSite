@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Photography by Garrett Peake">
+  <title>Photography | Garrett Peake</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/styles/theme.css">
+  <link rel="stylesheet" href="/styles/base.css">
+  <link rel="stylesheet" href="/styles/pages/photography.css">
+
+  <!-- Prevent FOUC -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+</head>
+<body class="page">
+  <gp-tracker></gp-tracker>
+  <gp-site-header></gp-site-header>
+
+  <main class="photo-main">
+    <div class="photo-content">
+      <h1 class="page-title">Photography</h1>
+
+      <div class="photo-grid" id="photo-grid">
+        <!-- Photos will be loaded dynamically or can be added statically -->
+        <!-- Example static photos (placeholder) -->
+        <div class="photo-item" data-location="New York, NY" data-description="City lights at dusk">
+          <div class="photo-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+          </div>
+        </div>
+        <div class="photo-item" data-location="San Francisco, CA" data-description="Golden Gate at sunrise">
+          <div class="photo-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+          </div>
+        </div>
+        <div class="photo-item" data-location="Tokyo, Japan" data-description="Neon streets of Shibuya">
+          <div class="photo-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+          </div>
+        </div>
+        <div class="photo-item" data-location="Iceland" data-description="Northern lights over glaciers">
+          <div class="photo-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+          </div>
+        </div>
+        <div class="photo-item" data-location="Paris, France" data-description="Evening at the Louvre">
+          <div class="photo-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+          </div>
+        </div>
+        <div class="photo-item" data-location="Barcelona, Spain" data-description="Gothic Quarter alleyways">
+          <div class="photo-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <gp-site-footer></gp-site-footer>
+
+  <!-- Photo Modal -->
+  <gp-photo-modal></gp-photo-modal>
+
+  <!-- Web Components -->
+  <script type="module" src="/components/core/gp-site-header.js"></script>
+  <script type="module" src="/components/core/gp-site-footer.js"></script>
+  <script type="module" src="/components/core/gp-photo-modal.js"></script>
+  <script type="module" src="/components/tracking/gp-tracker.js"></script>
+
+  <script src="/js/photography.js"></script>
+</body>
+</html>

@@ -9,33 +9,36 @@
   <!-- Styles -->
   <link rel="stylesheet" href="/styles/theme.css">
   <link rel="stylesheet" href="/styles/base.css">
-  <link rel="stylesheet" href="/styles/components.css">
   <link rel="stylesheet" href="/styles/pages/blog.css">
 
-  <!-- Preload web component styles -->
-  <link rel="preload" href="/styles/web-components.css" as="style">
+  <!-- Prevent FOUC -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 <body class="page">
   <gp-tracker></gp-tracker>
-  <gp-header></gp-header>
+  <gp-site-header></gp-site-header>
 
-  <main class="container">
-    <h1>Blog</h1>
+  <main class="blog-main">
+    <div class="blog-content">
+      <h1 class="page-title">Blog</h1>
 
-    <gp-peak-divider height="30px"></gp-peak-divider>
-
-    <section class="posts" id="posts">
-      <p class="loading">Loading posts...</p>
-    </section>
+      <section class="posts" id="posts">
+        <p class="loading">Loading posts...</p>
+      </section>
+    </div>
   </main>
 
-  <gp-footer></gp-footer>
+  <gp-site-footer></gp-site-footer>
 
   <!-- Web Components -->
-  <script type="module" src="/components/core/gp-theme-toggle.js"></script>
-  <script type="module" src="/components/core/gp-header.js"></script>
-  <script type="module" src="/components/core/gp-footer.js"></script>
-  <script type="module" src="/components/core/gp-peak-divider.js"></script>
+  <script type="module" src="/components/core/gp-site-header.js"></script>
+  <script type="module" src="/components/core/gp-site-footer.js"></script>
   <script type="module" src="/components/tracking/gp-tracker.js"></script>
 
   <script src="/js/blog.js"></script>
