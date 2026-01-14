@@ -17,7 +17,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Cloudflare bindings configured (KV, R2, Analytics Engine)
 - [x] Basic Worker entry point with route handling skeleton
 - [x] Static asset configuration with `run_worker_first` routing
-- [x] Theme CSS variables (light/dark mode)
+- [x] Theme CSS variables (light/dark mode) with Space Grotesk display font
 - [x] Base CSS reset and typography
 - [x] Unified component CSS (buttons, cards, forms, dialogs, tables)
 - [x] Web components with external shared stylesheet
@@ -25,8 +25,12 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Custom markdown renderer with macro support (server + client)
 - [x] `/Banner` macro implementation
 - [x] Core web components (header, footer, theme toggle, peak divider)
+- [x] New site header/footer components with mountain peaks theme toggle
+- [x] Photo modal component for photography page
 - [x] Tracking component (gp-tracker)
-- [x] Public pages (home, blog listing, about)
+- [x] Public pages (home, blog listing, about, photography)
+- [x] Neo-brutalist home page with three-panel layout, shelf, and carousel
+- [x] Mobile-responsive layouts with hamburger menus
 - [x] Tracking redirect page (`/s/:slug`)
 - [x] Public API endpoints (`GET /api/posts`, `GET /api/posts/:slug`, `POST /api/track`)
 - [x] Blog post detail pages (Worker-rendered with markdown)
@@ -89,7 +93,8 @@ Static assets served directly (no Worker) for:
 - `/` → `public/index.html`
 - `/about` → `public/about.html`
 - `/blog` → `public/blog.html`
-- `/styles/*`, `/components/*`, `/assets/*`
+- `/photography` → `public/photography.html`
+- `/styles/*`, `/components/*`, `/assets/*`, `/js/*`
 
 Worker handles:
 - `/api/*` → API endpoints
@@ -171,9 +176,10 @@ Worker handles:
 │           ├── post.test.ts
 │           └── tracking-redirect.test.ts
 └── /public
-    ├── index.html        # Home page
+    ├── index.html        # Home page (neo-brutalist three-panel layout)
     ├── about.html        # About page
     ├── blog.html         # Blog listing page
+    ├── photography.html  # Photography gallery page
     ├── /admin
     │   ├── index.html    # Admin dashboard
     │   ├── login.html    # Admin login page
@@ -183,6 +189,8 @@ Worker handles:
     │   └── tracking.html # Tracking links management
     ├── /js
     │   ├── blog.js       # Blog listing page logic
+    │   ├── home.js       # Home page interactions (theme, shelf, carousel)
+    │   ├── photography.js # Photography gallery modal handling
     │   └── /admin
     │       ├── login.js      # Login form handling
     │       ├── dashboard.js  # Dashboard stats and recent items
@@ -193,15 +201,16 @@ Worker handles:
     ├── /lib
     │   └── markdown.js   # Client-side markdown renderer for preview
     ├── /styles
-    │   ├── theme.css         # CSS custom properties for theming
+    │   ├── theme.css         # CSS custom properties (colors, fonts, spacing)
     │   ├── base.css          # Reset, typography, layout utilities
     │   ├── components.css    # Reusable UI components (buttons, cards, forms)
     │   ├── web-components.css # Shared styles for Shadow DOM components
     │   ├── admin.css         # Admin-specific layout (sidebar, header)
     │   └── /pages
-    │       ├── home.css           # Home page styles
-    │       ├── about.css          # About page styles
-    │       ├── blog.css           # Blog listing styles
+    │       ├── home.css           # Home page three-panel layout
+    │       ├── about.css          # About page with image frame
+    │       ├── blog.css           # Blog listing with thin borders
+    │       ├── photography.css    # Photo grid and modal styles
     │       ├── login.css          # Admin login page styles
     │       ├── admin-dashboard.css # Admin dashboard styles
     │       ├── admin-editor.css   # Editor page styles
@@ -210,10 +219,13 @@ Worker handles:
     │       └── admin-tracking.css # Tracking page styles
     └── /components
         ├── /core
-        │   ├── gp-header.js       # Site header with nav
-        │   ├── gp-footer.js       # Site footer
+        │   ├── gp-header.js       # Legacy site header with nav
+        │   ├── gp-footer.js       # Legacy site footer
+        │   ├── gp-site-header.js  # New header with mountain peaks toggle
+        │   ├── gp-site-footer.js  # New minimal footer (copyright only)
         │   ├── gp-theme-toggle.js # Dark/light mode switch
-        │   └── gp-peak-divider.js # Mountain peak separator
+        │   ├── gp-peak-divider.js # Mountain peak separator
+        │   └── gp-photo-modal.js  # Photography modal component
         └── /tracking
             └── gp-tracker.js      # Silent page view tracker
 ```
@@ -311,11 +323,13 @@ The CSS is organized into layers that build on each other. Always include styles
 
 ```css
 /* Colors - switch automatically with data-theme="dark" */
---color-bg        /* Page background */
---color-text      /* Text color */
---color-primary   /* Primary action color (blue/orange) */
---color-accent    /* Accent color (orange/blue) */
---color-border    /* Border color */
+--color-bg            /* Page background */
+--color-text          /* Text color */
+--color-primary       /* Primary action color (blue/orange) */
+--color-accent        /* Accent color (orange/blue) */
+--color-border        /* Border color */
+--color-bg-secondary  /* Secondary background (cards, inputs) */
+--color-text-muted    /* Muted text color */
 
 /* Spacing scale */
 --space-xs: 0.25rem;
@@ -323,14 +337,32 @@ The CSS is organized into layers that build on each other. Always include styles
 --space-md: 1rem;
 --space-lg: 2rem;
 --space-xl: 4rem;
+--space-2xl: 6rem;
 
 /* Layout */
---max-width-prose: 768px;  /* Content width */
---max-width-wide: 1024px;  /* Full layout width */
+--max-width-prose: 768px;   /* Content width */
+--max-width-wide: 1024px;   /* Full layout width */
+--max-width-full: 1400px;   /* Maximum page width */
+--panel-right-width: 320px; /* Home page shelf panel */
+
+/* Border widths - neo-brutalist thin lines */
+--border-thin: 1px;
+--border-medium: 2px;
 
 /* Typography */
---font-sans       /* System font stack */
---font-mono       /* Monospace font stack */
+--font-sans     /* System font stack */
+--font-mono     /* Monospace font stack */
+--font-display  /* Space Grotesk for hero typography */
+
+/* Animation */
+--transition-fast: 0.15s ease;
+--transition-medium: 0.3s ease;
+--transition-slow: 0.5s ease;
+
+/* Z-index layers */
+--z-dropdown: 100;
+--z-sticky: 200;
+--z-modal: 1000;
 ```
 
 ### Component Classes (components.css)
@@ -572,8 +604,10 @@ Shared utility functions:
 1. Add Analytics Engine integration for page views
 2. Add drag-and-drop file upload UI in editor
 3. Add auto-save for drafts in editor
-4. Mobile responsiveness improvements
-5. SEO meta tags for blog posts
+4. SEO meta tags for blog posts
+5. Add actual project URLs/iframes to home page shelf
+6. Add real photos to photography page
+7. Add profile image to about page
 
 ---
 

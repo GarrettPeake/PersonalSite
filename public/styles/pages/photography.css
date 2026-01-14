@@ -1,0 +1,114 @@
+/**
+ * Photography Page Styles
+ *
+ * Tight grid of square photos with modal for viewing.
+ * Requires: body.page class on <body> element for flex layout.
+ */
+
+/* Prevent FOUC for new components */
+gp-site-header:not(:defined),
+gp-site-footer:not(:defined),
+gp-photo-modal:not(:defined) {
+  display: none;
+}
+
+.photo-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-lg) var(--space-md);
+}
+
+.photo-content {
+  width: 100%;
+  max-width: var(--max-width-full);
+  margin: 0 auto;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: var(--space-lg);
+  letter-spacing: -0.02em;
+}
+
+/* Photo Grid - tight 1px spacing */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
+}
+
+.photo-item {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--color-bg);
+}
+
+.photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-medium);
+}
+
+.photo-item:hover img {
+  transform: scale(1.05);
+}
+
+/* Placeholder for photos without images */
+.photo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-secondary);
+  transition: background var(--transition-fast);
+}
+
+.photo-placeholder svg {
+  width: 40%;
+  height: 40%;
+  color: var(--color-text-muted);
+  opacity: 0.5;
+}
+
+.photo-item:hover .photo-placeholder {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+/* Overlay on hover */
+.photo-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  transition: background var(--transition-fast);
+}
+
+.photo-item:hover::after {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive grid */
+@media (max-width: 768px) {
+  .photo-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .page-title {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .photo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
