@@ -18,7 +18,7 @@ async function loadPosts() {
       <article class="post-card">
         <h2><a href="/blog/${post.slug}">${escapeHtml(post.title)}</a></h2>
         <p class="post-meta">${formatDate(post.publishedAt)}</p>
-        <p class="post-excerpt">${escapeHtml(getExcerpt(post.content))}</p>
+        <p class="post-excerpt">${escapeHtml(post.excerpt)}</p>
       </article>
     `).join('');
   } catch (error) {
@@ -32,18 +32,6 @@ function formatDate(isoString) {
     month: 'long',
     day: 'numeric'
   });
-}
-
-function getExcerpt(content, maxLength = 200) {
-  // Strip markdown and get first paragraph
-  const text = content
-    .replace(/^#+\s+.+$/gm, '') // Remove headings
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links
-    .replace(/[*_`]/g, '') // Remove formatting
-    .trim();
-
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength).trim() + '...';
 }
 
 function escapeHtml(text) {
