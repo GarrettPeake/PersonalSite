@@ -40,6 +40,14 @@ import {
   handleGetTracking,
   handleDeleteTracking,
 } from './handlers/api/tracking';
+import {
+  handleListPhotosPublic,
+  handleAdminListPhotos,
+  handleAdminGetPhoto,
+  handleCreatePhoto,
+  handleUpdatePhoto,
+  handleDeletePhoto,
+} from './handlers/api/photos';
 
 // Utilities
 import { isAuthenticated } from './middleware/auth';
@@ -110,6 +118,11 @@ export async function handleApi(request: Request, env: Env, path: string): Promi
     // POST /api/track - Record tracking event
     if (path === '/api/track' && method === 'POST') {
       return handleTrack(request, env);
+    }
+
+    // GET /api/photos - List all photos (public)
+    if (path === '/api/photos' && method === 'GET') {
+      return handleListPhotosPublic(env);
     }
 
     // GET /api/draft/share/:token - Get draft by share token (public)
@@ -259,6 +272,38 @@ export async function handleApi(request: Request, env: Env, path: string): Promi
       // POST /api/admin/upload - Upload file to R2
       if (path === '/api/admin/upload' && method === 'POST') {
         return handleUpload(request, env);
+      }
+
+      // -----------------------------------------------------------------------
+      // Photos
+      // -----------------------------------------------------------------------
+
+      // GET /api/admin/photos - List all photos
+      if (path === '/api/admin/photos' && method === 'GET') {
+        return handleAdminListPhotos(env);
+      }
+
+      // POST /api/admin/photos - Create new photo
+      if (path === '/api/admin/photos' && method === 'POST') {
+        return handleCreatePhoto(request, env);
+      }
+
+      // GET /api/admin/photos/:id - Get single photo
+      if (path.match(/^\/api\/admin\/photos\/[^/]+$/) && method === 'GET') {
+        const id = path.replace('/api/admin/photos/', '');
+        return handleAdminGetPhoto(env, id);
+      }
+
+      // PUT /api/admin/photos/:id - Update photo
+      if (path.match(/^\/api\/admin\/photos\/[^/]+$/) && method === 'PUT') {
+        const id = path.replace('/api/admin/photos/', '');
+        return handleUpdatePhoto(request, env, id);
+      }
+
+      // DELETE /api/admin/photos/:id - Delete photo
+      if (path.match(/^\/api\/admin\/photos\/[^/]+$/) && method === 'DELETE') {
+        const id = path.replace('/api/admin/photos/', '');
+        return handleDeletePhoto(env, id);
       }
     }
 
