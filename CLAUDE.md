@@ -41,11 +41,12 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Client-side markdown renderer for editor preview
 - [x] Modular backend architecture (DAOs, handlers, templates)
 - [x] Vitest testing infrastructure for Workers
+- [x] File upload to R2 (`POST /api/admin/upload`)
+- [x] Comprehensive test coverage for all backend modules (448 tests)
 
 ### Not Yet Implemented
 
-- [ ] File upload to R2
-- [ ] Analytics Engine integration
+- [ ] Analytics Engine integration for page views
 
 ## Tech Stack
 
@@ -122,7 +123,8 @@ Worker handles:
 │   │   │   ├── auth.ts      # POST /api/auth/login|logout
 │   │   │   ├── drafts.ts    # /api/admin/drafts/* endpoints
 │   │   │   ├── posts.ts     # /api/admin/posts/* endpoints
-│   │   │   └── tracking.ts  # /api/admin/tracking/* endpoints
+│   │   │   ├── tracking.ts  # /api/admin/tracking/* endpoints
+│   │   │   └── upload.ts    # POST /api/admin/upload
 │   │   └── /pages
 │   │       ├── blog.ts      # /blog/:slug handler
 │   │       ├── draft.ts     # /draft/share/:token handler
@@ -139,7 +141,35 @@ Worker handles:
 │   ├── /middleware
 │   │   └── auth.ts       # Authentication helpers (login, session, cookies)
 │   └── /__tests__
-│       └── router.test.ts # Router unit tests
+│       ├── router.test.ts # Router unit tests
+│       ├── /dao
+│       │   ├── base.test.ts
+│       │   ├── draft.dao.test.ts
+│       │   ├── post.dao.test.ts
+│       │   ├── tracking.dao.test.ts
+│       │   └── session.dao.test.ts
+│       ├── /handlers
+│       │   ├── /api
+│       │   │   ├── public.test.ts
+│       │   │   ├── auth.test.ts
+│       │   │   ├── drafts.test.ts
+│       │   │   ├── posts.test.ts
+│       │   │   ├── tracking.test.ts
+│       │   │   └── upload.test.ts
+│       │   └── /pages
+│       │       ├── blog.test.ts
+│       │       ├── draft.test.ts
+│       │       ├── tracking.test.ts
+│       │       └── admin.test.ts
+│       ├── /lib
+│       │   ├── utils.test.ts
+│       │   ├── markdown.test.ts
+│       │   └── response.test.ts
+│       ├── /middleware
+│       │   └── auth.test.ts
+│       └── /templates
+│           ├── post.test.ts
+│           └── tracking-redirect.test.ts
 └── /public
     ├── index.html        # Home page
     ├── about.html        # About page
@@ -215,6 +245,7 @@ Set via `wrangler secret put <name>`:
 | GET | `/api/posts` | List all posts (with excerpts) |
 | GET | `/api/posts/:slug` | Get single post by slug |
 | POST | `/api/track` | Record tracking event |
+| GET | `/api/draft/share/:token` | Get draft by share token |
 
 ### Auth
 
@@ -234,6 +265,7 @@ Set via `wrangler secret put <name>`:
 | DELETE | `/api/admin/drafts/:id` | Delete draft |
 | POST | `/api/admin/drafts/:id/publish` | Publish draft → post |
 | POST | `/api/admin/drafts/:id/share` | Create share token |
+| DELETE | `/api/admin/drafts/:id/share` | Revoke share token |
 | GET | `/api/admin/posts` | List all posts |
 | GET | `/api/admin/posts/:id` | Get post by ID |
 | PUT | `/api/admin/posts/:id` | Update post |
@@ -243,6 +275,7 @@ Set via `wrangler secret put <name>`:
 | POST | `/api/admin/tracking` | Create tracking slug |
 | GET | `/api/admin/tracking/:slug` | Get tracking with events |
 | DELETE | `/api/admin/tracking/:slug` | Delete tracking slug |
+| POST | `/api/admin/upload` | Upload file to R2 |
 
 ## CSS Architecture
 
@@ -536,8 +569,8 @@ Shared utility functions:
 
 ## Next Steps
 
-1. Implement file upload to R2 (drag-and-drop in editor)
-2. Add Analytics Engine integration for page views
+1. Add Analytics Engine integration for page views
+2. Add drag-and-drop file upload UI in editor
 3. Add auto-save for drafts in editor
 4. Mobile responsiveness improvements
 5. SEO meta tags for blog posts

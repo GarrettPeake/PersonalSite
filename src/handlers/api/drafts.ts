@@ -8,10 +8,12 @@ import { Env } from '../../types';
 import {
   listDrafts,
   getDraft,
+  getDraftByShareToken,
   createDraft,
   updateDraft,
   deleteDraft,
   createShareToken,
+  revokeShareToken,
 } from '../../dao/draft.dao';
 import { publishDraft } from '../../dao/post.dao';
 import { jsonResponse, corsHeaders } from '../../lib/response';
@@ -93,4 +95,23 @@ export async function handleShareDraft(env: Env, id: string): Promise<Response> 
   } catch (e) {
     return jsonResponse({ error: (e as Error).message }, corsHeaders, 400);
   }
+}
+
+/**
+ * DELETE /api/admin/drafts/:id/share - Revoke a share token
+ */
+export async function handleRevokeShareDraft(env: Env, id: string): Promise<Response> {
+  await revokeShareToken(env.KV, id);
+  return jsonResponse({ ok: true }, corsHeaders);
+}
+
+/**
+ * GET /api/draft/share/:token - Public endpoint to get draft by share token
+ */
+export async function handleGetDraftByShareToken(env: Env, token: string): Promise<Response> {
+  const draft = await getDraftByShareToken(env.KV, token);
+  if (!draft) {
+    return jsonResponse({ error: 'Draft not found or share link expired' }, corsHeaders, 404);
+  }
+  return jsonResponse(draft, corsHeaders);
 }
