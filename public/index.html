@@ -1,278 +1,466 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Garrett Peake - Software Engineer">
-  <title>Garrett Peake</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Garrett Peake - Software Engineer" />
+    <title>Garrett Peake</title>
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="/styles/theme.css">
-  <link rel="stylesheet" href="/styles/base.css">
-  <link rel="stylesheet" href="/styles/pages/home.css">
+    <!-- Styles -->
+    <link rel="stylesheet" href="/styles/theme.css" />
+    <link rel="stylesheet" href="/styles/base.css" />
+    <link rel="stylesheet" href="/styles/pages/home.css" />
 
-  <!-- Prevent FOUC -->
-  <script>
-    (function() {
-      const theme = localStorage.getItem('theme') ||
-        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      document.documentElement.setAttribute('data-theme', theme);
-    })();
-  </script>
-</head>
-<body class="home-page">
-  <gp-tracker></gp-tracker>
+    <!-- Prevent FOUC -->
+    <script>
+      (function () {
+        const theme =
+          localStorage.getItem("theme") ||
+          (window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+  </head>
+  <body class="home-page">
+    <gp-tracker></gp-tracker>
 
-  <!-- Desktop Layout -->
-  <div class="desktop-layout">
-    <!-- Content Panel (Left) -->
-    <main class="content-panel">
-      <div class="content-inner">
-        <!-- Hero Name -->
-        <div class="hero-section">
-          <h1 class="hero-name">
-            <span class="name-line">Garrett</span>
-            <span class="name-line">Peake.</span>
-          </h1>
+    <!-- Desktop Layout -->
+    <div class="desktop-layout">
+      <!-- Content Panel (Left) -->
+      <main class="content-panel">
+        <div class="content-inner">
+          <!-- Hero Name -->
+          <div class="hero-section">
+            <h1 class="hero-name">
+              <span class="name-line">Garrett</span>
+              <span class="name-line">Peake.</span>
+            </h1>
 
-          <!-- Navigation Links -->
-          <nav class="hero-nav">
-            <a href="/blog" class="nav-link">/blog</a>
-            <a href="/about" class="nav-link">/about</a>
-            <a href="/photography" class="nav-link">/photography</a>
-          </nav>
+            <!-- Navigation Links -->
+            <nav class="hero-nav">
+              <a href="/blog" class="nav-link">/blog</a>
+              <a href="/about" class="nav-link">/about</a>
+              <a href="/photography" class="nav-link">/photography</a>
+            </nav>
 
-          <!-- Social Icons -->
-          <div class="social-links">
-            <a href="https://github.com/GarrettPeake" target="_blank" rel="noopener" aria-label="GitHub">
-              <svg viewBox="0 0 24 24">
-                <path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-              </svg>
-            </a>
-            <a href="https://www.linkedin.com/in/gepeake" target="_blank" rel="noopener" aria-label="LinkedIn">
-              <svg viewBox="0 0 24 24">
-                <path fill="currentColor" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-              </svg>
-            </a>
+            <!-- Social Icons -->
+            <div class="social-links">
+              <a
+                href="https://github.com/GarrettPeake"
+                target="_blank"
+                rel="noopener"
+                aria-label="GitHub"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
+                  />
+                </svg>
+              </a>
+              <a
+                href="https://www.linkedin.com/in/gepeake"
+                target="_blank"
+                rel="noopener"
+                aria-label="LinkedIn"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+                  />
+                </svg>
+              </a>
+            </div>
           </div>
-        </div>
 
-        <!-- Project Display Area -->
-        <div class="project-display">
-          <div class="project-frame">
-            <!-- Guidelines -->
-            <div class="guideline guideline-top"></div>
-            <div class="guideline guideline-right"></div>
-            <div class="guideline guideline-bottom"></div>
-            <div class="guideline guideline-left"></div>
+          <!-- Project Display Area -->
+          <div class="project-display">
+            <div class="project-frame">
+              <!-- Guidelines -->
+              <div class="guideline guideline-top"></div>
+              <div class="guideline guideline-right"></div>
+              <div class="guideline guideline-bottom"></div>
+              <div class="guideline guideline-left"></div>
 
-            <!-- Carousel -->
-            <div class="carousel" id="project-carousel">
-              <div class="carousel-track">
-                <!-- Project slides will be inserted here -->
-                <div class="carousel-slide active" data-project="0">
-                  <div class="slide-placeholder">
-                    <span>Select a project</span>
+              <!-- Carousel -->
+              <div class="carousel" id="project-carousel">
+                <div class="carousel-track">
+                  <!-- Project slides will be inserted here -->
+                  <div class="carousel-slide active" data-project="0">
+                    <div class="slide-placeholder">
+                      <span>Select a project</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
 
-    <!-- Right Panel -->
-    <aside class="right-panel">
-      <!-- Controls Panel (Top) -->
-      <div class="controls-panel">
-        <div class="theme-toggle-scene" id="theme-toggle">
-          <!-- Sun/Moon -->
-          <div class="celestial-body sun"></div>
-          <div class="celestial-body moon"></div>
+      <!-- Right Panel -->
+      <aside class="right-panel">
+        <!-- Controls Panel (Top) -->
+        <div class="controls-panel">
+          <div class="theme-toggle-scene" id="theme-toggle">
+            <!-- Sun/Moon -->
+            <div class="celestial-body sun"></div>
+            <div class="celestial-body moon"></div>
 
-          <!-- Mountains -->
-          <svg class="mountains" viewBox="0 0 320 120" preserveAspectRatio="none">
-            <polygon class="mountain mountain-left" points="0,120 80,40 160,120"/>
-            <polygon class="mountain mountain-center" points="60,120 160,0 260,120"/>
-            <polygon class="mountain mountain-right" points="160,120 240,25 320,120"/>
-          </svg>
-        </div>
-      </div>
-
-      <!-- Shelf Panel (Bottom) -->
-      <div class="shelf-panel">
-        <div class="shelf-items" id="shelf-items">
-          <!-- Project Icons -->
-          <div class="shelf-item active" data-project="0" data-title="Personal Site" data-description="A neo-brutalist personal website built with Cloudflare Workers">
-            <div class="shelf-item-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <polygon points="12,2 22,22 2,22"/>
-              </svg>
-            </div>
-            <div class="shelf-item-legend">Personal Site</div>
-          </div>
-
-          <div class="shelf-item" data-project="1" data-title="Project Alpha" data-description="A demonstration project showcasing modern web development techniques">
-            <div class="shelf-item-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <path d="M9 9h6v6H9z"/>
-              </svg>
-            </div>
-            <div class="shelf-item-legend">Project Alpha</div>
-          </div>
-
-          <div class="shelf-item" data-project="2" data-title="Project Beta" data-description="An innovative solution for complex data visualization">
-            <div class="shelf-item-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M12 3v9l6 3"/>
-              </svg>
-            </div>
-            <div class="shelf-item-legend">Project Beta</div>
-          </div>
-
-          <div class="shelf-item" data-project="3" data-title="Project Gamma" data-description="Real-time collaboration tools for distributed teams">
-            <div class="shelf-item-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                <path d="M2 17l10 5 10-5"/>
-                <path d="M2 12l10 5 10-5"/>
-              </svg>
-            </div>
-            <div class="shelf-item-legend">Project Gamma</div>
-          </div>
-        </div>
-
-        <!-- Description box (appears on hover) -->
-        <div class="shelf-description" id="shelf-description">
-          <p class="description-text">Hover over a project to see details</p>
-        </div>
-      </div>
-    </aside>
-  </div>
-
-  <!-- Mobile Layout -->
-  <div class="mobile-layout">
-    <!-- Mobile Header -->
-    <header class="mobile-header">
-      <span class="mobile-logo">Garrett Peake</span>
-      <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Menu" aria-expanded="false">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </header>
-
-    <!-- Mobile Menu -->
-    <nav class="mobile-menu" id="mobile-menu">
-      <a href="/blog" class="mobile-nav-link">/blog</a>
-      <a href="/about" class="mobile-nav-link">/about</a>
-      <a href="/photography" class="mobile-nav-link">/photography</a>
-      <div class="mobile-theme-toggle" id="mobile-theme-toggle">
-        <span class="theme-label">Theme</span>
-        <div class="mini-mountains">
-          <div class="mini-celestial sun"></div>
-          <div class="mini-celestial moon"></div>
-          <svg viewBox="0 0 60 30" preserveAspectRatio="none">
-            <polygon points="0,30 15,10 30,30"/>
-            <polygon points="10,30 30,0 50,30"/>
-            <polygon points="30,30 45,8 60,30"/>
-          </svg>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Mobile Content -->
-    <main class="mobile-content">
-      <h1 class="mobile-hero-name">
-        <span>Garrett</span>
-        <span>Peake.</span>
-      </h1>
-
-      <!-- Project List -->
-      <div class="mobile-projects">
-        <div class="mobile-project-card" data-url="#">
-          <div class="project-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <polygon points="12,2 22,22 2,22"/>
+            <!-- Mountains -->
+            <svg
+              class="mountains"
+              viewBox="0 0 320 240"
+              version="1.1"
+              xmlns="http://www.w3.org/2000/svg"
+              xmlns:xlink="http://www.w3.org/1999/xlink"
+              xml:space="preserve"
+              xmlns:serif="http://www.serif.com/"
+              style="
+                fill-rule: evenodd;
+                clip-rule: evenodd;
+                stroke-linejoin: round;
+                stroke-miterlimit: 2;
+              "
+            >
+              <g transform="matrix(1,0,0,1,0,87)">
+                <path d="M0,120L80,40L160,120L0,120Z" class="mountain" />
+              </g>
+              <g transform="matrix(1,0,0,1,0,87)">
+                <path d="M60,120L160,0L260,120L60,120Z" class="mountain" />
+              </g>
+              <g transform="matrix(1,0,0,1,0,87)">
+                <path d="M160,120L240,25L320,120L160,120Z" class="mountain" />
+              </g>
+              <rect x="0" y="207" width="320" height="33" class="mountain" />
+              <path
+                d="M80,141L18,207L18,223.5L56,207L80,141Z"
+                class="mountain-snow"
+              />
+              <path
+                d="M88,154L80,181L103.396,216L106,173L88,154Z"
+                class="mountain-snow"
+              />
+              <path
+                d="M160,103L118,157L116,207L139,169L160,103Z"
+                class="mountain-snow"
+              />
+              <path
+                d="M160,132L149,172L154,227L168,174"
+                class="mountain-snow"
+              />
+              <path
+                d="M231,138L200,181L202,223.5L231,138Z"
+                class="mountain-snow"
+              />
+              <path
+                d="M240,129L221,195L246,216L240,129Z"
+                class="mountain-snow"
+              />
+              <path
+                d="M141,183L127,207L145,228L141,183Z"
+                class="mountain-snow"
+              />
             </svg>
           </div>
-          <div class="project-info">
-            <h3>Personal Site</h3>
-            <p>A neo-brutalist personal website built with Cloudflare Workers</p>
+        </div>
+
+        <!-- Shelf Panel (Bottom) -->
+        <div class="shelf-panel">
+          <div class="shelf-items" id="shelf-items">
+            <!-- Project Icons -->
+            <div
+              class="shelf-item active"
+              data-project="0"
+              data-title="Personal Site"
+              data-description="A neo-brutalist personal website built with Cloudflare Workers"
+            >
+              <div class="shelf-item-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <polygon points="12,2 22,22 2,22" />
+                </svg>
+              </div>
+              <div class="shelf-item-legend">Personal Site</div>
+            </div>
+
+            <div
+              class="shelf-item"
+              data-project="1"
+              data-title="Project Alpha"
+              data-description="A demonstration project showcasing modern web development techniques"
+            >
+              <div class="shelf-item-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <path d="M9 9h6v6H9z" />
+                </svg>
+              </div>
+              <div class="shelf-item-legend">Project Alpha</div>
+            </div>
+
+            <div
+              class="shelf-item"
+              data-project="2"
+              data-title="Project Beta"
+              data-description="An innovative solution for complex data visualization"
+            >
+              <div class="shelf-item-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 3v9l6 3" />
+                </svg>
+              </div>
+              <div class="shelf-item-legend">Project Beta</div>
+            </div>
+
+            <div
+              class="shelf-item"
+              data-project="3"
+              data-title="Project Gamma"
+              data-description="Real-time collaboration tools for distributed teams"
+            >
+              <div class="shelf-item-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+              </div>
+              <div class="shelf-item-legend">Project Gamma</div>
+            </div>
           </div>
-          <a href="#" target="_blank" rel="noopener" class="open-link" aria-label="Open in new tab">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
+
+          <!-- Description box (appears on hover) -->
+          <div class="shelf-description" id="shelf-description">
+            <p class="description-text">Hover over a project to see details</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Mobile Layout -->
+    <div class="mobile-layout">
+      <!-- Mobile Header -->
+      <header class="mobile-header">
+        <span class="mobile-logo">Garrett Peake</span>
+        <button
+          class="mobile-menu-btn"
+          id="mobile-menu-btn"
+          aria-label="Menu"
+          aria-expanded="false"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </header>
+
+      <!-- Mobile Menu -->
+      <nav class="mobile-menu" id="mobile-menu">
+        <a href="/blog" class="mobile-nav-link">/blog</a>
+        <a href="/about" class="mobile-nav-link">/about</a>
+        <a href="/photography" class="mobile-nav-link">/photography</a>
+        <div class="mobile-theme-toggle" id="mobile-theme-toggle">
+          <span class="theme-label">Theme</span>
+          <div class="mini-mountains">
+            <div class="mini-celestial sun"></div>
+            <div class="mini-celestial moon"></div>
+            <svg viewBox="0 0 60 30" preserveAspectRatio="none">
+              <polygon points="0,30 15,10 30,30" />
+              <polygon points="10,30 30,0 50,30" />
+              <polygon points="30,30 45,8 60,30" />
+            </svg>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Mobile Content -->
+      <main class="mobile-content">
+        <h1 class="mobile-hero-name">
+          <span>Garrett</span>
+          <span>Peake.</span>
+        </h1>
+
+        <!-- Project List -->
+        <div class="mobile-projects">
+          <div class="mobile-project-card" data-url="#">
+            <div class="project-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <polygon points="12,2 22,22 2,22" />
+              </svg>
+            </div>
+            <div class="project-info">
+              <h3>Personal Site</h3>
+              <p>
+                A neo-brutalist personal website built with Cloudflare Workers
+              </p>
+            </div>
+            <a
+              href="#"
+              target="_blank"
+              rel="noopener"
+              class="open-link"
+              aria-label="Open in new tab"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
+
+          <div class="mobile-project-card" data-url="#">
+            <div class="project-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M9 9h6v6H9z" />
+              </svg>
+            </div>
+            <div class="project-info">
+              <h3>Project Alpha</h3>
+              <p>
+                A demonstration project showcasing modern web development
+                techniques
+              </p>
+            </div>
+            <a
+              href="#"
+              target="_blank"
+              rel="noopener"
+              class="open-link"
+              aria-label="Open in new tab"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
+
+          <div class="mobile-project-card" data-url="#">
+            <div class="project-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 3v9l6 3" />
+              </svg>
+            </div>
+            <div class="project-info">
+              <h3>Project Beta</h3>
+              <p>An innovative solution for complex data visualization</p>
+            </div>
+            <a
+              href="#"
+              target="_blank"
+              rel="noopener"
+              class="open-link"
+              aria-label="Open in new tab"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Social Links -->
+        <div class="mobile-social">
+          <a
+            href="https://github.com/GarrettPeake"
+            target="_blank"
+            rel="noopener"
+            aria-label="GitHub"
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
+              />
+            </svg>
+          </a>
+          <a
+            href="https://www.linkedin.com/in/gepeake"
+            target="_blank"
+            rel="noopener"
+            aria-label="LinkedIn"
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+              />
             </svg>
           </a>
         </div>
+      </main>
+    </div>
 
-        <div class="mobile-project-card" data-url="#">
-          <div class="project-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <path d="M9 9h6v6H9z"/>
-            </svg>
-          </div>
-          <div class="project-info">
-            <h3>Project Alpha</h3>
-            <p>A demonstration project showcasing modern web development techniques</p>
-          </div>
-          <a href="#" target="_blank" rel="noopener" class="open-link" aria-label="Open in new tab">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-          </a>
-        </div>
+    <!-- Web Components -->
+    <script type="module" src="/components/tracking/gp-tracker.js"></script>
 
-        <div class="mobile-project-card" data-url="#">
-          <div class="project-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M12 3v9l6 3"/>
-            </svg>
-          </div>
-          <div class="project-info">
-            <h3>Project Beta</h3>
-            <p>An innovative solution for complex data visualization</p>
-          </div>
-          <a href="#" target="_blank" rel="noopener" class="open-link" aria-label="Open in new tab">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-          </a>
-        </div>
-      </div>
-
-      <!-- Social Links -->
-      <div class="mobile-social">
-        <a href="https://github.com/GarrettPeake" target="_blank" rel="noopener" aria-label="GitHub">
-          <svg viewBox="0 0 24 24">
-            <path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-          </svg>
-        </a>
-        <a href="https://www.linkedin.com/in/gepeake" target="_blank" rel="noopener" aria-label="LinkedIn">
-          <svg viewBox="0 0 24 24">
-            <path fill="currentColor" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-          </svg>
-        </a>
-      </div>
-    </main>
-  </div>
-
-  <!-- Web Components -->
-  <script type="module" src="/components/tracking/gp-tracker.js"></script>
-
-  <!-- Home Page Script -->
-  <script src="/js/home.js"></script>
-</body>
+    <!-- Home Page Script -->
+    <script src="/js/home.js"></script>
+  </body>
 </html>

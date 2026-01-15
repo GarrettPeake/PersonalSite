@@ -57,7 +57,7 @@ body.home-page {
 
 /* Background gradient for hero */
 .hero-section::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -100vh;
   left: -100vw;
@@ -66,7 +66,7 @@ body.home-page {
   background: linear-gradient(
     to right,
     var(--color-bg) 0%,
-    var(--color-bg) 60%,
+    var(--color-bg) 85%,
     transparent 100%
   );
   z-index: -1;
@@ -135,7 +135,7 @@ body.home-page {
    ========================================================================== */
 
 .project-display {
-  flex: 1;
+  flex: 1.5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -145,7 +145,7 @@ body.home-page {
 .project-frame {
   position: relative;
   width: 100%;
-  max-width: 600px;
+  max-width: 900px;
   aspect-ratio: 16/10;
 }
 
@@ -159,29 +159,29 @@ body.home-page {
 }
 
 .guideline-top {
-  top: -20px;
-  left: 50%;
+  top: -5px;
+  left: -100vw;
   right: -100vw;
   border-top-width: 1px;
 }
 
 .guideline-bottom {
-  bottom: -20px;
-  left: 50%;
+  bottom: -5px;
+  left: -100vw;
   right: -100vw;
   border-bottom-width: 1px;
 }
 
 .guideline-left {
-  left: -20px;
-  top: 50%;
+  left: -5px;
+  top: -100vh;
   bottom: -100vh;
   border-left-width: 1px;
 }
 
 .guideline-right {
-  right: -20px;
-  top: 50%;
+  right: -5px;
+  top: -100vh;
   bottom: -100vh;
   border-right-width: 1px;
 }
@@ -241,7 +241,7 @@ body.home-page {
   width: var(--panel-right-width);
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--color-accent);
+  /* border-left: 1px solid var(--color-accent); */
 }
 
 /* Controls Panel */
@@ -265,12 +265,15 @@ body.home-page {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 100%;
 }
 
 .mountain {
+  fill: var(--color-primary);
+}
+
+.mountain-snow {
   fill: var(--color-accent);
-  transition: fill var(--transition-medium);
+  transition: fill var(--transition-slow);
 }
 
 /* Celestial Bodies */
@@ -286,14 +289,12 @@ body.home-page {
 
 .celestial-body.sun {
   background: #ff6b00;
-  box-shadow: 0 0 30px rgba(255, 107, 0, 0.5);
-  top: 15px;
+  top: 10px;
   opacity: 1;
 }
 
 .celestial-body.moon {
   background: #0066ff;
-  box-shadow: 0 0 20px rgba(0, 102, 255, 0.4);
   top: 120px;
   opacity: 0;
 }
@@ -305,22 +306,24 @@ body.home-page {
 }
 
 [data-theme="dark"] .celestial-body.moon {
-  top: 15px;
+  top: 10px;
   opacity: 1;
 }
 
 /* Shelf Panel */
 .shelf-panel {
   flex: 1;
-  background: var(--color-accent);
+  background: var(--color-primary);
   display: flex;
   flex-direction: column;
   padding: var(--space-md);
+  max-height: calc(100vh - 120px);
+  overflow: scroll;
 }
 
 .shelf-items {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: var(--space-md);
   flex: 1;
 }
@@ -354,33 +357,6 @@ body.home-page {
   position: relative;
 }
 
-/* Guidelines extending from icons */
-.shelf-item-icon::before,
-.shelf-item-icon::after {
-  content: '';
-  position: absolute;
-  border-style: dashed;
-  border-color: var(--color-bg);
-  border-width: 0;
-  opacity: 0.4;
-}
-
-.shelf-item-icon::before {
-  top: 50%;
-  left: -100%;
-  right: 100%;
-  width: 100%;
-  border-top-width: 1px;
-}
-
-.shelf-item-icon::after {
-  left: 50%;
-  top: -100%;
-  bottom: 100%;
-  height: 100%;
-  border-left-width: 1px;
-}
-
 .shelf-item-icon svg {
   width: 40%;
   height: 40%;
@@ -390,12 +366,12 @@ body.home-page {
 /* Shelf Item Legend */
 .shelf-item-legend {
   position: absolute;
-  top: -8px;
-  left: 8px;
-  background: var(--color-accent);
+  bottom: 0px;
+  right: 0px;
+  background: var(--color-primary);
   padding: 2px 6px;
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--color-bg);
   white-space: nowrap;
   border: 1px solid var(--color-bg);
@@ -542,7 +518,7 @@ body.home-page {
   }
 
   .mini-mountains polygon {
-    fill: var(--color-border);
+    fill: var(--color-primary);
   }
 
   .mini-celestial {
@@ -706,10 +682,6 @@ body.home-page {
 
   .hero-section {
     width: 240px;
-  }
-
-  .right-panel {
-    width: 280px;
   }
 
   .shelf-item-icon svg {

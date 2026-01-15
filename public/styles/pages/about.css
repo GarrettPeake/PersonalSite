@@ -26,8 +26,8 @@ gp-site-footer:not(:defined) {
 
 /* Hero section with image and intro */
 .about-hero {
-  display: grid;
-  grid-template-columns: 200px 1fr;
+  display: flex;
+  flex-direction: row;
   gap: var(--space-xl);
   margin-bottom: var(--space-2xl);
   align-items: start;
@@ -36,23 +36,18 @@ gp-site-footer:not(:defined) {
 /* Profile image frame */
 .profile-frame {
   position: relative;
-  width: 200px;
   height: 200px;
 }
 
 .profile-image {
-  width: 100%;
   height: 100%;
   border: var(--border-thin) solid var(--color-border);
-  overflow: hidden;
-  position: relative;
   z-index: 1;
 }
 
 .profile-image img {
-  width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .image-placeholder {
@@ -180,7 +175,6 @@ gp-site-footer:not(:defined) {
   }
 
   .profile-frame {
-    width: 150px;
     height: 150px;
     margin: 0 auto;
   }

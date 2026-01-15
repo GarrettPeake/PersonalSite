@@ -12,7 +12,7 @@
 class GpSiteHeader extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: 'open' });
+    this.attachShadow({ mode: "open" });
     this._mobileMenuOpen = false;
   }
 
@@ -35,7 +35,6 @@ class GpSiteHeader extends HTMLElement {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: var(--space-sm, 0.5rem) var(--space-md, 1rem);
           max-width: var(--max-width-full, 1400px);
           margin: 0 auto;
           height: 60px;
@@ -99,8 +98,10 @@ class GpSiteHeader extends HTMLElement {
         .theme-toggle-container {
           position: relative;
           width: 80px;
-          height: 40px;
+          height: 60px;
           cursor: pointer;
+          overflow: hidden;
+          border: 1px solid var(--color-primary)
         }
 
         .mountains-bg {
@@ -116,7 +117,6 @@ class GpSiteHeader extends HTMLElement {
           position: absolute;
           bottom: 0;
           fill: var(--color-border, #0066ff);
-          transition: fill var(--transition-medium, 0.3s ease);
         }
 
         .mountain-left {
@@ -252,31 +252,6 @@ class GpSiteHeader extends HTMLElement {
           .hamburger {
             display: flex;
           }
-
-          .theme-toggle-container {
-            width: 60px;
-            height: 30px;
-          }
-
-          .mountain-center {
-            width: 38px;
-            height: 30px;
-          }
-
-          .mountain-left {
-            width: 30px;
-            height: 20px;
-          }
-
-          .mountain-right {
-            width: 34px;
-            height: 24px;
-          }
-
-          .celestial {
-            width: 14px;
-            height: 14px;
-          }
         }
       </style>
 
@@ -325,59 +300,63 @@ class GpSiteHeader extends HTMLElement {
   }
 
   setupEventListeners() {
-    const themeToggle = this.shadowRoot.querySelector('.theme-toggle-container');
-    themeToggle.addEventListener('click', () => this.toggleTheme());
-    themeToggle.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
+    const themeToggle = this.shadowRoot.querySelector(
+      ".theme-toggle-container"
+    );
+    themeToggle.addEventListener("click", () => this.toggleTheme());
+    themeToggle.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         this.toggleTheme();
       }
     });
 
-    const hamburger = this.shadowRoot.querySelector('.hamburger');
-    hamburger.addEventListener('click', () => this.toggleMobileMenu());
+    const hamburger = this.shadowRoot.querySelector(".hamburger");
+    hamburger.addEventListener("click", () => this.toggleMobileMenu());
   }
 
   toggleMobileMenu() {
     this._mobileMenuOpen = !this._mobileMenuOpen;
-    const hamburger = this.shadowRoot.querySelector('.hamburger');
-    const mobileMenu = this.shadowRoot.querySelector('.mobile-menu');
+    const hamburger = this.shadowRoot.querySelector(".hamburger");
+    const mobileMenu = this.shadowRoot.querySelector(".mobile-menu");
 
-    hamburger.classList.toggle('open', this._mobileMenuOpen);
-    hamburger.setAttribute('aria-expanded', this._mobileMenuOpen);
-    mobileMenu.classList.toggle('open', this._mobileMenuOpen);
+    hamburger.classList.toggle("open", this._mobileMenuOpen);
+    hamburger.setAttribute("aria-expanded", this._mobileMenuOpen);
+    mobileMenu.classList.toggle("open", this._mobileMenuOpen);
   }
 
   initTheme() {
-    const stored = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = stored || (prefersDark ? 'dark' : 'light');
+    const stored = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+    const theme = stored || (prefersDark ? "dark" : "light");
     this.setTheme(theme);
   }
 
   toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
+    const current = document.documentElement.getAttribute("data-theme");
+    const next = current === "dark" ? "light" : "dark";
     this.setTheme(next);
   }
 
   setTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    this.setAttribute('theme', theme);
-    localStorage.setItem('theme', theme);
+    document.documentElement.setAttribute("data-theme", theme);
+    this.setAttribute("theme", theme);
+    localStorage.setItem("theme", theme);
   }
 
   highlightCurrentPage() {
     const path = window.location.pathname;
-    const links = this.shadowRoot.querySelectorAll('.nav-link');
+    const links = this.shadowRoot.querySelectorAll(".nav-link");
 
     links.forEach((link) => {
-      const href = link.getAttribute('href');
-      if (href === path || (href !== '/' && path.startsWith(href))) {
-        link.classList.add('active');
+      const href = link.getAttribute("href");
+      if (href === path || (href !== "/" && path.startsWith(href))) {
+        link.classList.add("active");
       }
     });
   }
 }
 
-customElements.define('gp-site-header', GpSiteHeader);
+customElements.define("gp-site-header", GpSiteHeader);
