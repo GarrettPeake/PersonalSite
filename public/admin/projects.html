@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Projects | Admin | Garrett Peake</title>
+  <link rel="stylesheet" href="/styles/theme.css">
+  <link rel="stylesheet" href="/styles/base.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <link rel="stylesheet" href="/styles/admin.css">
+  <link rel="stylesheet" href="/styles/pages/admin-projects.css">
+  <script type="module" src="/components/core/gp-theme-toggle.js"></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="logo">GP</a>
+        <span class="admin-badge">Admin</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin/" class="nav-item">Dashboard</a>
+        <a href="/admin/posts" class="nav-item">Posts</a>
+        <a href="/admin/drafts" class="nav-item">Drafts</a>
+        <a href="/admin/photos" class="nav-item">Photos</a>
+        <a href="/admin/projects" class="nav-item active">Projects</a>
+        <a href="/admin/tracking" class="nav-item">Tracking</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <gp-theme-toggle></gp-theme-toggle>
+        <button id="logout-btn" class="btn-logout">Logout</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1>Projects</h1>
+        <button id="add-project-btn" class="btn btn--primary">+ Add Project</button>
+      </header>
+
+      <div id="projects-list" class="projects-list">
+        <p class="loading">Loading projects...</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create/Edit Project Dialog -->
+  <div id="project-dialog" class="dialog-overlay" hidden>
+    <div class="dialog dialog--large">
+      <h3 id="dialog-title">Add Project</h3>
+      <form id="project-form" class="project-form">
+        <input type="hidden" id="project-id">
+
+        <div class="form-row">
+          <div class="form-group form-group--flex">
+            <label for="project-title">Title</label>
+            <input type="text" id="project-title" name="title" required placeholder="Project name">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Icon</label>
+          <div class="icon-type-selector">
+            <label class="radio-label">
+              <input type="radio" name="iconType" value="svg" checked>
+              <span>SVG Code</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="iconType" value="image">
+              <span>Upload Image</span>
+            </label>
+          </div>
+          <div id="icon-svg-input" class="icon-input-area">
+            <textarea id="icon-svg" name="iconSvg" rows="4" placeholder="<svg viewBox='0 0 24 24'>...</svg>"></textarea>
+            <div id="svg-preview" class="svg-preview"></div>
+          </div>
+          <div id="icon-image-input" class="icon-input-area" hidden>
+            <div class="icon-upload-row">
+              <input type="file" id="icon-file" accept="image/*">
+              <input type="text" id="icon-url" placeholder="Or paste image URL" class="form-input--mono">
+            </div>
+            <div id="image-preview" class="image-preview"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="project-description">Description (Markdown)</label>
+          <div class="description-editor">
+            <textarea id="project-description" name="description" rows="5" placeholder="Project description with **markdown** support"></textarea>
+            <div class="preview-toggle">
+              <button type="button" id="toggle-preview" class="btn btn--sm btn--secondary">Preview</button>
+            </div>
+            <div id="description-preview" class="description-preview" hidden></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Content Pieces</label>
+          <div id="content-pieces" class="content-pieces">
+            <!-- Content pieces will be added here dynamically -->
+          </div>
+          <button type="button" id="add-content-btn" class="btn btn--secondary btn--sm">+ Add Content Piece</button>
+        </div>
+
+        <div class="dialog-actions">
+          <button type="button" id="project-cancel" class="btn btn--secondary">Cancel</button>
+          <button type="submit" class="btn btn--primary">Save Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Content Piece Dialog (for adding/editing content pieces) -->
+  <div id="content-piece-dialog" class="dialog-overlay" hidden>
+    <div class="dialog dialog--wide">
+      <h3 id="content-piece-title">Add Content Piece</h3>
+      <form id="content-piece-form">
+        <input type="hidden" id="content-piece-index" value="-1">
+
+        <div class="form-group">
+          <label>Type</label>
+          <div class="type-selector">
+            <label class="radio-label">
+              <input type="radio" name="contentType" value="image" checked>
+              <span>Image</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="contentType" value="iframe">
+              <span>Website (iframe)</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="content-image-input" class="form-group">
+          <label>Image</label>
+          <div class="content-upload-row">
+            <input type="file" id="content-file" accept="image/*">
+            <span class="or-text">or</span>
+            <input type="text" id="content-image-url" placeholder="Paste image URL" class="form-input--mono">
+          </div>
+          <div id="content-image-preview" class="content-preview"></div>
+        </div>
+
+        <div id="content-iframe-input" class="form-group" hidden>
+          <label for="content-iframe-url">Website URL</label>
+          <input type="url" id="content-iframe-url" placeholder="https://example.com" class="form-input--mono">
+        </div>
+
+        <div class="form-group">
+          <label for="content-description">Caption (Markdown)</label>
+          <textarea id="content-description" rows="3" placeholder="Description of this content"></textarea>
+        </div>
+
+        <div class="dialog-actions">
+          <button type="button" id="content-piece-cancel" class="btn btn--secondary">Cancel</button>
+          <button type="submit" class="btn btn--primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm Delete Dialog -->
+  <div id="confirm-dialog" class="dialog-overlay" hidden>
+    <div class="dialog">
+      <h3>Delete Project</h3>
+      <p>Are you sure you want to delete this project? This cannot be undone.</p>
+      <div class="dialog-actions">
+        <button id="dialog-cancel" class="btn btn--secondary">Cancel</button>
+        <button id="dialog-confirm" class="btn btn--danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/markdown.js"></script>
+  <script src="/js/admin/projects.js"></script>
+</body>
+</html>
