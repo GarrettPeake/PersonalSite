@@ -46,12 +46,15 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Modular backend architecture (DAOs, handlers, templates)
 - [x] Vitest testing infrastructure for Workers
 - [x] File upload to R2 (`POST /api/admin/upload`)
-- [x] Comprehensive test coverage for all backend modules (449 tests)
+- [x] Comprehensive test coverage for all backend modules (527 tests)
 - [x] Optional post descriptions for blog listing (replaces auto-generated excerpts)
 - [x] Admin photo management page with upload, edit, delete
 - [x] Photo CRUD API endpoints (public and admin)
 - [x] EXIF stripping on photo upload for privacy
 - [x] Public photography page loads from API
+- [x] Admin project management page with CRUD and reorder
+- [x] Project API endpoints (public and admin)
+- [x] Home page dynamically loads projects from API
 
 ### Not Yet Implemented
 
@@ -89,10 +92,12 @@ All data uses prefixed keys in a single KV namespace:
 | `session:{token}` | Auth session data |
 | `tracking:{slug}` | Tracking slug data + events |
 | `photo:{uuid}` | Photo metadata |
+| `project:{uuid}` | Project metadata with content pieces |
 | `index:drafts` | Array of all draft UUIDs |
 | `index:posts` | Array of all post UUIDs |
 | `index:tracking` | Array of all tracking slugs |
 | `index:photos` | Array of all photo UUIDs |
+| `index:projects` | Array of all project UUIDs |
 
 ## Routing
 
@@ -129,7 +134,8 @@ Worker handles:
 │   │   ├── post.dao.ts   # Post CRUD + publish/unpublish
 │   │   ├── tracking.dao.ts # Tracking CRUD + events
 │   │   ├── session.dao.ts  # Session CRUD
-│   │   └── photo.dao.ts  # Photo CRUD operations
+│   │   ├── photo.dao.ts  # Photo CRUD operations
+│   │   └── project.dao.ts # Project CRUD + reorder operations
 │   ├── /handlers
 │   │   ├── /api
 │   │   │   ├── public.ts    # GET /api/posts, POST /api/track
@@ -138,7 +144,8 @@ Worker handles:
 │   │   │   ├── posts.ts     # /api/admin/posts/* endpoints
 │   │   │   ├── tracking.ts  # /api/admin/tracking/* endpoints
 │   │   │   ├── upload.ts    # POST /api/admin/upload
-│   │   │   └── photos.ts    # /api/photos and /api/admin/photos/* endpoints
+│   │   │   ├── photos.ts    # /api/photos and /api/admin/photos/* endpoints
+│   │   │   └── projects.ts  # /api/projects and /api/admin/projects/* endpoints
 │   │   └── /pages
 │   │       ├── blog.ts      # /blog/:slug handler
 │   │       ├── draft.ts     # /draft/share/:token handler
@@ -163,7 +170,8 @@ Worker handles:
 │       │   ├── post.dao.test.ts
 │       │   ├── tracking.dao.test.ts
 │       │   ├── session.dao.test.ts
-│       │   └── photo.dao.test.ts
+│       │   ├── photo.dao.test.ts
+│       │   └── project.dao.test.ts
 │       ├── /handlers
 │       │   ├── /api
 │       │   │   ├── public.test.ts
@@ -172,7 +180,8 @@ Worker handles:
 │       │   │   ├── posts.test.ts
 │       │   │   ├── tracking.test.ts
 │       │   │   ├── upload.test.ts
-│       │   │   └── photos.test.ts
+│       │   │   ├── photos.test.ts
+│       │   │   └── projects.test.ts
 │       │   └── /pages
 │       │       ├── blog.test.ts
 │       │       ├── draft.test.ts
@@ -200,6 +209,7 @@ Worker handles:
     │   ├── posts.html    # Published posts list
     │   ├── drafts.html   # Drafts list
     │   ├── photos.html   # Photo management
+    │   ├── projects.html # Project management with reorder
     │   └── tracking.html # Tracking links management
     ├── /js
     │   ├── blog.js       # Blog listing page logic
@@ -212,6 +222,7 @@ Worker handles:
     │       ├── posts.js      # Posts list management
     │       ├── drafts.js     # Drafts list management
     │       ├── photos.js     # Photo management
+    │       ├── projects.js   # Project management with reorder
     │       └── tracking.js   # Tracking links management
     ├── /lib
     │   └── markdown.js   # Client-side markdown renderer for preview
@@ -232,6 +243,7 @@ Worker handles:
     │       ├── admin-posts.css    # Posts list styles
     │       ├── admin-drafts.css   # Drafts list styles
     │       ├── admin-photos.css   # Photo management styles
+    │       ├── admin-projects.css # Project management styles
     │       └── admin-tracking.css # Tracking page styles
     └── /components
         ├── /core
@@ -275,6 +287,7 @@ Set via `wrangler secret put <name>`:
 | POST | `/api/track` | Record tracking event |
 | GET | `/api/draft/share/:token` | Get draft by share token |
 | GET | `/api/photos` | List all photos |
+| GET | `/api/projects` | List all projects |
 
 ### Auth
 
@@ -310,6 +323,12 @@ Set via `wrangler secret put <name>`:
 | GET | `/api/admin/photos/:id` | Get photo by ID |
 | PUT | `/api/admin/photos/:id` | Update photo metadata |
 | DELETE | `/api/admin/photos/:id` | Delete photo |
+| GET | `/api/admin/projects` | List all projects |
+| POST | `/api/admin/projects` | Create new project |
+| GET | `/api/admin/projects/:id` | Get project by ID |
+| PUT | `/api/admin/projects/:id` | Update project |
+| DELETE | `/api/admin/projects/:id` | Delete project |
+| PUT | `/api/admin/projects/reorder` | Reorder projects |
 
 ## CSS Architecture
 
@@ -571,6 +590,7 @@ Each entity has its own DAO file with CRUD operations:
 - `tracking.dao.ts`: Tracking operations + events (`getTrackingSlug`, `listTrackingSlugs`, `createTrackingSlug`, `deleteTrackingSlug`, `recordTrackingEvent`)
 - `session.dao.ts`: Session operations (`createSession`, `getSession`, `deleteSession`)
 - `photo.dao.ts`: Photo operations (`getPhoto`, `listPhotos`, `createPhoto`, `updatePhoto`, `deletePhoto`)
+- `project.dao.ts`: Project operations + reorder (`getProject`, `listProjects`, `createProject`, `updateProject`, `deleteProject`, `reorderProjects`)
 - `base.ts`: Shared index management (`getIndex`, `addToIndex`, `removeFromIndex`)
 
 **Handlers (`src/handlers/`)**
@@ -581,6 +601,7 @@ Request handlers are split by route type:
 - `api/posts.ts`: Admin post endpoints
 - `api/tracking.ts`: Admin tracking endpoints
 - `api/photos.ts`: Photo endpoints (public and admin)
+- `api/projects.ts`: Project endpoints (public and admin) with reorder
 - `pages/*.ts`: Page rendering handlers
 
 **Templates (`src/templates/`)**

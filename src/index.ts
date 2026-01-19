@@ -48,6 +48,15 @@ import {
   handleUpdatePhoto,
   handleDeletePhoto,
 } from './handlers/api/photos';
+import {
+  handleListProjectsPublic,
+  handleAdminListProjects,
+  handleAdminGetProject,
+  handleCreateProject,
+  handleUpdateProject,
+  handleDeleteProject,
+  handleReorderProjects,
+} from './handlers/api/projects';
 
 // Utilities
 import { isAuthenticated } from './middleware/auth';
@@ -123,6 +132,11 @@ export async function handleApi(request: Request, env: Env, path: string): Promi
     // GET /api/photos - List all photos (public)
     if (path === '/api/photos' && method === 'GET') {
       return handleListPhotosPublic(env);
+    }
+
+    // GET /api/projects - List all projects (public)
+    if (path === '/api/projects' && method === 'GET') {
+      return handleListProjectsPublic(env);
     }
 
     // GET /api/draft/share/:token - Get draft by share token (public)
@@ -304,6 +318,43 @@ export async function handleApi(request: Request, env: Env, path: string): Promi
       if (path.match(/^\/api\/admin\/photos\/[^/]+$/) && method === 'DELETE') {
         const id = path.replace('/api/admin/photos/', '');
         return handleDeletePhoto(env, id);
+      }
+
+      // -----------------------------------------------------------------------
+      // Projects
+      // -----------------------------------------------------------------------
+
+      // PUT /api/admin/projects/reorder - Reorder projects (must be before :id routes)
+      if (path === '/api/admin/projects/reorder' && method === 'PUT') {
+        return handleReorderProjects(request, env);
+      }
+
+      // GET /api/admin/projects - List all projects
+      if (path === '/api/admin/projects' && method === 'GET') {
+        return handleAdminListProjects(env);
+      }
+
+      // POST /api/admin/projects - Create new project
+      if (path === '/api/admin/projects' && method === 'POST') {
+        return handleCreateProject(request, env);
+      }
+
+      // GET /api/admin/projects/:id - Get single project
+      if (path.match(/^\/api\/admin\/projects\/[^/]+$/) && method === 'GET') {
+        const id = path.replace('/api/admin/projects/', '');
+        return handleAdminGetProject(env, id);
+      }
+
+      // PUT /api/admin/projects/:id - Update project
+      if (path.match(/^\/api\/admin\/projects\/[^/]+$/) && method === 'PUT') {
+        const id = path.replace('/api/admin/projects/', '');
+        return handleUpdateProject(request, env, id);
+      }
+
+      // DELETE /api/admin/projects/:id - Delete project
+      if (path.match(/^\/api\/admin\/projects\/[^/]+$/) && method === 'DELETE') {
+        const id = path.replace('/api/admin/projects/', '');
+        return handleDeleteProject(env, id);
       }
     }
 

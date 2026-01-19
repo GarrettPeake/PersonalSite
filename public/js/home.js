@@ -3,6 +3,9 @@
 (function() {
   'use strict';
 
+  // State
+  let projects = [];
+
   // Theme toggle functionality
   function initThemeToggle() {
     const themeToggle = document.getElementById('theme-toggle');
@@ -38,6 +41,116 @@
     });
   }
 
+  // Fetch projects from API
+  async function loadProjects() {
+    try {
+      const res = await fetch('/api/projects');
+      if (!res.ok) throw new Error('Failed to load projects');
+      projects = await res.json();
+      renderProjects();
+    } catch (err) {
+      console.error('Failed to load projects:', err);
+      // Show fallback message
+      const shelfItems = document.getElementById('shelf-items');
+      if (shelfItems) {
+        shelfItems.innerHTML = '<p class="shelf-empty">No projects available</p>';
+      }
+    }
+  }
+
+  // Render projects to shelf and carousel
+  function renderProjects() {
+    const shelfItems = document.getElementById('shelf-items');
+    const carouselTrack = document.querySelector('.carousel-track');
+
+    if (!shelfItems) return;
+
+    if (projects.length === 0) {
+      shelfItems.innerHTML = '<p class="shelf-empty">No projects yet</p>';
+      if (carouselTrack) {
+        carouselTrack.innerHTML = `
+          <div class="carousel-slide active" data-project="0">
+            <div class="slide-placeholder">
+              <span>No projects yet</span>
+            </div>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    // Render shelf items
+    shelfItems.innerHTML = projects.map((project, index) => `
+      <div
+        class="shelf-item ${index === 0 ? 'active' : ''}"
+        data-project="${index}"
+        data-id="${project.id}"
+        data-title="${escapeAttr(project.title)}"
+        data-description="${escapeAttr(project.description)}"
+      >
+        <div class="shelf-item-icon">
+          ${project.iconType === 'svg' ? project.icon : `<img src="${escapeAttr(project.icon)}" alt="">`}
+        </div>
+        <div class="shelf-item-legend">${escapeHtml(project.title)}</div>
+      </div>
+    `).join('');
+
+    // Render carousel slides
+    if (carouselTrack) {
+      carouselTrack.innerHTML = projects.map((project, index) => {
+        const content = renderCarouselContent(project, index);
+        return `
+          <div class="carousel-slide ${index === 0 ? 'active' : ''}" data-project="${index}">
+            ${content}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Set initial description
+    const descriptionText = document.querySelector('.description-text');
+    if (descriptionText && projects.length > 0) {
+      descriptionText.innerHTML = renderMarkdownSimple(projects[0].description) || 'Select a project';
+    }
+
+    // Initialize shelf interactions
+    initShelf();
+  }
+
+  // Render carousel content for a project
+  function renderCarouselContent(project, index) {
+    if (!project.contentPieces || project.contentPieces.length === 0) {
+      return `
+        <div class="slide-placeholder">
+          <span>${escapeHtml(project.title)}</span>
+        </div>
+      `;
+    }
+
+    // Show first content piece
+    const piece = project.contentPieces[0];
+
+    if (piece.type === 'iframe') {
+      return `<iframe src="${escapeAttr(piece.url)}" title="${escapeAttr(project.title)}" loading="lazy"></iframe>`;
+    } else {
+      return `
+        <div class="slide-image">
+          <img src="${escapeAttr(piece.url)}" alt="${escapeAttr(piece.description || project.title)}" loading="lazy">
+          ${piece.description ? `<div class="slide-caption">${renderMarkdownSimple(piece.description)}</div>` : ''}
+        </div>
+      `;
+    }
+  }
+
+  // Simple markdown renderer for descriptions (bold, italic, links)
+  function renderMarkdownSimple(text) {
+    if (!text) return '';
+    return escapeHtml(text)
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  }
+
   // Shelf hover functionality
   function initShelf() {
     const shelfItems = document.getElementById('shelf-items');
@@ -48,47 +161,55 @@
 
     const descriptionText = descriptionBox.querySelector('.description-text');
 
+    // Remove existing listeners by cloning (simple approach)
+    const newShelfItems = shelfItems.cloneNode(true);
+    shelfItems.parentNode.replaceChild(newShelfItems, shelfItems);
+
     // Handle shelf item interactions
-    shelfItems.addEventListener('mouseover', (e) => {
+    newShelfItems.addEventListener('mouseover', (e) => {
       const item = e.target.closest('.shelf-item');
       if (!item) return;
 
-      const description = item.dataset.description;
-      if (description && descriptionText) {
-        descriptionText.textContent = description;
+      const projectIndex = parseInt(item.dataset.project);
+      const project = projects[projectIndex];
+      if (project && descriptionText) {
+        descriptionText.innerHTML = renderMarkdownSimple(project.description) || '';
       }
     });
 
-    shelfItems.addEventListener('mouseout', (e) => {
+    newShelfItems.addEventListener('mouseout', (e) => {
       const item = e.target.closest('.shelf-item');
       if (!item) return;
 
       // Reset to active item's description or default
-      const activeItem = shelfItems.querySelector('.shelf-item.active');
+      const activeItem = newShelfItems.querySelector('.shelf-item.active');
       if (activeItem && descriptionText) {
-        descriptionText.textContent = activeItem.dataset.description || 'Select a project';
+        const activeIndex = parseInt(activeItem.dataset.project);
+        const project = projects[activeIndex];
+        descriptionText.innerHTML = project ? renderMarkdownSimple(project.description) : 'Select a project';
       } else if (descriptionText) {
-        descriptionText.textContent = 'Hover over a project to see details';
+        descriptionText.innerHTML = 'Hover over a project to see details';
       }
     });
 
-    shelfItems.addEventListener('click', (e) => {
+    newShelfItems.addEventListener('click', (e) => {
       const item = e.target.closest('.shelf-item');
       if (!item) return;
 
       // Update active state
-      shelfItems.querySelectorAll('.shelf-item').forEach(i => i.classList.remove('active'));
+      newShelfItems.querySelectorAll('.shelf-item').forEach(i => i.classList.remove('active'));
       item.classList.add('active');
 
       // Update description
-      if (descriptionText) {
-        descriptionText.textContent = item.dataset.description || '';
+      const projectIndex = parseInt(item.dataset.project);
+      const project = projects[projectIndex];
+      if (project && descriptionText) {
+        descriptionText.innerHTML = renderMarkdownSimple(project.description) || '';
       }
 
       // Update carousel if present
       if (carousel) {
-        const projectId = item.dataset.project;
-        updateCarousel(projectId);
+        updateCarousel(item.dataset.project);
       }
     });
   }
@@ -112,44 +233,6 @@
     });
   }
 
-  // Project URL data (you can extend this with actual project URLs)
-  const projectData = {
-    0: { url: null, type: 'placeholder' },
-    1: { url: null, type: 'placeholder' },
-    2: { url: null, type: 'placeholder' },
-    3: { url: null, type: 'placeholder' }
-  };
-
-  // Initialize carousel slides
-  function initCarousel() {
-    const track = document.querySelector('.carousel-track');
-    if (!track) return;
-
-    // Create slides for each project
-    const existingSlide = track.querySelector('.carousel-slide');
-
-    Object.keys(projectData).forEach((id, index) => {
-      if (index === 0) return; // First slide already exists
-
-      const slide = document.createElement('div');
-      slide.className = 'carousel-slide';
-      slide.dataset.project = id;
-
-      const project = projectData[id];
-      if (project.url) {
-        slide.innerHTML = `<iframe src="${project.url}" title="Project preview"></iframe>`;
-      } else {
-        slide.innerHTML = `
-          <div class="slide-placeholder">
-            <span>Project preview</span>
-          </div>
-        `;
-      }
-
-      track.appendChild(slide);
-    });
-  }
-
   // Handle carousel click to navigate to project
   function initCarouselNavigation() {
     const carousel = document.getElementById('project-carousel');
@@ -163,13 +246,30 @@
     });
   }
 
+  // Utility functions
+  function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function escapeAttr(text) {
+    if (!text) return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
   // Initialize all functionality
   function init() {
     initThemeToggle();
     initMobileMenu();
-    initShelf();
-    initCarousel();
     initCarouselNavigation();
+    loadProjects();
   }
 
   // Run on DOM ready

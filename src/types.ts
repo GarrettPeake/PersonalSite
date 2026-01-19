@@ -34,10 +34,12 @@ export const KV_PREFIX = {
   SESSION: 'session:',
   TRACKING: 'tracking:',
   PHOTO: 'photo:',
+  PROJECT: 'project:',
   INDEX_DRAFTS: 'index:drafts',
   INDEX_POSTS: 'index:posts',
   INDEX_TRACKING: 'index:tracking',
   INDEX_PHOTOS: 'index:photos',
+  INDEX_PROJECTS: 'index:projects',
 } as const;
 
 // ============================================================================
@@ -66,3 +68,43 @@ export type PhotoCreateInput = Omit<Photo, 'id' | 'publishedAt' | 'updatedAt'>;
  * Input for updating photo metadata
  */
 export type PhotoUpdateInput = Pick<Photo, 'location' | 'description'>;
+
+// ============================================================================
+// Project Types
+// ============================================================================
+
+/**
+ * Content piece within a project (image or iframe)
+ */
+export interface ContentPiece {
+  id: string;
+  type: 'image' | 'iframe';
+  url: string;           // R2 URL for images, external URL for iframes
+  description: string;   // Markdown-formatted caption
+  order: number;         // Order within project
+}
+
+/**
+ * Project entity stored in KV
+ */
+export interface Project {
+  id: string;
+  title: string;
+  icon: string;              // SVG string OR R2 image URL
+  iconType: 'svg' | 'image'; // Determines how to render
+  description: string;       // Markdown-formatted
+  contentPieces: ContentPiece[];
+  order: number;             // For custom ordering on home page
+  createdAt: string;         // ISO timestamp
+  updatedAt: string;         // ISO timestamp
+}
+
+/**
+ * Input for creating a new project
+ */
+export type ProjectCreateInput = Omit<Project, 'id' | 'order' | 'createdAt' | 'updatedAt'>;
+
+/**
+ * Input for updating a project
+ */
+export type ProjectUpdateInput = Partial<Omit<Project, 'id' | 'createdAt' | 'updatedAt'>>;
