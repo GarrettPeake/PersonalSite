@@ -17,7 +17,7 @@ async function loadPhotos() {
 
   } catch (err) {
     console.error('Failed to load photos:', err);
-    photoGrid.innerHTML = '<p class="empty">No photos yet</p>';
+    photoGrid.innerHTML = '';
   }
 }
 
@@ -25,7 +25,7 @@ function renderPhotoGrid() {
   const photoGrid = document.getElementById('photo-grid');
 
   if (photos.length === 0) {
-    photoGrid.innerHTML = '<p class="empty">No photos yet</p>';
+    photoGrid.innerHTML = '';
     return;
   }
 
