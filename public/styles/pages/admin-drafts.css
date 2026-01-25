@@ -1,15 +1,9 @@
 /**
  * Admin Drafts Page Styles
  *
- * Drafts table with share URL input.
- * Uses: .data-table, .form-input--mono, .untitled from components.css.
+ * Drafts table styling for proper HTML tables.
+ * Uses: .admin-table, .table-wrapper, .untitled from components.css.
  */
-
-/* Table Grid Columns */
-.table-header,
-.table-row {
-  grid-template-columns: 2fr 1fr 200px;
-}
 
 /* Cell styling */
 .draft-title {
@@ -30,13 +24,14 @@
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
+/* Actions - button row */
 .draft-actions {
   display: flex;
   gap: var(--space-xs);
-  flex-wrap: nowrap;
+  justify-content: flex-end;
 }
 
-/* Share URL */
+/* Share URL dialog */
 .share-url-wrapper {
   display: flex;
   gap: var(--space-sm);
@@ -51,23 +46,4 @@
   color: var(--color-text);
   font-family: var(--font-mono);
   font-size: 0.875rem;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .table-header,
-  .table-row {
-    grid-template-columns: 1fr 180px;
-  }
-
-  .table-header > *:nth-child(2),
-  .table-row > *:nth-child(2) {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .draft-actions {
-    flex-direction: column;
-  }
 }

@@ -9,10 +9,53 @@
   <link rel="stylesheet" href="/styles/base.css">
   <link rel="stylesheet" href="/styles/components.css">
   <link rel="stylesheet" href="/styles/pages/login.css">
-  <script type="module" src="/components/core/gp-theme-toggle.js"></script>
+  <script>
+    (function () {
+      const theme =
+        localStorage.getItem("theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
 </head>
-<body>
+<body class="login-page">
   <main class="login-container">
+    <!-- Theme Toggle Scene -->
+    <div class="theme-scene" id="theme-toggle">
+      <!-- Sun/Moon -->
+      <div class="celestial-body sun"></div>
+      <div class="celestial-body moon"></div>
+
+      <!-- Mountains -->
+      <svg
+        class="mountains"
+        viewBox="0 0 320 120"
+        preserveAspectRatio="xMidYMax slice"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g transform="matrix(1,0,0,1,0,0)">
+          <path d="M0,100L80,20L160,100L0,100Z" class="mountain" />
+        </g>
+        <g transform="matrix(1,0,0,1,0,0)">
+          <path d="M60,100L160,0L260,100L60,100Z" class="mountain" />
+        </g>
+        <g transform="matrix(1,0,0,1,0,0)">
+          <path d="M160,100L240,15L320,100L160,100Z" class="mountain" />
+        </g>
+        <rect x="0" y="100" width="320" height="20" class="mountain" />
+        <path d="M80,34L38,80L38,96L56,80L80,34Z" class="mountain-snow" />
+        <path d="M88,47L80,74L103,96L106,66L88,47Z" class="mountain-snow" />
+        <path d="M160,16L118,70L116,100L139,62L160,16Z" class="mountain-snow" />
+        <path d="M160,45L149,85L154,110L168,87" class="mountain-snow" />
+        <path d="M231,31L200,74L202,96L231,31Z" class="mountain-snow" />
+        <path d="M240,22L221,88L246,96L240,22Z" class="mountain-snow" />
+        <path d="M141,76L127,100L145,108L141,76Z" class="mountain-snow" />
+      </svg>
+    </div>
+
+    <!-- Login Form -->
     <div class="login-box">
       <h1>Admin</h1>
 
@@ -41,12 +84,10 @@
 
         <div id="error" class="error" hidden></div>
 
-        <button type="submit" class="btn-primary">Login</button>
+        <button type="submit" class="btn btn--primary btn--block">Login</button>
       </form>
 
-      <div class="theme-toggle-wrapper">
-        <gp-theme-toggle></gp-theme-toggle>
-      </div>
+      <a href="/" class="back-link">&larr; Back to site</a>
     </div>
   </main>
 

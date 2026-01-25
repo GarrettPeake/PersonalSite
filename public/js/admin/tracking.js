@@ -58,33 +58,41 @@ function renderTracking(items) {
   items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   trackingList.innerHTML = `
-    <div class="table-header">
-      <div>Tag</div>
-      <div>Link</div>
-      <div>Status</div>
-      <div>Visits</div>
-      <div>Actions</div>
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Tag</th>
+            <th>Link</th>
+            <th class="col-status">Status</th>
+            <th>Visits</th>
+            <th class="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(item => {
+            const visited = item.events && item.events.length > 0;
+            const visitCount = item.events ? item.events.length : 0;
+            return `
+              <tr data-slug="${item.slug}">
+                <td class="tracking-tag">${escapeHtml(item.tag)}</td>
+                <td class="tracking-url mono">/s/${escapeHtml(item.slug)}</td>
+                <td class="tracking-status">
+                  <span class="status-dot ${visited ? 'visited' : ''}"></span>
+                  <span>${visited ? 'Visited' : 'Not visited'}</span>
+                </td>
+                <td class="tracking-visits">${visitCount} ${visitCount === 1 ? 'visit' : 'visits'}</td>
+                <td class="tracking-actions">
+                  <button class="btn-action" data-action="copy" data-slug="${item.slug}">Copy</button>
+                  <button class="btn-action" data-action="events" data-slug="${item.slug}" ${!visited ? 'disabled' : ''}>Events</button>
+                  <button class="btn-action danger" data-action="delete" data-slug="${item.slug}">Delete</button>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
     </div>
-    ${items.map(item => {
-      const visited = item.events && item.events.length > 0;
-      const visitCount = item.events ? item.events.length : 0;
-      return `
-        <div class="table-row" data-slug="${item.slug}">
-          <div class="tracking-tag">${escapeHtml(item.tag)}</div>
-          <div class="tracking-url">/s/${escapeHtml(item.slug)}</div>
-          <div class="tracking-status">
-            <span class="status-dot ${visited ? 'visited' : ''}"></span>
-            <span>${visited ? 'Visited' : 'Not visited'}</span>
-          </div>
-          <div class="tracking-visits">${visitCount} ${visitCount === 1 ? 'visit' : 'visits'}</div>
-          <div class="tracking-actions">
-            <button class="btn-action" data-action="copy" data-slug="${item.slug}">Copy</button>
-            <button class="btn-action" data-action="events" data-slug="${item.slug}" ${!visited ? 'disabled' : ''}>Events</button>
-            <button class="btn-action danger" data-action="delete" data-slug="${item.slug}">Delete</button>
-          </div>
-        </div>
-      `;
-    }).join('')}
   `;
 
   // Add event listeners for action buttons

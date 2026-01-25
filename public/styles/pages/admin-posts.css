@@ -1,17 +1,11 @@
 /**
  * Admin Posts Page Styles
  *
- * Posts table with responsive grid columns.
- * Uses: .data-table, .data-table__header, .data-table__row from components.css.
+ * Posts table styling for proper HTML tables.
+ * Uses: .admin-table, .table-wrapper from components.css.
  */
 
-/* Table Grid Columns */
-.table-header,
-.table-row {
-  grid-template-columns: 2fr 1fr 1fr 150px;
-}
-
-/* Cell styling - uses .title, .meta, .mono from components.css */
+/* Cell styling */
 .post-title {
   font-weight: 600;
 }
@@ -36,33 +30,9 @@
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
-/* Actions - uses .actions from components.css */
+/* Actions - button row */
 .post-actions {
   display: flex;
   gap: var(--space-xs);
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .table-header,
-  .table-row {
-    grid-template-columns: 1fr 1fr 120px;
-  }
-
-  .table-header > *:nth-child(2),
-  .table-row > *:nth-child(2) {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .table-header,
-  .table-row {
-    grid-template-columns: 1fr 100px;
-  }
-
-  .table-header > *:nth-child(3),
-  .table-row > *:nth-child(3) {
-    display: none;
-  }
+  justify-content: flex-end;
 }

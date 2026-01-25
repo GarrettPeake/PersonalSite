@@ -50,27 +50,35 @@ function renderDrafts(drafts) {
   drafts.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
   draftsList.innerHTML = `
-    <div class="table-header">
-      <div>Title</div>
-      <div>Last Updated</div>
-      <div>Actions</div>
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th class="col-title">Title</th>
+            <th class="col-date">Last Updated</th>
+            <th class="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${drafts.map(draft => `
+            <tr data-id="${draft.id}">
+              <td class="draft-title">
+                <a href="/admin/editor?draft=${draft.id}">
+                  ${draft.title ? escapeHtml(draft.title) : '<span class="untitled">Untitled</span>'}
+                </a>
+              </td>
+              <td class="draft-date">${formatDate(draft.updatedAt)}</td>
+              <td class="draft-actions">
+                <a href="/admin/editor?draft=${draft.id}" class="btn-action">Edit</a>
+                <button class="btn-action" data-action="share" data-id="${draft.id}">Share</button>
+                <button class="btn-action primary" data-action="publish" data-id="${draft.id}">Publish</button>
+                <button class="btn-action danger" data-action="delete" data-id="${draft.id}">Delete</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
     </div>
-    ${drafts.map(draft => `
-      <div class="table-row" data-id="${draft.id}">
-        <div class="draft-title">
-          <a href="/admin/editor?draft=${draft.id}">
-            ${draft.title ? escapeHtml(draft.title) : '<span class="untitled">Untitled</span>'}
-          </a>
-        </div>
-        <div class="draft-date">${formatDate(draft.updatedAt)}</div>
-        <div class="draft-actions">
-          <a href="/admin/editor?draft=${draft.id}" class="btn-action">Edit</a>
-          <button class="btn-action" data-action="share" data-id="${draft.id}">Share</button>
-          <button class="btn-action primary" data-action="publish" data-id="${draft.id}">Publish</button>
-          <button class="btn-action danger" data-action="delete" data-id="${draft.id}">Delete</button>
-        </div>
-      </div>
-    `).join('')}
   `;
 
   // Add event listeners for action buttons
@@ -81,7 +89,7 @@ function renderDrafts(drafts) {
 
 // Handle action buttons
 function handleAction(action, id) {
-  const draft = document.querySelector(`[data-id="${id}"]`);
+  const draft = document.querySelector(`tr[data-id="${id}"]`);
   const title = draft?.querySelector('.draft-title a')?.textContent?.trim() || 'this draft';
 
   if (action === 'publish') {

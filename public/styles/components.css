@@ -357,12 +357,116 @@
 }
 
 /* ==========================================================================
-   DATA TABLES
+   DATA TABLES (Proper HTML tables)
+   ========================================================================== */
+
+/**
+ * Admin table - proper HTML table with neo-brutalist styling
+ * Usage: <table class="admin-table">...</table>
+ */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 3px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.admin-table thead {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.admin-table th {
+  padding: var(--space-md);
+  text-align: left;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  border-bottom: 2px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: var(--space-md);
+  border-bottom: 1px dashed var(--color-border);
+  vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+}
+
+/* Cell content truncation */
+.admin-table .cell-truncate {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cell width hints */
+.admin-table .col-title {
+  width: 40%;
+  min-width: 200px;
+}
+
+.admin-table .col-slug {
+  width: 25%;
+  min-width: 150px;
+}
+
+.admin-table .col-date {
+  width: 15%;
+  min-width: 100px;
+  white-space: nowrap;
+}
+
+.admin-table .col-status {
+  width: 10%;
+  min-width: 100px;
+  white-space: nowrap;
+}
+
+.admin-table .col-actions {
+  width: auto;
+  min-width: 120px;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* Actions cell alignment */
+.admin-table td:last-child {
+  text-align: right;
+}
+
+.admin-table th:last-child {
+  text-align: right;
+}
+
+/* Table wrapper for horizontal scroll on mobile */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 3px solid var(--color-border);
+}
+
+.table-wrapper .admin-table {
+  border: none;
+  min-width: 600px;
+}
+
+/* ==========================================================================
+   DATA TABLES (Legacy grid-based - deprecated)
    ========================================================================== */
 
 /**
  * Data table - grid-based table layout
  * Usage: <div class="data-table">...</div>
+ * @deprecated Use .admin-table with proper <table> elements instead
  */
 .data-table {
   border: 3px solid var(--color-border);

@@ -1,15 +1,9 @@
 /**
  * Admin Tracking Page Styles
  *
- * Tracking links table with events dialog.
- * Uses: .data-table, .dialog, .status-dot from components.css.
+ * Tracking links table styling for proper HTML tables.
+ * Uses: .admin-table, .table-wrapper, .dialog, .status-dot from components.css.
  */
-
-/* Table Grid Columns */
-.table-header,
-.table-row {
-  grid-template-columns: 2fr 1fr 80px 100px 150px;
-}
 
 /* Cell styling */
 .tracking-tag {
@@ -34,10 +28,11 @@
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
-/* Actions */
+/* Actions - button row */
 .tracking-actions {
   display: flex;
   gap: var(--space-xs);
+  justify-content: flex-end;
 }
 
 /* Events Dialog - extends .dialog */
@@ -92,29 +87,4 @@
 
 .events-dialog .dialog-actions {
   margin-top: var(--space-lg);
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .table-header,
-  .table-row {
-    grid-template-columns: 1fr 100px 100px 120px;
-  }
-
-  .table-header > *:nth-child(2),
-  .table-row > *:nth-child(2) {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .table-header,
-  .table-row {
-    grid-template-columns: 1fr 80px 100px;
-  }
-
-  .table-header > *:nth-child(4),
-  .table-row > *:nth-child(4) {
-    display: none;
-  }
 }

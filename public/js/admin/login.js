@@ -2,6 +2,15 @@
 
 const form = document.getElementById('login-form');
 const errorEl = document.getElementById('error');
+const themeToggle = document.getElementById('theme-toggle');
+
+// Theme toggle handler
+themeToggle.addEventListener('click', () => {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+});
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
