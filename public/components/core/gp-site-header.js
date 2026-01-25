@@ -43,7 +43,7 @@ class GpSiteHeader extends HTMLElement {
         /* Logo */
         .logo {
           display: flex;
-          align-items: center;
+          align-items: baseline;
           text-decoration: none;
           color: var(--color-text, #1a1a1a);
           font-family: var(--font-display, 'Space Grotesk', sans-serif);
@@ -55,6 +55,17 @@ class GpSiteHeader extends HTMLElement {
         .logo:hover {
           text-decoration: none;
           color: var(--color-primary, #0066ff);
+        }
+
+        .logo:hover .page-suffix {
+          color: var(--color-primary, #0066ff);
+        }
+
+        .page-suffix {
+          font-size: 0.75rem;
+          font-weight: 500;
+          color: var(--color-accent, #ff6b00);
+          margin-left: 2px;
         }
 
         /* Navigation */
@@ -85,12 +96,7 @@ class GpSiteHeader extends HTMLElement {
           margin-right: 2px;
         }
 
-        .nav-link:hover,
-        .nav-link.active {
-          color: var(--color-primary, #0066ff);
-        }
-
-        .nav-link.active::before {
+        .nav-link:hover {
           color: var(--color-primary, #0066ff);
         }
 
@@ -256,13 +262,11 @@ class GpSiteHeader extends HTMLElement {
       </style>
 
       <header>
-        <a href="/" class="logo">Garrett Peake</a>
+        <a href="/" class="logo">Garrett Peake${this.getPageSuffix()}</a>
 
         <nav>
           <div class="nav-links">
-            <a href="/blog" class="nav-link">blog</a>
-            <a href="/about" class="nav-link">about</a>
-            <a href="/photography" class="nav-link">photography</a>
+            ${this.getNavLinks()}
           </div>
 
           <div class="theme-toggle-container" role="button" aria-label="Toggle theme" tabindex="0">
@@ -290,13 +294,29 @@ class GpSiteHeader extends HTMLElement {
       </header>
 
       <div class="mobile-menu">
-        <a href="/blog" class="nav-link">blog</a>
-        <a href="/about" class="nav-link">about</a>
-        <a href="/photography" class="nav-link">photography</a>
+        ${this.getNavLinks()}
       </div>
     `;
+  }
 
-    this.highlightCurrentPage();
+  getPageSuffix() {
+    const page = this.getAttribute('page');
+    if (!page) return '';
+    return `<span class="page-suffix">/${page}</span>`;
+  }
+
+  getNavLinks() {
+    const currentPage = this.getAttribute('page');
+    const allLinks = [
+      { href: '/blog', label: 'blog' },
+      { href: '/about', label: 'about' },
+      { href: '/photography', label: 'photography' }
+    ];
+
+    return allLinks
+      .filter(link => link.label !== currentPage)
+      .map(link => `<a href="${link.href}" class="nav-link">${link.label}</a>`)
+      .join('\n            ');
   }
 
   setupEventListeners() {
@@ -344,18 +364,6 @@ class GpSiteHeader extends HTMLElement {
     document.documentElement.setAttribute("data-theme", theme);
     this.setAttribute("theme", theme);
     localStorage.setItem("theme", theme);
-  }
-
-  highlightCurrentPage() {
-    const path = window.location.pathname;
-    const links = this.shadowRoot.querySelectorAll(".nav-link");
-
-    links.forEach((link) => {
-      const href = link.getAttribute("href");
-      if (href === path || (href !== "/" && path.startsWith(href))) {
-        link.classList.add("active");
-      }
-    });
   }
 }
 
