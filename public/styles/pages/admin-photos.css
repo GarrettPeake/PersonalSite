@@ -181,6 +181,7 @@
   justify-content: center;
   gap: var(--space-sm);
   color: var(--color-text-muted);
+  pointer-events: none;
 }
 
 .file-upload-placeholder svg {
