@@ -55,6 +55,11 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Admin project management page with CRUD and reorder
 - [x] Project API endpoints (public and admin)
 - [x] Home page dynamically loads projects from API
+- [x] Desktop SPA mode (900px+) with client-side routing
+- [x] SPA section modules (projects, blog, about, photography)
+- [x] Blog post modal for SPA mode
+- [x] Carousel slide transitions between sections
+- [x] SPA navigation tracking integration
 
 ### Not Yet Implemented
 
@@ -213,8 +218,15 @@ Worker handles:
     │   └── tracking.html # Tracking links management
     ├── /js
     │   ├── blog.js       # Blog listing page logic
-    │   ├── home.js       # Home page interactions (theme, shelf, carousel)
+    │   ├── home.js       # Home page interactions (theme, mobile menu)
     │   ├── photography.js # Photography gallery modal handling
+    │   ├── /spa
+    │   │   └── router.js     # SPA router with History API navigation
+    │   ├── /sections
+    │   │   ├── projects.js   # Projects section (carousel + shelf)
+    │   │   ├── blog.js       # Blog section (post list)
+    │   │   ├── about.js      # About section (static content)
+    │   │   └── photography.js # Photography section (photo grid)
     │   └── /admin
     │       ├── login.js      # Login form handling
     │       ├── dashboard.js  # Dashboard stats and recent items
@@ -253,9 +265,10 @@ Worker handles:
         │   ├── gp-site-footer.js  # New minimal footer (copyright only)
         │   ├── gp-theme-toggle.js # Dark/light mode switch
         │   ├── gp-peak-divider.js # Mountain peak separator
-        │   └── gp-photo-modal.js  # Photography modal component
+        │   ├── gp-photo-modal.js  # Photography modal component
+        │   └── gp-blog-modal.js   # Blog post modal for SPA mode
         └── /tracking
-            └── gp-tracker.js      # Silent page view tracker
+            └── gp-tracker.js      # Silent page view tracker (with SPA trackPageView)
 ```
 
 ## Development Commands
@@ -642,6 +655,50 @@ Shared utility functions:
 - Block macros: `/MacroName(args)` on own line
 - Inline macros: `/macroName(args)` within text
 - Currently only `/Banner` macro implemented
+
+### Desktop SPA Architecture
+
+On desktop (900px+), the home page transforms into a Single Page Application:
+
+**Router (`/public/js/spa/router.js`)**
+- Uses History API for navigation (no page reloads)
+- Routes: `/`, `/projects`, `/blog`, `/about`, `/photography`
+- `/` and `/projects` are aliases (both show projects section)
+- Direct links to `/blog/:slug` open blog modal after loading blog section
+
+**Section Modules (`/public/js/sections/`)**
+Each section is a lazy-loaded ES module with:
+```javascript
+export default {
+  template: '...',           // HTML structure
+  async init(container) {},  // Fetch data, render, bind events
+}
+```
+
+**Section Transitions**
+- Sections slide horizontally based on ordering: projects → blog → about → photography
+- Going forward: current slides left, new slides in from right
+- Going backward: current slides right, new slides in from left
+- 400ms transition duration
+
+**Shelf Panel Behavior**
+- Projects section: shelf visible with project icons
+- Other sections: shelf collapses, only theme toggle visible
+
+**Blog Post Modal (`gp-blog-modal`)**
+- Full-screen overlay for reading blog posts
+- Opens with URL update to `/blog/:slug`
+- Escape key or back button closes modal
+- Dispatches `blog-modal-close` event for router to update URL
+
+**Tracking Integration**
+- `gp-tracker.trackPageView(path)` called on each SPA navigation
+- Initial page load tracked automatically via `connectedCallback()`
+
+**Mobile Behavior**
+- SPA router does NOT initialize on mobile (< 900px)
+- Nav links perform normal page navigation
+- Existing separate pages (blog.html, about.html, etc.) still work
 
 ### Authentication (`src/middleware/auth.ts`)
 - Session-based with HTTP-only cookies

@@ -23,6 +23,12 @@
             ? "dark"
             : "light");
         document.documentElement.setAttribute("data-theme", theme);
+
+        // Desktop SPA redirect
+        if (window.innerWidth >= 900) {
+          sessionStorage.setItem('spa-redirect', window.location.pathname);
+          window.location.replace('/');
+        }
       })();
     </script>
   </head>

@@ -40,9 +40,10 @@
 
             <!-- Navigation Links -->
             <nav class="hero-nav">
-              <a href="/blog" class="nav-link">/blog</a>
-              <a href="/about" class="nav-link">/about</a>
-              <a href="/photography" class="nav-link">/photography</a>
+              <a href="/" class="nav-link active" data-spa-link>/projects</a>
+              <a href="/blog" class="nav-link" data-spa-link>/blog</a>
+              <a href="/about" class="nav-link" data-spa-link>/about</a>
+              <a href="/photography" class="nav-link" data-spa-link>/photography</a>
             </nav>
 
             <!-- Social Icons -->
@@ -76,27 +77,9 @@
             </div>
           </div>
 
-          <!-- Project Display Area -->
-          <div class="project-display">
-            <div class="project-frame">
-              <!-- Guidelines -->
-              <div class="guideline guideline-top"></div>
-              <div class="guideline guideline-right"></div>
-              <div class="guideline guideline-bottom"></div>
-              <div class="guideline guideline-left"></div>
-
-              <!-- Carousel -->
-              <div class="carousel" id="project-carousel">
-                <div class="carousel-track">
-                  <!-- Project slides will be inserted here -->
-                  <div class="carousel-slide active" data-project="0">
-                    <div class="slide-placeholder">
-                      <span>Select a project</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <!-- SPA Content Area -->
+          <div class="spa-content" id="spa-content">
+            <!-- Sections loaded dynamically by SPA router -->
           </div>
         </div>
       </main>
@@ -379,10 +362,23 @@
       </main>
     </div>
 
+    <!-- Modals for SPA -->
+    <gp-photo-modal></gp-photo-modal>
+    <gp-blog-modal></gp-blog-modal>
+
     <!-- Web Components -->
     <script type="module" src="/components/tracking/gp-tracker.js"></script>
+    <script type="module" src="/components/core/gp-photo-modal.js"></script>
+    <script type="module" src="/components/core/gp-blog-modal.js"></script>
 
     <!-- Home Page Script -->
     <script src="/js/home.js"></script>
+
+    <!-- SPA Router (desktop only) -->
+    <script type="module">
+      if (window.innerWidth >= 900) {
+        import('/js/spa/router.js').then(m => m.init());
+      }
+    </script>
   </body>
 </html>
