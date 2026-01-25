@@ -3,20 +3,21 @@
  *
  * Silently tracks page views for recruiter analytics.
  * Reads tracking slug from localStorage and beacons to backend.
+ * Exposes trackPageView() method for SPA navigation tracking.
  */
 class GpTracker extends HTMLElement {
   connectedCallback() {
     this.track();
   }
 
-  track() {
+  track(path = window.location.pathname) {
     const slug = localStorage.getItem('trackingSlug');
     if (!slug) return;
 
     // Use sendBeacon for reliable tracking even on page unload
     const data = JSON.stringify({
       slug,
-      page: window.location.pathname,
+      page: path,
       timestamp: new Date().toISOString(),
     });
 
@@ -33,6 +34,11 @@ class GpTracker extends HTMLElement {
         // Silently fail - tracking should not impact user experience
       });
     }
+  }
+
+  // Called by SPA router on navigation
+  trackPageView(path) {
+    this.track(path);
   }
 }
 
