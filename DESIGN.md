@@ -77,8 +77,6 @@ binding = "ANALYTICS"
 dataset = "page_views"
 
 # Environment variables (non-secret)
-[vars]
-SITE_URL = "https://gpeake.com"
 
 # Routes
 [[routes]]

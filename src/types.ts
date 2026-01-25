@@ -15,7 +15,6 @@ export interface Env {
   ASSETS: Fetcher;
 
   // Environment variables
-  SITE_URL: string;
 
   // Secrets (set via wrangler secret put)
   ADMIN_USERNAME: string;

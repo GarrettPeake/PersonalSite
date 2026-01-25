@@ -2,6 +2,11 @@ name = "gpeake-site"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true
+
 # Static assets configuration
 [assets]
 directory = "./public"
@@ -31,12 +36,3 @@ bucket_name = "gpeake-files"
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"
 dataset = "page_views"
-
-# Environment variables (non-secret)
-[vars]
-SITE_URL = "https://gpeake.com"
-
-# Routes (uncomment when ready to deploy to custom domain)
-# [[routes]]
-# pattern = "gpeake.com/*"
-# custom_domain = true

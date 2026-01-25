@@ -30,11 +30,10 @@
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
-/* Actions - uses .actions .actions--wrap from components.css */
 .draft-actions {
   display: flex;
   gap: var(--space-xs);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 /* Share URL */
