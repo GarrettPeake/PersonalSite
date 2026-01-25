@@ -36,12 +36,12 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Blog post detail pages (Worker-rendered with markdown)
 - [x] Draft preview pages (`/draft/share/:token`)
 - [x] Admin authentication (session-based with cookies)
-- [x] Admin login page
+- [x] Admin login page with neo-brutalist mountain scene theme toggle
 - [x] Admin dashboard with stats
 - [x] Admin editor UI with split-pane live preview
-- [x] Admin posts list page
-- [x] Admin drafts list page
-- [x] Admin tracking management page
+- [x] Admin posts list page (proper HTML tables)
+- [x] Admin drafts list page (proper HTML tables)
+- [x] Admin tracking management page (proper HTML tables)
 - [x] Client-side markdown renderer for editor preview
 - [x] Modular backend architecture (DAOs, handlers, templates)
 - [x] Vitest testing infrastructure for Workers
@@ -455,19 +455,40 @@ The CSS is organized into layers that build on each other. Always include styles
 </div>
 ```
 
-#### Data Tables
+#### Data Tables (Admin)
+
+Use proper HTML `<table>` elements with these classes:
 
 | Class | Use For |
 |-------|---------|
-| `.data-table` | Table container with border |
-| `.data-table__header` | Table header row (grid) |
-| `.data-table__row` | Table body row (grid) |
+| `.table-wrapper` | Scrollable container for tables |
+| `.admin-table` | Main table element with neo-brutalist styling |
+| `.col-title` | Title column (40% width) |
+| `.col-slug` | Slug column (25% width) |
+| `.col-date` | Date column (15% width) |
+| `.col-status` | Status column (10% width) |
+| `.col-actions` | Actions column (right-aligned) |
+| `.cell-truncate` | Truncate text with ellipsis |
 
-Set grid columns in page-specific CSS:
-```css
-.table-header, .table-row {
-  grid-template-columns: 2fr 1fr 150px;
-}
+```html
+<div class="table-wrapper">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th class="col-title">Title</th>
+        <th class="col-date">Date</th>
+        <th class="col-actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Post Title</td>
+        <td>Jan 1, 2024</td>
+        <td><button class="btn-action">Edit</button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 ```
 
 #### Dialogs

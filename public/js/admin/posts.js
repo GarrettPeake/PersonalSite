@@ -46,26 +46,34 @@ function renderPosts(posts) {
   posts.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
 
   postsList.innerHTML = `
-    <div class="table-header">
-      <div>Title</div>
-      <div>Slug</div>
-      <div>Published</div>
-      <div>Actions</div>
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th class="col-title">Title</th>
+            <th class="col-slug">Slug</th>
+            <th class="col-date">Published</th>
+            <th class="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${posts.map(post => `
+            <tr data-id="${post.id}">
+              <td class="post-title">
+                <a href="/blog/${post.slug}" target="_blank">${escapeHtml(post.title)}</a>
+              </td>
+              <td class="post-slug cell-truncate">/blog/${escapeHtml(post.slug)}</td>
+              <td class="post-date">${formatDate(post.publishedAt)}</td>
+              <td class="post-actions">
+                <a href="/admin/editor?post=${post.id}" class="btn-action">Edit</a>
+                <button class="btn-action" data-action="unpublish" data-id="${post.id}">Unpublish</button>
+                <button class="btn-action danger" data-action="delete" data-id="${post.id}">Delete</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
     </div>
-    ${posts.map(post => `
-      <div class="table-row" data-id="${post.id}">
-        <div class="post-title">
-          <a href="/blog/${post.slug}" target="_blank">${escapeHtml(post.title)}</a>
-        </div>
-        <div class="post-slug">/blog/${escapeHtml(post.slug)}</div>
-        <div class="post-date">${formatDate(post.publishedAt)}</div>
-        <div class="post-actions">
-          <a href="/admin/editor?post=${post.id}" class="btn-action">Edit</a>
-          <button class="btn-action" data-action="unpublish" data-id="${post.id}">Unpublish</button>
-          <button class="btn-action danger" data-action="delete" data-id="${post.id}">Delete</button>
-        </div>
-      </div>
-    `).join('')}
   `;
 
   // Add event listeners for action buttons
@@ -76,7 +84,7 @@ function renderPosts(posts) {
 
 // Handle action buttons
 function handleAction(action, id) {
-  const post = document.querySelector(`[data-id="${id}"]`);
+  const post = document.querySelector(`tr[data-id="${id}"]`);
   const title = post?.querySelector('.post-title a')?.textContent || 'this post';
 
   if (action === 'unpublish') {
