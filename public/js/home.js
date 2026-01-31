@@ -5,9 +5,7 @@
 
   // State
   let projects = [];
-
-  // Check if we're in SPA mode (desktop)
-  const isSPAMode = window.innerWidth >= 900;
+  let mobileProjectsLoaded = false;
 
   // Theme toggle functionality
   function initThemeToggle() {
@@ -44,20 +42,35 @@
     });
   }
 
-  // Fetch projects from API (for mobile only - SPA handles desktop)
+  // Fetch projects from API (for mobile view)
   async function loadMobileProjects() {
-    // Skip if in SPA mode - SPA router handles projects
-    if (isSPAMode) return;
+    // Skip if already loaded (projects data is reusable)
+    if (mobileProjectsLoaded) return;
+
+    // Skip if currently in SPA/desktop mode
+    if (window.innerWidth >= 900) return;
 
     try {
       const res = await fetch('/api/projects');
       if (!res.ok) throw new Error('Failed to load projects');
       projects = await res.json();
+      mobileProjectsLoaded = true;
       renderMobileProjects();
     } catch (err) {
       console.error('Failed to load projects:', err);
     }
   }
+
+  // Listen for resize to load mobile projects when switching to mobile
+  let _homeResizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(_homeResizeTimer);
+    _homeResizeTimer = setTimeout(() => {
+      if (window.innerWidth < 900 && !mobileProjectsLoaded) {
+        loadMobileProjects();
+      }
+    }, 150);
+  });
 
   // Render projects to mobile layout
   function renderMobileProjects() {

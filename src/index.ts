@@ -58,9 +58,12 @@ import {
   handleReorderProjects,
 } from './handlers/api/projects';
 
+// Templates
+import { notFoundPage } from './templates/not-found';
+
 // Utilities
 import { isAuthenticated } from './middleware/auth';
-import { jsonResponse, corsHeaders, handleCorsPreflightResponse } from './lib/response';
+import { jsonResponse, htmlResponse, corsHeaders, handleCorsPreflightResponse } from './lib/response';
 
 export default {
   async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
@@ -92,8 +95,12 @@ export default {
       return handleAdmin(request, env, path);
     }
 
-    // For any other route that made it to the Worker, serve from assets
-    return env.ASSETS.fetch(request);
+    // Try to serve from static assets; return 404 page if asset not found
+    const assetResponse = await env.ASSETS.fetch(request);
+    if (assetResponse.status === 404) {
+      return htmlResponse(notFoundPage(path), 404);
+    }
+    return assetResponse;
   },
 } satisfies ExportedHandler<Env>;
 

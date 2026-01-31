@@ -285,10 +285,12 @@ class GpBlogModal extends HTMLElement {
   renderPost(post) {
     const content = this.shadowRoot.querySelector('.modal-content');
 
+    document.title = `${post.title} | Garrett Peake`;
+
     content.innerHTML = `
       <h1 class="post-title">${this.escapeHtml(post.title)}</h1>
       <p class="post-meta">${this.formatDate(post.publishedAt)}</p>
-      <div class="post-body">${post.contentHtml}</div>
+      <div class="post-body">${typeof window.renderMarkdown === 'function' ? window.renderMarkdown(post.content) : this.escapeHtml(post.content)}</div>
     `;
   }
 
@@ -299,6 +301,7 @@ class GpBlogModal extends HTMLElement {
     this._currentSlug = null;
     this.removeAttribute('open');
     document.body.style.overflow = '';
+    document.title = 'Blog | Garrett Peake';
 
     // Dispatch event for router to handle URL update
     this.dispatchEvent(new CustomEvent('blog-modal-close', { bubbles: true }));

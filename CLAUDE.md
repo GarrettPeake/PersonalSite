@@ -60,6 +60,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Blog post modal for SPA mode
 - [x] Carousel slide transitions between sections
 - [x] SPA navigation tracking integration
+- [x] Custom 404 page for unmatched routes (server-side and SPA)
 
 ### Not Yet Implemented
 
@@ -158,6 +159,7 @@ Worker handles:
 │   │       └── admin.ts     # /admin/* auth guard
 │   ├── /templates
 │   │   ├── post.ts          # Blog post page template
+│   │   ├── not-found.ts     # 404 not found page template
 │   │   └── tracking-redirect.ts # Tracking redirect page template
 │   ├── /lib
 │   │   ├── kv.ts         # DEPRECATED: Use DAOs instead
@@ -201,6 +203,7 @@ Worker handles:
 │       │   └── auth.test.ts
 │       └── /templates
 │           ├── post.test.ts
+│           ├── not-found.test.ts
 │           └── tracking-redirect.test.ts
 └── /public
     ├── index.html        # Home page (neo-brutalist three-panel layout)
@@ -641,6 +644,7 @@ Request handlers are split by route type:
 **Templates (`src/templates/`)**
 HTML templates for server-rendered pages:
 - `post.ts`: Blog post and draft preview pages
+- `not-found.ts`: 404 not found page with neo-brutalist styling
 - `tracking-redirect.ts`: Tracking redirect page
 
 **Utilities (`src/lib/`)**

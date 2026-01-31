@@ -40,7 +40,7 @@
 
             <!-- Navigation Links -->
             <nav class="hero-nav">
-              <a href="/" class="nav-link active" data-spa-link>/projects</a>
+              <a href="/projects" class="nav-link active" data-spa-link>/projects</a>
               <a href="/blog" class="nav-link" data-spa-link>/blog</a>
               <a href="/about" class="nav-link" data-spa-link>/about</a>
               <a href="/photography" class="nav-link" data-spa-link>/photography</a>
@@ -75,6 +75,9 @@
                 </svg>
               </a>
             </div>
+
+            <!-- Copyright -->
+            <p class="hero-copyright">&copy; 2026 Garrett Peake</p>
           </div>
 
           <!-- SPA Content Area -->
@@ -211,123 +214,8 @@
 
         <!-- Project List -->
         <div class="mobile-projects">
-          <div class="mobile-project-card" data-url="#">
-            <div class="project-icon">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-              >
-                <polygon points="12,2 22,22 2,22" />
-              </svg>
-            </div>
-            <div class="project-info">
-              <h3>Personal Site</h3>
-              <p>
-                A neo-brutalist personal website built with Cloudflare Workers
-              </p>
-            </div>
-            <a
-              href="#"
-              target="_blank"
-              rel="noopener"
-              class="open-link"
-              aria-label="Open in new tab"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-            </a>
-          </div>
-
-          <div class="mobile-project-card" data-url="#">
-            <div class="project-icon">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M9 9h6v6H9z" />
-              </svg>
-            </div>
-            <div class="project-info">
-              <h3>Project Alpha</h3>
-              <p>
-                A demonstration project showcasing modern web development
-                techniques
-              </p>
-            </div>
-            <a
-              href="#"
-              target="_blank"
-              rel="noopener"
-              class="open-link"
-              aria-label="Open in new tab"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-            </a>
-          </div>
-
-          <div class="mobile-project-card" data-url="#">
-            <div class="project-icon">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 3v9l6 3" />
-              </svg>
-            </div>
-            <div class="project-info">
-              <h3>Project Beta</h3>
-              <p>An innovative solution for complex data visualization</p>
-            </div>
-            <a
-              href="#"
-              target="_blank"
-              rel="noopener"
-              class="open-link"
-              aria-label="Open in new tab"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-            </a>
-          </div>
+          <!-- Projects loaded dynamically via JavaScript -->
+          <p class="loading">Loading projects...</p>
         </div>
 
         <!-- Social Links -->
@@ -366,6 +254,9 @@
     <gp-photo-modal></gp-photo-modal>
     <gp-blog-modal></gp-blog-modal>
 
+    <!-- Markdown Renderer (needed for blog modal in SPA mode) -->
+    <script src="/lib/markdown.js"></script>
+
     <!-- Web Components -->
     <script type="module" src="/components/tracking/gp-tracker.js"></script>
     <script type="module" src="/components/core/gp-photo-modal.js"></script>
@@ -374,11 +265,40 @@
     <!-- Home Page Script -->
     <script src="/js/home.js"></script>
 
-    <!-- SPA Router (desktop only) -->
+    <!-- SPA Router (desktop only, resize-aware) -->
     <script type="module">
-      if (window.innerWidth >= 900) {
-        import('/js/spa/router.js').then(m => m.init());
+      import * as spaRouter from '/js/spa/router.js';
+
+      const SPA_BREAKPOINT = 900;
+      let wasDesktop = window.innerWidth >= SPA_BREAKPOINT;
+
+      // Initialize SPA on desktop
+      if (wasDesktop) {
+        spaRouter.init();
       }
+
+      // Handle resize across the breakpoint
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          const isDesktop = window.innerWidth >= SPA_BREAKPOINT;
+
+          if (isDesktop === wasDesktop) return;
+
+          if (isDesktop && !wasDesktop) {
+            // Crossed from mobile to desktop: initialize SPA with current route
+            spaRouter.init();
+          } else if (!isDesktop && wasDesktop) {
+            // Crossed from desktop to mobile: tear down SPA cleanly
+            // The URL already reflects the current section via History API,
+            // so the mobile layout will show the correct page if navigated.
+            spaRouter.destroy();
+          }
+
+          wasDesktop = isDesktop;
+        }, 150);
+      });
     </script>
   </body>
 </html>

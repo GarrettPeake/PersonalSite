@@ -11,15 +11,9 @@ invocation_logs = true
 [assets]
 directory = "./public"
 binding = "ASSETS"
-not_found_handling = "single-page-application"
-# Only invoke Worker for API routes, tracking, and dynamic pages
-run_worker_first = [
-  "/api/*",
-  "/s/*",
-  "/blog/*",
-  "/draft/*",
-  "/admin/*"
-]
+not_found_handling = "none"
+# Invoke Worker for all routes so we can handle 404s properly
+run_worker_first = true
 
 # KV Namespace binding
 [[kv_namespaces]]

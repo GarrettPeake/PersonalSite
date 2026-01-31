@@ -19,14 +19,21 @@ class SPARouter {
   currentSection = null;
   loadedSections = {};
   isTransitioning = false;
+  initialized = false;
 
   constructor() {
     this.spaContent = null;
     this.rightPanel = null;
     this.shelfPanel = null;
+    this._popstateHandler = null;
+    this._blogModalCloseHandler = null;
+    this._clickHandler = null;
   }
 
   init() {
+    // Prevent double-initialization
+    if (this.initialized) return;
+
     this.spaContent = document.getElementById('spa-content');
     this.rightPanel = document.querySelector('.right-panel');
     this.shelfPanel = document.querySelector('.shelf-panel');
@@ -46,7 +53,7 @@ class SPARouter {
 
     // Parse initial URL and set section
     const path = window.location.pathname;
-    let initialSection = this.routes[path] || 'projects';
+    let initialSection = this.routes[path] || null;
     let initialBlogSlug = null;
 
     // Check if this is a direct link to a blog post
@@ -56,9 +63,14 @@ class SPARouter {
       initialBlogSlug = blogPostMatch[1];
     }
 
+    // If no matching section found, show 404 state
+    if (!initialSection) {
+      initialSection = 'not-found';
+    }
+
     // Bind popstate for browser back/forward
-    window.addEventListener('popstate', (e) => {
-      const section = e.state?.section || this.routes[window.location.pathname] || 'projects';
+    this._popstateHandler = (e) => {
+      const section = e.state?.section || this.routes[window.location.pathname] || 'not-found';
       this.showSection(section, false);
 
       // Close blog modal if we navigated away from a blog post
@@ -68,18 +80,23 @@ class SPARouter {
           blogModal.close();
         }
       }
-    });
+    };
+    window.addEventListener('popstate', this._popstateHandler);
 
     // Listen for blog modal close events
-    document.addEventListener('blog-modal-close', () => {
+    this._blogModalCloseHandler = () => {
       // Update URL to /blog when modal closes
       if (window.location.pathname.startsWith('/blog/')) {
         history.pushState({ section: 'blog' }, '', '/blog');
+        this.updateDocumentTitle('blog');
       }
-    });
+    };
+    document.addEventListener('blog-modal-close', this._blogModalCloseHandler);
 
     // Intercept nav link clicks
     this.setupNavigation();
+
+    this.initialized = true;
 
     // Load and show initial section
     this.showSection(initialSection, false).then(() => {
@@ -96,16 +113,51 @@ class SPARouter {
     history.replaceState({ section: initialSection, slug: initialBlogSlug }, '', window.location.pathname);
   }
 
+  destroy() {
+    if (!this.initialized) return;
+
+    // Remove event listeners
+    if (this._popstateHandler) {
+      window.removeEventListener('popstate', this._popstateHandler);
+      this._popstateHandler = null;
+    }
+    if (this._blogModalCloseHandler) {
+      document.removeEventListener('blog-modal-close', this._blogModalCloseHandler);
+      this._blogModalCloseHandler = null;
+    }
+    if (this._clickHandler) {
+      document.removeEventListener('click', this._clickHandler);
+      this._clickHandler = null;
+    }
+
+    // Clean up loaded sections from DOM
+    if (this.spaContent) {
+      this.spaContent.innerHTML = '';
+    }
+
+    // Reset state
+    this.currentSection = null;
+    this.loadedSections = {};
+    this.isTransitioning = false;
+    this.initialized = false;
+  }
+
+  /** Returns the current section name, useful for preserving state across resize */
+  getCurrentSection() {
+    return this.currentSection;
+  }
+
   setupNavigation() {
     // Handle all nav links with data-section
-    document.addEventListener('click', (e) => {
+    this._clickHandler = (e) => {
       const link = e.target.closest('[data-spa-link]');
       if (!link) return;
 
       e.preventDefault();
       const href = link.getAttribute('href');
       this.navigate(href);
-    });
+    };
+    document.addEventListener('click', this._clickHandler);
   }
 
   navigate(url, pushState = true) {
@@ -115,6 +167,9 @@ class SPARouter {
       window.location.href = url;
       return;
     }
+
+    // Close blog modal if open before navigating
+    this.closeBlogPost();
 
     if (pushState) {
       history.pushState({ section }, '', url);
@@ -158,6 +213,9 @@ class SPARouter {
 
     // Update nav active state
     this.updateNavActiveState(name);
+
+    // Update document title
+    this.updateDocumentTitle(name);
 
     // Update shelf panel visibility
     this.updateShelfVisibility(name);
@@ -219,6 +277,24 @@ class SPARouter {
 
   async loadSection(name) {
     try {
+      // Handle not-found as a built-in section
+      if (name === 'not-found') {
+        const sectionEl = document.createElement('div');
+        sectionEl.className = 'spa-section';
+        sectionEl.setAttribute('data-section', 'not-found');
+        sectionEl.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:var(--space-xl) var(--space-md);">
+            <p style="font-family:var(--font-display);font-size:clamp(6rem,15vw,12rem);font-weight:700;line-height:1;color:var(--color-primary);margin:0;">404</p>
+            <h1 style="font-family:var(--font-display);font-size:clamp(1.25rem,3vw,2rem);font-weight:600;margin:var(--space-sm) 0 var(--space-md);">Page not found</h1>
+            <p style="font-family:var(--font-mono);font-size:0.875rem;color:var(--color-text-muted);background:var(--color-bg-secondary);border:var(--border-thin) solid var(--color-border);padding:var(--space-xs) var(--space-sm);margin-bottom:var(--space-lg);word-break:break-all;">${window.location.pathname}</p>
+            <p style="color:var(--color-text-muted);margin:0 0 var(--space-lg);max-width:36ch;">The page you are looking for does not exist or has been moved.</p>
+            <a href="/" class="btn btn--primary" data-spa-link>Back to home</a>
+          </div>`;
+        this.spaContent.appendChild(sectionEl);
+        this.loadedSections[name] = true;
+        return;
+      }
+
       const module = await import(`/js/sections/${name}.js`);
 
       // Create section container
@@ -259,6 +335,17 @@ class SPARouter {
         link.classList.remove('active');
       }
     });
+  }
+
+  updateDocumentTitle(section) {
+    const titles = {
+      'projects': 'Garrett Peake',
+      'blog': 'Blog | Garrett Peake',
+      'about': 'About | Garrett Peake',
+      'photography': 'Photography | Garrett Peake',
+      'not-found': '404 | Garrett Peake'
+    };
+    document.title = titles[section] || 'Garrett Peake';
   }
 
   updateShelfVisibility(section) {
@@ -308,6 +395,14 @@ const router = new SPARouter();
 
 export function init() {
   router.init();
+}
+
+export function destroy() {
+  router.destroy();
+}
+
+export function getCurrentSection() {
+  return router.getCurrentSection();
 }
 
 export function navigate(url) {

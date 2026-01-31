@@ -36,6 +36,7 @@ gp-site-footer:not(:defined) {
 /* Profile image frame */
 .profile-frame {
   position: relative;
+  flex-shrink: 0;
   height: 200px;
 }
 
@@ -105,6 +106,7 @@ gp-site-footer:not(:defined) {
 
 /* Intro text */
 .about-intro {
+  flex: 1 1 300px;
   padding-top: var(--space-md);
 }
 
@@ -167,10 +169,11 @@ gp-site-footer:not(:defined) {
   flex-shrink: 0;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* Responsive - stack photo above text on narrow viewports */
+@media (max-width: 600px) {
   .about-hero {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: center;
     gap: var(--space-lg);
   }
 
