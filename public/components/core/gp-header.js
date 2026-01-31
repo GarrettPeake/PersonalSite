@@ -62,7 +62,7 @@ class GpHeader extends HTMLElement {
         </a>
 
         <nav>
-          <a href="/" class="nav-link">Home</a>
+          <a href="/projects" class="nav-link">Projects</a>
           <a href="/blog" class="nav-link">Blog</a>
           <a href="/about" class="nav-link">About</a>
           <gp-theme-toggle></gp-theme-toggle>
