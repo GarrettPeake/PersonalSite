@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /draft
+Disallow: /s/
+
+Sitemap: https://gpeake.com/sitemap.xml

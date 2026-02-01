@@ -114,8 +114,8 @@ describe('Draft Preview Page Handler', () => {
 
     const html = await response.text();
     expect(html).toContain('<!DOCTYPE html>');
-    expect(html).toContain('<gp-header>');
-    expect(html).toContain('<gp-footer>');
+    expect(html).toContain('<gp-site-header');
+    expect(html).toContain('<gp-site-footer>');
   });
 
   it('should use updatedAt as date', async () => {

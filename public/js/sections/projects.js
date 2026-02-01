@@ -135,46 +135,60 @@ function initShelfSync() {
 
   if (!shelfItems) return;
 
-  // Handle shelf item interactions
+  // Track which project is selected (clicked) vs just hovered
+  let selectedIndex = 0; // First project is selected by default
+
+  // Show description for the given project index
+  function showDescription(index) {
+    const project = projects[index];
+    if (project && descriptionText) {
+      descriptionText.innerHTML = renderMarkdownSimple(project.description) || '';
+    }
+  }
+
+  // Restore description to the currently selected project
+  function restoreSelectedDescription() {
+    if (selectedIndex !== null && projects[selectedIndex]) {
+      showDescription(selectedIndex);
+    } else if (descriptionText) {
+      descriptionText.innerHTML = 'Select a project';
+    }
+  }
+
+  // Handle hover: temporarily show hovered project description
   shelfItems.addEventListener('mouseover', (e) => {
     const item = e.target.closest('.shelf-item');
     if (!item) return;
 
     const projectIndex = parseInt(item.dataset.project);
-    const project = projects[projectIndex];
-    if (project && descriptionText) {
-      descriptionText.innerHTML = renderMarkdownSimple(project.description) || '';
-    }
+    showDescription(projectIndex);
   });
 
+  // Handle mouseout: revert to selected project description
   shelfItems.addEventListener('mouseout', (e) => {
-    const item = e.target.closest('.shelf-item');
-    if (!item) return;
+    // Only revert when the mouse actually leaves the shelf-items container
+    const related = e.relatedTarget;
+    if (related && shelfItems.contains(related)) return;
 
-    const activeItem = shelfItems.querySelector('.shelf-item.active');
-    if (activeItem && descriptionText) {
-      const activeIndex = parseInt(activeItem.dataset.project);
-      const project = projects[activeIndex];
-      descriptionText.innerHTML = project ? renderMarkdownSimple(project.description) : 'Select a project';
-    } else if (descriptionText) {
-      descriptionText.innerHTML = 'Hover over a project to see details';
-    }
+    restoreSelectedDescription();
   });
 
+  // Handle click: persistently select a project
   shelfItems.addEventListener('click', (e) => {
     const item = e.target.closest('.shelf-item');
     if (!item) return;
 
-    // Update active state
+    const projectIndex = parseInt(item.dataset.project);
+
+    // Update selected state
+    selectedIndex = projectIndex;
+
+    // Update active class
     shelfItems.querySelectorAll('.shelf-item').forEach(i => i.classList.remove('active'));
     item.classList.add('active');
 
-    // Update description
-    const projectIndex = parseInt(item.dataset.project);
-    const project = projects[projectIndex];
-    if (project && descriptionText) {
-      descriptionText.innerHTML = renderMarkdownSimple(project.description) || '';
-    }
+    // Show description for selected project
+    showDescription(projectIndex);
 
     // Update carousel
     updateCarousel(item.dataset.project);

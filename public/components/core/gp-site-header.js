@@ -90,8 +90,7 @@ class GpSiteHeader extends HTMLElement {
           transition: color var(--transition-fast, 0.15s ease);
         }
 
-        .nav-link::before {
-          content: '/';
+        .nav-slash {
           color: var(--color-text-muted, #666);
           margin-right: 2px;
         }
@@ -258,6 +257,32 @@ class GpSiteHeader extends HTMLElement {
           .hamburger {
             display: flex;
           }
+
+          .theme-toggle-container {
+            width: 48px;
+            height: 40px;
+          }
+
+          .celestial {
+            width: 14px;
+            height: 14px;
+            top: 1px;
+          }
+
+          .mountain-left {
+            width: 24px;
+            height: 16px;
+          }
+
+          .mountain-center {
+            width: 30px;
+            height: 24px;
+          }
+
+          .mountain-right {
+            width: 27px;
+            height: 20px;
+          }
         }
       </style>
 
@@ -302,7 +327,7 @@ class GpSiteHeader extends HTMLElement {
   getPageSuffix() {
     const page = this.getAttribute('page');
     if (!page) return '';
-    return `<span class="page-suffix">/${page}</span>`;
+    return `<span class="page-suffix" aria-hidden="true">/${page}</span>`;
   }
 
   getNavLinks() {
@@ -315,7 +340,7 @@ class GpSiteHeader extends HTMLElement {
 
     return allLinks
       .filter(link => link.label !== currentPage)
-      .map(link => `<a href="${link.href}" class="nav-link">${link.label}</a>`)
+      .map(link => `<a href="${link.href}" class="nav-link"><span class="nav-slash" aria-hidden="true">/</span>${link.label}</a>`)
       .join('\n            ');
   }
 
@@ -333,6 +358,19 @@ class GpSiteHeader extends HTMLElement {
 
     const hamburger = this.shadowRoot.querySelector(".hamburger");
     hamburger.addEventListener("click", () => this.toggleMobileMenu());
+
+    this._onKeyDown = (e) => {
+      if (e.key === "Escape" && this._mobileMenuOpen) {
+        this.closeMobileMenu();
+      }
+    };
+    document.addEventListener("keydown", this._onKeyDown);
+  }
+
+  disconnectedCallback() {
+    if (this._onKeyDown) {
+      document.removeEventListener("keydown", this._onKeyDown);
+    }
   }
 
   toggleMobileMenu() {
@@ -343,6 +381,18 @@ class GpSiteHeader extends HTMLElement {
     hamburger.classList.toggle("open", this._mobileMenuOpen);
     hamburger.setAttribute("aria-expanded", this._mobileMenuOpen);
     mobileMenu.classList.toggle("open", this._mobileMenuOpen);
+  }
+
+  closeMobileMenu() {
+    if (!this._mobileMenuOpen) return;
+    this._mobileMenuOpen = false;
+    const hamburger = this.shadowRoot.querySelector(".hamburger");
+    const mobileMenu = this.shadowRoot.querySelector(".mobile-menu");
+
+    hamburger.classList.remove("open");
+    hamburger.setAttribute("aria-expanded", "false");
+    mobileMenu.classList.remove("open");
+    hamburger.focus();
   }
 
   initTheme() {

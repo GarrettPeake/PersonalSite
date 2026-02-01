@@ -333,10 +333,20 @@
   font-family: inherit;
 }
 
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus,
-.form-input:focus {
+.form-group input:focus-visible,
+.form-group textarea:focus-visible,
+.form-group select:focus-visible,
+.form-input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-color: var(--color-primary);
+  box-shadow: 4px 4px 0 var(--color-primary);
+}
+
+.form-group input:focus:not(:focus-visible),
+.form-group textarea:focus:not(:focus-visible),
+.form-group select:focus:not(:focus-visible),
+.form-input:focus:not(:focus-visible) {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 4px 4px 0 var(--color-primary);

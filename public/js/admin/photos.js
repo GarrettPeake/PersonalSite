@@ -58,12 +58,15 @@ function renderPhotos() {
     </div>
   `;
 
-  if (photos.length === 0) {
+  // Filter out any invalid/empty photo entries
+  const validPhotos = photos.filter(photo => photo && photo.id && photo.url);
+
+  if (validPhotos.length === 0) {
     photosGrid.innerHTML = addButton;
   } else {
-    photosGrid.innerHTML = addButton + photos.map(photo => `
+    photosGrid.innerHTML = addButton + validPhotos.map(photo => `
       <div class="photo-item" data-id="${photo.id}">
-        <img src="${escapeHtml(photo.url)}" alt="${escapeHtml(photo.description || 'Photo')}" loading="lazy">
+        <img src="${escapeHtml(photo.url)}" alt="${escapeHtml(photo.description || 'Photo')}" loading="lazy" onerror="this.closest('.photo-item').style.display='none'">
         <div class="photo-overlay">
           <button class="btn btn--sm btn--secondary" data-action="edit" data-id="${photo.id}">Edit</button>
           <button class="btn btn--sm btn--danger" data-action="delete" data-id="${photo.id}">Delete</button>

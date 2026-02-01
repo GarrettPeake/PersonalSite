@@ -34,7 +34,7 @@ body.home-page {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
+  overflow: clip;
 }
 
 .content-inner {
@@ -685,6 +685,35 @@ body.home-page {
     line-height: 1.4;
   }
 
+  /* Description hidden by default, shown on expand */
+  .mobile-project-card .project-description {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.3s ease;
+    margin-top: 0;
+  }
+
+  .mobile-project-card.expanded .project-description {
+    max-height: 200px;
+    opacity: 1;
+    margin-top: var(--space-xs);
+  }
+
+  /* Visual feedback for interactive cards */
+  .mobile-project-card {
+    cursor: pointer;
+    transition: background var(--transition-fast);
+  }
+
+  .mobile-project-card:active {
+    background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg));
+  }
+
+  .mobile-project-card.expanded {
+    background: color-mix(in srgb, var(--color-primary) 3%, var(--color-bg));
+  }
+
   .mobile-project-card .open-link {
     width: 36px;
     height: 36px;
@@ -758,7 +787,7 @@ body.home-page {
 .spa-content {
   flex: 1.5;
   position: relative;
-  overflow: hidden;
+  overflow: clip;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -803,6 +832,16 @@ body.home-page {
   transform: translateX(-100%);
 }
 
+/* Pre-SPA shelf collapse: hide shelf immediately on non-projects routes
+   before the SPA router initializes, preventing flash of "Loading projects..." */
+[data-initial-section="non-projects"] .shelf-panel {
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  height: 0;
+  pointer-events: none;
+}
+
 /* Right Panel Animation for shelf collapse */
 .right-panel {
   position: relative;
@@ -821,6 +860,8 @@ body.home-page {
   left: 0;
   right: 0;
   bottom: 0;
+  overflow: hidden;
+  height: 0;
 }
 
 .right-panel.collapsed .controls-panel {
