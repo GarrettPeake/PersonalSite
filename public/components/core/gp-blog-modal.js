@@ -27,25 +27,30 @@ class GpBlogModal extends HTMLElement {
 
         :host([open]) {
           display: block;
+          position: fixed;
+          inset: 0;
+          z-index: var(--z-modal, 1000);
+          overflow: hidden;
         }
 
         .modal-overlay {
-          position: fixed;
+          position: absolute;
           top: 0;
           bottom: 0;
-          /* Position between hero section and right panel */
-          left: 280px;
+          /* Position between hero section and right panel.
+             280px = hero-section width, var(--space-xl) = content-inner padding */
+          left: calc(280px + var(--space-xl, 4rem));
           right: var(--panel-right-width, 320px);
           background: var(--color-bg, #fafafa);
-          z-index: var(--z-modal, 1000);
           overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
           border-left: 1px solid var(--color-border, #e0e0e0);
           border-right: 1px solid var(--color-border, #e0e0e0);
         }
 
         @media (min-width: 901px) and (max-width: 1200px) {
           .modal-overlay {
-            left: 240px;
+            left: calc(240px + var(--space-xl, 4rem));
           }
         }
 
@@ -311,7 +316,8 @@ class GpBlogModal extends HTMLElement {
     return new Date(isoString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: 'UTC'
     });
   }
 

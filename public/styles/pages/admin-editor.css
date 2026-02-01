@@ -44,8 +44,16 @@
   width: 100%;
 }
 
-.title-input:focus {
+.title-input:focus:not(:focus-visible) {
   outline: none;
+}
+
+.title-input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.title-input:focus {
   border-bottom-color: var(--color-primary);
 }
 
@@ -71,7 +79,7 @@
   flex: 1;
 }
 
-.slug-input:focus {
+.slug-input:focus:not(:focus-visible) {
   outline: none;
 }
 
@@ -85,8 +93,16 @@
   width: 100%;
 }
 
-.description-input:focus {
+.description-input:focus:not(:focus-visible) {
   outline: none;
+}
+
+.description-input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.description-input:focus {
   border-bottom-color: var(--color-primary);
 }
 
@@ -165,7 +181,7 @@
   color: var(--color-text);
 }
 
-.editor-pane textarea:focus {
+.editor-pane textarea:focus:not(:focus-visible) {
   outline: none;
 }
 

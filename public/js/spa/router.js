@@ -100,6 +100,8 @@ class SPARouter {
 
     // Load and show initial section
     this.showSection(initialSection, false).then(() => {
+      // Remove pre-SPA shelf collapse attribute now that the router manages visibility
+      document.documentElement.removeAttribute('data-initial-section');
       // If this was a direct link to a blog post, open it
       if (initialBlogSlug) {
         const blogModal = document.querySelector('gp-blog-modal');

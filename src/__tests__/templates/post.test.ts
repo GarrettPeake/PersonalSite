@@ -37,22 +37,22 @@ describe('Post Page Template', () => {
       expect(html).toContain('width=device-width');
     });
 
-    it('should include header component', () => {
+    it('should include site header component', () => {
       const html = renderPostPage({
         title: 'Test',
         content: 'Content',
         publishedAt: '2024-01-01',
       });
-      expect(html).toContain('<gp-header>');
+      expect(html).toContain('<gp-site-header');
     });
 
-    it('should include footer component', () => {
+    it('should include site footer component', () => {
       const html = renderPostPage({
         title: 'Test',
         content: 'Content',
         publishedAt: '2024-01-01',
       });
-      expect(html).toContain('<gp-footer>');
+      expect(html).toContain('<gp-site-footer>');
     });
 
     it('should include tracker component', () => {
@@ -228,7 +228,7 @@ describe('Post Page Template', () => {
   });
 
   describe('Styling', () => {
-    it('should include inline styles', () => {
+    it('should include inline styles for post content', () => {
       const html = renderPostPage({
         title: 'Post',
         content: 'Content',
@@ -236,6 +236,34 @@ describe('Post Page Template', () => {
       });
       expect(html).toContain('<style>');
       expect(html).toContain('.post-content');
+    });
+
+    it('should include components.css', () => {
+      const html = renderPostPage({
+        title: 'Post',
+        content: 'Content',
+        publishedAt: '2024-01-01',
+      });
+      expect(html).toContain('/styles/components.css');
+    });
+
+    it('should include FOUC prevention script', () => {
+      const html = renderPostPage({
+        title: 'Post',
+        content: 'Content',
+        publishedAt: '2024-01-01',
+      });
+      expect(html).toContain('data-theme');
+      expect(html).toContain('localStorage');
+    });
+
+    it('should have page class on body', () => {
+      const html = renderPostPage({
+        title: 'Post',
+        content: 'Content',
+        publishedAt: '2024-01-01',
+      });
+      expect(html).toContain('class="page"');
     });
 
     it('should include container class', () => {

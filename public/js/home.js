@@ -84,7 +84,7 @@
         </div>
         <div class="project-info">
           <h3>${escapeHtml(project.title)}</h3>
-          <p>${escapeHtml(project.description)}</p>
+          <p class="project-description">${escapeHtml(project.description)}</p>
         </div>
         ${project.url ? `
           <a
@@ -110,6 +110,31 @@
         ` : ''}
       </div>
     `).join('');
+
+    initMobileProjectCards(mobileProjects);
+  }
+
+  // Make mobile project cards interactive - click to toggle description
+  function initMobileProjectCards(container) {
+    container.addEventListener('click', (e) => {
+      // Don't interfere with the open-link anchor clicks
+      if (e.target.closest('.open-link')) return;
+
+      const card = e.target.closest('.mobile-project-card');
+      if (!card) return;
+
+      const wasExpanded = card.classList.contains('expanded');
+
+      // Collapse all other cards
+      container.querySelectorAll('.mobile-project-card.expanded').forEach(c => {
+        c.classList.remove('expanded');
+      });
+
+      // Toggle the clicked card
+      if (!wasExpanded) {
+        card.classList.add('expanded');
+      }
+    });
   }
 
   // Utility functions

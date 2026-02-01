@@ -11,6 +11,7 @@ import { handleBlogPost } from './handlers/pages/blog';
 import { handleDraftPreview } from './handlers/pages/draft';
 import { handleTrackingRedirect } from './handlers/pages/tracking';
 import { handleAdmin } from './handlers/pages/admin';
+import { handleSitemap } from './handlers/pages/sitemap';
 
 // API handlers
 import { handleListPosts, handleGetPost, handleTrack } from './handlers/api/public';
@@ -93,6 +94,18 @@ export default {
     // Admin routes
     if (path.startsWith('/admin/')) {
       return handleAdmin(request, env, path);
+    }
+
+    // Sitemap
+    if (path === '/sitemap.xml') {
+      return handleSitemap(env);
+    }
+
+    // SPA routes that should serve index.html (the SPA shell)
+    // These are client-side routes handled by the SPA router on desktop
+    if (path === '/projects') {
+      const indexRequest = new Request(new URL('/', request.url), request);
+      return env.ASSETS.fetch(indexRequest);
     }
 
     // Try to serve from static assets; return 404 page if asset not found

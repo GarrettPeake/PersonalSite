@@ -61,6 +61,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Carousel slide transitions between sections
 - [x] SPA navigation tracking integration
 - [x] Custom 404 page for unmatched routes (server-side and SPA)
+- [x] Dynamic sitemap.xml with static pages and published blog posts
 
 ### Not Yet Implemented
 
@@ -115,6 +116,7 @@ Static assets served directly (no Worker) for:
 - `/styles/*`, `/components/*`, `/assets/*`, `/js/*`
 
 Worker handles:
+- `/sitemap.xml` → Dynamic sitemap generation
 - `/api/*` → API endpoints
 - `/s/:slug` → Tracking redirect
 - `/blog/:slug` → Dynamic post rendering
@@ -156,6 +158,7 @@ Worker handles:
 │   │       ├── blog.ts      # /blog/:slug handler
 │   │       ├── draft.ts     # /draft/share/:token handler
 │   │       ├── tracking.ts  # /s/:slug handler
+│   │       ├── sitemap.ts   # /sitemap.xml dynamic generation
 │   │       └── admin.ts     # /admin/* auth guard
 │   ├── /templates
 │   │   ├── post.ts          # Blog post page template
@@ -193,6 +196,7 @@ Worker handles:
 │       │       ├── blog.test.ts
 │       │       ├── draft.test.ts
 │       │       ├── tracking.test.ts
+│       │       ├── sitemap.test.ts
 │       │       └── admin.test.ts
 │       ├── /lib
 │       │   ├── utils.test.ts

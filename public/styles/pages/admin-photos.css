@@ -138,9 +138,13 @@
   border-radius: 0;
 }
 
+.photo-form input[type="text"]:focus:not(:focus-visible),
+.photo-form textarea:focus:not(:focus-visible) {
+  outline: none;
+}
+
 .photo-form input[type="text"]:focus,
 .photo-form textarea:focus {
-  outline: none;
   border-color: var(--color-primary);
 }
 

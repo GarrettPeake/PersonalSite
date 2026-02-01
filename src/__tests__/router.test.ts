@@ -26,6 +26,12 @@ vi.mock('../handlers/pages/admin', () => ({
   handleAdmin: vi.fn(() => new Response('admin handler')),
 }));
 
+vi.mock('../handlers/pages/sitemap', () => ({
+  handleSitemap: vi.fn(() => new Response('sitemap handler', {
+    headers: { 'Content-Type': 'application/xml' },
+  })),
+}));
+
 // Mock auth - use partial mock to keep real login/logout but mock isAuthenticated
 vi.mock('../middleware/auth', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../middleware/auth')>();
@@ -40,6 +46,7 @@ import { handleBlogPost } from '../handlers/pages/blog';
 import { handleDraftPreview } from '../handlers/pages/draft';
 import { handleTrackingRedirect } from '../handlers/pages/tracking';
 import { handleAdmin } from '../handlers/pages/admin';
+import { handleSitemap } from '../handlers/pages/sitemap';
 
 describe('Router', () => {
   beforeEach(() => {
@@ -56,6 +63,16 @@ describe('Router', () => {
       // Since env.ASSETS is mocked, we just check that page handlers weren't called
       expect(handleBlogPost).not.toHaveBeenCalled();
       expect(handleAdmin).not.toHaveBeenCalled();
+    });
+
+    it('should route /sitemap.xml to sitemap handler', async () => {
+      const request = new Request('http://localhost/sitemap.xml');
+      const ctx = createExecutionContext();
+      const response = await worker.fetch(request, env, ctx);
+
+      expect(handleSitemap).toHaveBeenCalledWith(env);
+      expect(await response.text()).toBe('sitemap handler');
+      expect(response.headers.get('Content-Type')).toBe('application/xml');
     });
 
     it('should serve assets for /blog without trailing content', async () => {

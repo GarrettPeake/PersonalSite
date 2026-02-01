@@ -36,18 +36,34 @@ export function renderPostPage(options: PostPageOptions): string {
   ${notFound ? '<meta name="robots" content="noindex">' : ''}
   ${isDraft ? '<meta name="robots" content="noindex">' : ''}
   <title>${escapeHtml(title)} | Garrett Peake</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+
+  <!-- Styles -->
   <link rel="stylesheet" href="/styles/theme.css">
   <link rel="stylesheet" href="/styles/base.css">
-  <script type="module" src="/components/core/gp-theme-toggle.js"></script>
-  <script type="module" src="/components/core/gp-header.js"></script>
-  <script type="module" src="/components/core/gp-footer.js"></script>
-  <script type="module" src="/components/tracking/gp-tracker.js"></script>
+  <link rel="stylesheet" href="/styles/components.css">
+
+  <!-- Prevent FOUC -->
+  <script>
+    (function() {
+      var theme = localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  ${!isDraft && !notFound ? `<!-- Desktop SPA redirect -->
+  <script>
+    (function() {
+      if (window.innerWidth >= 900) {
+        sessionStorage.setItem('spa-redirect', window.location.pathname);
+        window.location.replace('/');
+      }
+    })();
+  </script>` : ''}
+
   <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
     .post-meta {
       color: color-mix(in srgb, var(--color-text) 60%, transparent);
       margin-bottom: var(--space-lg);
@@ -84,10 +100,10 @@ export function renderPostPage(options: PostPageOptions): string {
     }
   </style>
 </head>
-<body>
+<body class="page">
   <gp-tracker></gp-tracker>
   ${draftBanner}
-  <gp-header></gp-header>
+  <gp-site-header page="blog"></gp-site-header>
 
   <main class="container">
     <a href="/blog" class="back-link">&larr; Back to blog</a>
@@ -100,7 +116,12 @@ export function renderPostPage(options: PostPageOptions): string {
     </article>
   </main>
 
-  <gp-footer></gp-footer>
+  <gp-site-footer></gp-site-footer>
+
+  <!-- Web Components -->
+  <script type="module" src="/components/core/gp-site-header.js"></script>
+  <script type="module" src="/components/core/gp-site-footer.js"></script>
+  <script type="module" src="/components/tracking/gp-tracker.js"></script>
 </body>
 </html>`;
 }
