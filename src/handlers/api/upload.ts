@@ -17,6 +17,9 @@ const ALLOWED_TYPES: Record<string, string> = {
   'image/webp': 'webp',
   'image/svg+xml': 'svg',
   'application/pdf': 'pdf',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB

@@ -28,6 +28,7 @@ import {
   handleGetDraftByShareToken,
 } from './handlers/api/drafts';
 import { handleUpload } from './handlers/api/upload';
+import { handleOgFetch } from './handlers/api/og';
 import {
   handleAdminListPosts,
   handleAdminGetPost,
@@ -306,6 +307,11 @@ export async function handleApi(request: Request, env: Env, path: string): Promi
       // POST /api/admin/upload - Upload file to R2
       if (path === '/api/admin/upload' && method === 'POST') {
         return handleUpload(request, env);
+      }
+
+      // GET /api/admin/og?url=... - Fetch OpenGraph metadata
+      if (path === '/api/admin/og' && method === 'GET') {
+        return handleOgFetch(request);
       }
 
       // -----------------------------------------------------------------------

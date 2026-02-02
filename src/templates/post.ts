@@ -81,11 +81,107 @@ export function renderPostPage(options: PostPageOptions): string {
       max-width: 100%;
       height: auto;
     }
+    .post-content ul,
+    .post-content ol {
+      padding-left: var(--space-lg);
+      margin: var(--space-md) 0;
+    }
+    .post-content li {
+      margin-bottom: var(--space-xs);
+    }
     .post-content blockquote {
       border-left: 4px solid var(--color-primary);
       padding-left: var(--space-md);
       margin: var(--space-md) 0;
       font-style: italic;
+    }
+    .post-content .md-figure {
+      margin: var(--space-lg) 0;
+      text-align: center;
+    }
+    .post-content .md-figure img {
+      max-width: 100%;
+      height: auto;
+    }
+    .post-content .md-figure figcaption {
+      font-size: 0.875rem;
+      color: color-mix(in srgb, var(--color-text) 60%, transparent);
+      margin-top: var(--space-sm);
+      font-style: italic;
+    }
+    .post-content .macro-callout {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      padding: var(--space-md);
+      margin: var(--space-md) 0;
+      border: 2px solid var(--color-border);
+      border-left: 4px solid var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg));
+    }
+    .post-content .macro-callout-icon {
+      flex-shrink: 0;
+      color: var(--color-primary);
+      margin-top: 2px;
+    }
+    .post-content .macro-two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-lg);
+      margin: var(--space-lg) 0;
+    }
+    .post-content .macro-bookmark {
+      display: flex;
+      text-decoration: none;
+      color: var(--color-text);
+      border: 2px solid var(--color-border);
+      margin: var(--space-md) 0;
+      overflow: hidden;
+      transition: border-color 0.15s ease;
+    }
+    .post-content .macro-bookmark:hover {
+      border-color: var(--color-primary);
+      text-decoration: none;
+    }
+    .post-content .macro-bookmark-content {
+      flex: 1;
+      padding: var(--space-md);
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .post-content .macro-bookmark-title {
+      font-weight: 600;
+      margin-bottom: var(--space-xs);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .post-content .macro-bookmark-description {
+      font-size: 0.875rem;
+      color: color-mix(in srgb, var(--color-text) 70%, transparent);
+      margin-bottom: var(--space-sm);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .post-content .macro-bookmark-meta {
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--color-text) 50%, transparent);
+    }
+    .post-content .macro-bookmark-thumbnail {
+      width: 180px;
+      flex-shrink: 0;
+    }
+    .post-content .macro-bookmark-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .post-content .macro-iframe {
+      margin: var(--space-lg) 0;
     }
     .draft-banner {
       background: var(--color-accent);

@@ -50,6 +50,38 @@ async function init() {
   // Keyboard shortcuts
   document.addEventListener('keydown', handleKeyboard);
 
+  // Drag and drop file upload
+  contentInput.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    contentInput.classList.add('drag-over');
+  });
+  contentInput.addEventListener('dragleave', () => {
+    contentInput.classList.remove('drag-over');
+  });
+  contentInput.addEventListener('drop', (e) => {
+    e.preventDefault();
+    contentInput.classList.remove('drag-over');
+    const files = e.dataTransfer?.files;
+    if (files) handleFileUpload(files);
+  });
+
+  // Paste file upload
+  contentInput.addEventListener('paste', (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const files = [];
+    for (const item of items) {
+      if (item.kind === 'file') {
+        const file = item.getAsFile();
+        if (file) files.push(file);
+      }
+    }
+    if (files.length > 0) {
+      e.preventDefault();
+      handleFileUpload(files);
+    }
+  });
+
   // Warn on unsaved changes
   window.addEventListener('beforeunload', (e) => {
     if (hasUnsavedChanges) {
@@ -116,12 +148,13 @@ async function loadPost(id) {
   }
 }
 
-// Handle title change - auto-generate slug
+// Handle title change - auto-generate slug and update preview
 function handleTitleChange() {
   handleChange();
   if (!currentId && !slugInput.value) {
     slugInput.value = slugify(titleInput.value);
   }
+  updatePreview();
 }
 
 // Handle any input change
@@ -129,11 +162,9 @@ function handleChange() {
   hasUnsavedChanges = true;
   saveStatus.textContent = 'Unsaved changes';
 
-  // Auto-save after 2 seconds of inactivity
+  // Auto-save after 3 seconds of inactivity
   if (autoSaveTimer) clearTimeout(autoSaveTimer);
-  if (isDraft && currentId) {
-    autoSaveTimer = setTimeout(() => autoSave(), 2000);
-  }
+  autoSaveTimer = setTimeout(() => autoSave(), 3000);
 }
 
 // Handle content change
@@ -144,30 +175,64 @@ function handleContentChange() {
 
 // Update preview pane
 function updatePreview() {
+  const title = titleInput.value.trim();
   const content = contentInput.value;
-  previewEl.innerHTML = window.renderMarkdown(content) || '<p style="color: var(--color-text); opacity: 0.5;">Preview will appear here...</p>';
+  const titleHtml = title ? `<h1>${escapePreviewHtml(title)}</h1>` : '';
+  const bodyHtml = window.renderMarkdown(content);
+  previewEl.innerHTML = titleHtml + (bodyHtml || '<p style="color: var(--color-text); opacity: 0.5;">Preview will appear here...</p>');
 }
 
-// Auto-save draft
+function escapePreviewHtml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Auto-save (works for drafts and published posts)
 async function autoSave() {
-  if (!isDraft || !currentId || isLoading) return;
+  if (isLoading) return;
+
+  const data = {
+    title: titleInput.value,
+    slug: slugInput.value,
+    description: descriptionInput.value,
+    content: contentInput.value,
+  };
 
   isLoading = true;
   saveStatus.textContent = 'Saving...';
 
   try {
-    const res = await fetch(`/api/admin/drafts/${currentId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: titleInput.value,
-        slug: slugInput.value,
-        description: descriptionInput.value,
-        content: contentInput.value,
-      }),
-    });
+    let res;
+    if (!currentId) {
+      // Create new draft
+      res = await fetch('/api/admin/drafts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        currentId = result.id;
+        isDraft = true;
+        const url = new URL(window.location);
+        url.searchParams.set('draft', currentId);
+        window.history.replaceState({}, '', url);
+      }
+    } else if (isDraft) {
+      res = await fetch(`/api/admin/drafts/${currentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } else {
+      // Published post
+      res = await fetch(`/api/admin/posts/${currentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    }
 
-    if (res.ok) {
+    if (res && res.ok) {
       hasUnsavedChanges = false;
       saveStatus.textContent = 'Saved';
     } else {
@@ -177,6 +242,52 @@ async function autoSave() {
     saveStatus.textContent = 'Save failed';
   } finally {
     isLoading = false;
+  }
+}
+
+// Handle file upload (drag/drop or paste)
+async function handleFileUpload(files) {
+  for (const file of files) {
+    const isVideo = file.type.startsWith('video/');
+    const isImage = file.type.startsWith('image/');
+    if (!isImage && !isVideo) continue;
+
+    saveStatus.textContent = 'Uploading...';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        saveStatus.textContent = err.error || 'Upload failed';
+        continue;
+      }
+
+      const { url } = await res.json();
+      const textarea = contentInput;
+      const pos = textarea.selectionStart;
+
+      let markdown;
+      if (isVideo) {
+        markdown = `\n/Iframe("${url}")\n`;
+      } else {
+        const name = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+        markdown = `\n![${name}](${url})\n`;
+      }
+
+      textarea.value = textarea.value.substring(0, pos) + markdown + textarea.value.substring(pos);
+      textarea.selectionStart = textarea.selectionEnd = pos + markdown.length;
+      handleContentChange();
+      saveStatus.textContent = 'Uploaded';
+    } catch (err) {
+      saveStatus.textContent = 'Upload failed';
+    }
   }
 }
 
@@ -388,6 +499,21 @@ function handleToolbarAction(action) {
       insert = `\n/Banner(200px, "Title", "Subtitle", "")\n`;
       cursorOffset = 18;
       break;
+    case 'callout':
+      insert = `\n/Callout("Your note here")\n`;
+      cursorOffset = 12;
+      break;
+    case 'twocolumn':
+      insert = `\n/TwoColumn\nLeft column content\n///\nRight column content\n/End\n`;
+      cursorOffset = 13;
+      break;
+    case 'linkpreview':
+      handleLinkPreviewInsert();
+      return;
+    case 'iframe':
+      insert = `\n/Iframe("https://example.com")\n`;
+      cursorOffset = 10;
+      break;
   }
 
   textarea.value = textarea.value.substring(0, start) + insert + textarea.value.substring(end);
@@ -395,6 +521,41 @@ function handleToolbarAction(action) {
   textarea.selectionStart = textarea.selectionEnd = start + cursorOffset;
 
   handleContentChange();
+}
+
+// Handle link preview insertion with OG fetch
+async function handleLinkPreviewInsert() {
+  const url = prompt('Enter URL for link preview:');
+  if (!url) return;
+
+  saveStatus.textContent = 'Fetching link data...';
+
+  try {
+    const res = await fetch(`/api/admin/og?url=${encodeURIComponent(url)}`);
+    const og = await res.json();
+
+    const title = (og.title || '').replace(/"/g, '\\"');
+    const description = (og.description || '').replace(/"/g, '\\"');
+    const image = og.image || '';
+
+    const macro = `\n/LinkPreview("${url}", "${title}", "${description}", "${image}")\n`;
+
+    const textarea = contentInput;
+    const pos = textarea.selectionStart;
+    textarea.value = textarea.value.substring(0, pos) + macro + textarea.value.substring(pos);
+    textarea.selectionStart = textarea.selectionEnd = pos + macro.length;
+    handleContentChange();
+    saveStatus.textContent = '';
+  } catch {
+    // Fall back to manual entry
+    const macro = `\n/LinkPreview("${url}", "", "", "")\n`;
+    const textarea = contentInput;
+    const pos = textarea.selectionStart;
+    textarea.value = textarea.value.substring(0, pos) + macro + textarea.value.substring(pos);
+    textarea.selectionStart = textarea.selectionEnd = pos + macro.length;
+    handleContentChange();
+    saveStatus.textContent = 'Could not fetch link data';
+  }
 }
 
 // Keyboard shortcuts
