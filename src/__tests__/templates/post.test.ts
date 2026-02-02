@@ -106,13 +106,13 @@ describe('Post Page Template', () => {
   });
 
   describe('Content Rendering', () => {
-    it('should include content in post-content div', () => {
+    it('should include content in md-content div', () => {
       const html = renderPostPage({
         title: 'Title',
         content: '<p>My rendered content</p>',
         publishedAt: '2024-01-01',
       });
-      expect(html).toContain('<div class="post-content">');
+      expect(html).toContain('<div class="md-content">');
       expect(html).toContain('<p>My rendered content</p>');
     });
 
@@ -228,14 +228,14 @@ describe('Post Page Template', () => {
   });
 
   describe('Styling', () => {
-    it('should include inline styles for post content', () => {
+    it('should include inline styles and markdown-content.css link', () => {
       const html = renderPostPage({
         title: 'Post',
         content: 'Content',
         publishedAt: '2024-01-01',
       });
       expect(html).toContain('<style>');
-      expect(html).toContain('.post-content');
+      expect(html).toContain('markdown-content.css');
     });
 
     it('should include components.css', () => {
