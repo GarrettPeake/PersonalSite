@@ -62,6 +62,14 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] SPA navigation tracking integration
 - [x] Custom 404 page for unmatched routes (server-side and SPA)
 - [x] Dynamic sitemap.xml with static pages and published blog posts
+- [x] Editor autosave (3s debounce) for drafts and published posts
+- [x] Post title shown in editor preview pane
+- [x] Image alt text rendered as figcaption subtitles
+- [x] Drag-and-drop and paste file upload in editor (images and videos)
+- [x] Video file upload support (mp4, webm, mov)
+- [x] Block macros: Callout, TwoColumn, LinkPreview, Iframe
+- [x] OpenGraph metadata fetch API (`GET /api/admin/og?url=...`)
+- [x] Editor toolbar buttons for all macros
 
 ### Not Yet Implemented
 
@@ -153,7 +161,8 @@ Worker handles:
 │   │   │   ├── tracking.ts  # /api/admin/tracking/* endpoints
 │   │   │   ├── upload.ts    # POST /api/admin/upload
 │   │   │   ├── photos.ts    # /api/photos and /api/admin/photos/* endpoints
-│   │   │   └── projects.ts  # /api/projects and /api/admin/projects/* endpoints
+│   │   │   ├── projects.ts  # /api/projects and /api/admin/projects/* endpoints
+│   │   │   └── og.ts        # GET /api/admin/og - OpenGraph metadata fetch
 │   │   └── /pages
 │   │       ├── blog.ts      # /blog/:slug handler
 │   │       ├── draft.ts     # /draft/share/:token handler
@@ -349,6 +358,7 @@ Set via `wrangler secret put <name>`:
 | PUT | `/api/admin/projects/:id` | Update project |
 | DELETE | `/api/admin/projects/:id` | Delete project |
 | PUT | `/api/admin/projects/reorder` | Reorder projects |
+| GET | `/api/admin/og?url=...` | Fetch OpenGraph metadata for link preview |
 
 ## CSS Architecture
 
@@ -659,10 +669,16 @@ Shared utility functions:
 - `exif.ts`: EXIF stripping for JPEG images (`isJpeg`, `stripExif`)
 
 ### Markdown Renderer (`src/lib/markdown.ts`)
-- Supports: headings, paragraphs, lists, blockquotes, code blocks, links, images, bold, italic
+- Supports: headings, paragraphs, lists, blockquotes, code blocks, links, images (with figcaption), bold, italic
 - Block macros: `/MacroName(args)` on own line
 - Inline macros: `/macroName(args)` within text
-- Currently only `/Banner` macro implemented
+- Multi-line macros: `/TwoColumn ... /// ... /End`
+- Implemented block macros:
+  - `/Banner(height, text, subtext, color)` - Full-width hero banner
+  - `/Callout("text")` - Callout box with lightbulb icon
+  - `/TwoColumn ... /// ... /End` - Two-column layout (multi-line)
+  - `/LinkPreview(url, title, description, image)` - Ghost-style bookmark card
+  - `/Iframe(src)` - Embedded iframe (URL or HTML)
 
 ### Desktop SPA Architecture
 

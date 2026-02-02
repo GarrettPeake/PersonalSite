@@ -29,12 +29,11 @@ interface MacroRegistry {
 const macros: MacroRegistry = {
   block: {
     Banner: renderBannerMacro,
+    Callout: renderCalloutMacro,
+    LinkPreview: renderLinkPreviewMacro,
+    Iframe: renderIframeMacro,
   },
-  inline: {
-    // Future inline macros will go here
-    // mention: renderMentionMacro,
-    // highlight: renderHighlightMacro,
-  },
+  inline: {},
 };
 
 /**
@@ -64,6 +63,44 @@ function renderBannerMacro(args: string[]): string {
   </div>`;
 }
 
+/**
+ * Render /Callout(text) macro
+ * Displays a callout box with a lightbulb icon
+ */
+function renderCalloutMacro(args: string[]): string {
+  const [text = ''] = args;
+  return `<div class="macro-callout"><svg class="macro-callout-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg><span>${escapeHtml(text)}</span></div>`;
+}
+
+/**
+ * Render /LinkPreview(url, title, description, image) macro
+ * Displays a rich link preview card (Ghost-style bookmark card)
+ */
+function renderLinkPreviewMacro(args: string[]): string {
+  const [url = '', title = '', description = '', image = ''] = args;
+  const displayTitle = title || url;
+  let hostname = '';
+  try { hostname = new URL(url).hostname; } catch { hostname = url; }
+  const thumbnailHtml = image
+    ? `<div class="macro-bookmark-thumbnail"><img src="${escapeHtml(image)}" alt=""></div>`
+    : '';
+  return `<a class="macro-bookmark" href="${escapeHtml(url)}" target="_blank" rel="noopener"><div class="macro-bookmark-content"><div class="macro-bookmark-title">${escapeHtml(displayTitle)}</div>${description ? `<div class="macro-bookmark-description">${escapeHtml(description)}</div>` : ''}<div class="macro-bookmark-meta"><span class="macro-bookmark-publisher">${escapeHtml(hostname)}</span></div></div>${thumbnailHtml}</a>`;
+}
+
+/**
+ * Render /Iframe(src) macro
+ * Embeds an iframe. Accepts a URL or raw HTML.
+ */
+function renderIframeMacro(args: string[]): string {
+  const [src = ''] = args;
+  // If it looks like HTML, render in a sandboxed srcdoc iframe
+  if (src.trim().startsWith('<')) {
+    const escaped = escapeHtml(src);
+    return `<div class="macro-iframe"><iframe srcdoc="${escaped}" sandbox="allow-scripts" loading="lazy" style="width:100%;min-height:400px;border:1px solid var(--color-border);"></iframe></div>`;
+  }
+  return `<div class="macro-iframe"><iframe src="${escapeHtml(src)}" sandbox="allow-scripts allow-same-origin" loading="lazy" style="width:100%;min-height:400px;border:1px solid var(--color-border);" allowfullscreen></iframe></div>`;
+}
+
 // ============================================================================
 // Markdown Parser
 // ============================================================================
@@ -76,6 +113,7 @@ export function renderMarkdown(markdown: string): string {
   let text = markdown.replace(/\r\n/g, '\n');
 
   // Process block-level elements first
+  text = processTwoColumnMacros(text);
   text = processBlockMacros(text);
   text = processCodeBlocks(text);
   text = processHeadings(text);
@@ -96,6 +134,22 @@ export function renderMarkdown(markdown: string): string {
 // ============================================================================
 // Block-Level Processing
 // ============================================================================
+
+/**
+ * Process /TwoColumn ... /// ... /End multi-line macro
+ * Renders two markdown blobs side by side
+ */
+function processTwoColumnMacros(text: string): string {
+  const pattern = /^\/TwoColumn\s*\n([\s\S]*?)^\/End\s*$/gm;
+  return text.replace(pattern, (_match, body: string) => {
+    const parts = body.split(/^\/\/\/\s*$/m);
+    const left = (parts[0] || '').trim();
+    const right = (parts[1] || '').trim();
+    const leftHtml = renderMarkdown(left);
+    const rightHtml = renderMarkdown(right);
+    return `<div class="macro-two-column"><div class="macro-two-column-left">${leftHtml}</div><div class="macro-two-column-right">${rightHtml}</div></div>`;
+  });
+}
 
 /**
  * Process block macros (PascalCase)
@@ -207,7 +261,7 @@ function processParagraphs(text: string): string {
       if (!trimmed) return '';
 
       // Skip if already an HTML block element
-      if (/^<(div|p|h[1-6]|ul|ol|li|blockquote|pre|hr|table)/i.test(trimmed)) {
+      if (/^<(div|p|h[1-6]|ul|ol|li|blockquote|pre|hr|table|figure|a class="macro)/i.test(trimmed)) {
         return trimmed;
       }
 
@@ -253,8 +307,13 @@ function processInlineCode(text: string): string {
  * Process links [text](url) and images ![alt](src)
  */
 function processLinks(text: string): string {
-  // Images first
-  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+  // Images first - wrap in figure with figcaption if alt text exists
+  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt: string, src: string) => {
+    if (alt) {
+      return `<figure class="md-figure"><img src="${src}" alt="${escapeHtml(alt)}"><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
+    }
+    return `<img src="${src}" alt="">`;
+  });
 
   // Links
   text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
