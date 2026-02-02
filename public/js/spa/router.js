@@ -108,14 +108,22 @@ class SPARouter {
 
     this.initialized = true;
 
+    // Disable transitions for the initial render so the first section appears instantly
+    this.spaContent.classList.add('no-transition');
+
     // Load and show initial section
     if (initialSection === 'blog-post' && initialBlogSlug) {
-      this.showBlogPost(initialBlogSlug, false);
+      this.showBlogPost(initialBlogSlug, false).then(() => {
+        this.enableTransitions();
+      });
     } else if (initialSection === 'draft-preview' && initialDraftToken) {
-      this.showDraftPreview(initialDraftToken, false);
+      this.showDraftPreview(initialDraftToken, false).then(() => {
+        this.enableTransitions();
+      });
     } else {
       this.showSection(initialSection, false).then(() => {
         document.documentElement.removeAttribute('data-initial-section');
+        this.enableTransitions();
         // Desktop: if this was a direct link to a blog post, open modal
         if (this.layoutMode === 'desktop' && initialBlogSlug) {
           const blogModal = document.querySelector('gp-blog-modal');
@@ -165,6 +173,17 @@ class SPARouter {
     this.layoutMode = null;
   }
 
+  /** Re-enable CSS transitions after the initial render */
+  enableTransitions() {
+    // Use requestAnimationFrame to ensure the browser has painted the initial state
+    // before re-enabling transitions, preventing any flash of animation
+    requestAnimationFrame(() => {
+      if (this.spaContent) {
+        this.spaContent.classList.remove('no-transition');
+      }
+    });
+  }
+
   /** Returns the current section name */
   getCurrentSection() {
     return this.currentSection;
@@ -172,6 +191,11 @@ class SPARouter {
 
   /** Resolve a URL path to a section name and optional params */
   resolveRoute(path) {
+    // Strip trailing slash (but keep "/" as-is)
+    if (path.length > 1 && path.endsWith('/')) {
+      path = path.slice(0, -1);
+    }
+
     // Blog post: /blog/:slug
     const blogPostMatch = path.match(/^\/blog\/(.+)$/);
     if (blogPostMatch) {
@@ -227,6 +251,10 @@ class SPARouter {
       const menuBtn = document.getElementById('mobile-menu-btn');
       if (menu && menu.classList.contains('open')) {
         menu.classList.remove('open');
+        // Hide menu links from tab order
+        menu.querySelectorAll('a, [tabindex]').forEach(el => el.setAttribute('tabindex', '-1'));
+        menu.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
         if (menuBtn) {
           menuBtn.classList.remove('open');
           menuBtn.setAttribute('aria-expanded', 'false');
@@ -237,6 +265,11 @@ class SPARouter {
   }
 
   navigate(url, pushState = true) {
+    // Normalize: strip trailing slash (but keep "/" as-is)
+    if (url.length > 1 && url.endsWith('/')) {
+      url = url.slice(0, -1);
+    }
+
     const { section, slug, token } = this.resolveRoute(url);
 
     if (section === 'not-found' && !url.startsWith('/draft') && !url.startsWith('/blog')) {

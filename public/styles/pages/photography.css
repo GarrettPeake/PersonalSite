@@ -59,8 +59,15 @@ gp-photo-modal:not(:defined) {
   transition: transform var(--transition-medium);
 }
 
-.photo-item:hover img {
+.photo-item:hover img,
+.photo-item:focus-visible img {
   transform: scale(1.05);
+}
+
+.photo-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  z-index: 1;
 }
 
 /* Placeholder for photos without images */
@@ -94,23 +101,31 @@ gp-photo-modal:not(:defined) {
   transition: background var(--transition-fast);
 }
 
-.photo-item:hover::after {
+.photo-item:hover::after,
+.photo-item:focus-visible::after {
   background: rgba(0, 0, 0, 0.1);
 }
 
 /* Responsive grid */
 @media (max-width: 768px) {
+  .photo-main {
+    padding: var(--space-xs);
+  }
+
   .photo-grid {
     grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
   }
 
   .page-title {
     font-size: 2rem;
+    padding: 0 var(--space-xs);
   }
 }
 
 @media (max-width: 480px) {
   .photo-grid {
     grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
   }
 }

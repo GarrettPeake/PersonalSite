@@ -44,7 +44,7 @@ function renderPhotoGrid(container) {
   }
 
   photoGrid.innerHTML = photos.map(photo => `
-    <div class="photo-item" data-id="${photo.id}" data-location="${escapeAttr(photo.location)}" data-description="${escapeAttr(photo.description)}">
+    <div class="photo-item" role="button" tabindex="0" aria-label="${escapeAttr(photo.description || photo.location || 'View photo')}" data-id="${photo.id}" data-location="${escapeAttr(photo.location)}" data-description="${escapeAttr(photo.description)}">
       <img src="${escapeAttr(photo.url)}" alt="${escapeAttr(photo.description || 'Photo')}" loading="lazy">
     </div>
   `).join('');
@@ -56,10 +56,7 @@ function initPhotoGallery(container) {
 
   if (!photoGrid || !photoModal) return;
 
-  photoGrid.addEventListener('click', (e) => {
-    const photoItem = e.target.closest('.photo-item');
-    if (!photoItem) return;
-
+  function openPhoto(photoItem) {
     const img = photoItem.querySelector('img');
     const imageSrc = img ? img.src : null;
     const location = photoItem.dataset.location || '';
@@ -70,6 +67,20 @@ function initPhotoGallery(container) {
       location,
       description
     });
+  }
+
+  photoGrid.addEventListener('click', (e) => {
+    const photoItem = e.target.closest('.photo-item');
+    if (!photoItem) return;
+    openPhoto(photoItem);
+  });
+
+  photoGrid.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const photoItem = e.target.closest('.photo-item');
+    if (!photoItem) return;
+    e.preventDefault();
+    openPhoto(photoItem);
   });
 }
 

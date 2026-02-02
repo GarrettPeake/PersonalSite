@@ -16,8 +16,19 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
   errorEl.hidden = true;
 
-  const username = form.username.value;
+  const username = form.username.value.trim();
   const password = form.password.value;
+
+  if (!username || !password) {
+    errorEl.textContent = 'Username and password are required.';
+    errorEl.hidden = false;
+    if (!username) {
+      form.username.focus();
+    } else {
+      form.password.focus();
+    }
+    return;
+  }
 
   try {
     const res = await fetch('/api/auth/login', {
