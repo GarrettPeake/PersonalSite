@@ -136,6 +136,9 @@ function renderDesktopProjects(container) {
         data-id="${project.id}"
         data-title="${escapeAttr(project.title)}"
         data-description="${escapeAttr(project.description)}"
+        tabindex="0"
+        role="button"
+        aria-label="${escapeAttr(project.title)}"
       >
         <div class="shelf-item-icon">
           ${project.iconType === 'svg' ? project.icon : `<img src="${escapeAttr(project.icon)}" alt="">`}
@@ -158,22 +161,35 @@ function renderMobileProjects(container) {
     return;
   }
 
-  mobileProjects.innerHTML = projects.map(project => `
-    <div class="mobile-project-card" data-url="${escapeAttr(project.url || '#')}">
+  mobileProjects.innerHTML = projects.map(project => {
+    const hasValidUrl = project.url && project.url !== '#';
+    return `
+    <div class="mobile-project-card" tabindex="0" role="button" aria-label="${escapeAttr(project.title)}">
       <div class="project-icon">
-        ${project.iconType === 'svg' ? project.icon : `<img src="${escapeAttr(project.icon)}" alt="">`}
+        ${project.iconType === 'svg' ? project.icon : `<img src="${escapeAttr(project.icon)}" alt="" width="48" height="48">`}
       </div>
       <div class="project-info">
         <h3>${escapeHtml(project.title)}</h3>
-        <p class="project-description">${escapeHtml(project.description)}</p>
+        <p class="project-description md-content">${renderMarkdownSimple(project.description)}</p>
+        ${project.contentPieces && project.contentPieces.length > 0 ? `
+          <div class="project-content-pieces">
+            ${project.contentPieces.map(piece => {
+              if (piece.type === 'iframe') {
+                return `<div class="content-piece-container"><iframe src="${escapeAttr(piece.url)}" title="${escapeAttr(piece.description || project.title)}" loading="lazy"></iframe></div>`;
+              } else {
+                return `<div class="content-piece-container"><img src="${escapeAttr(piece.url)}" alt="${escapeAttr(piece.description || project.title)}" loading="lazy"></div>`;
+              }
+            }).join('')}
+          </div>
+        ` : ''}
       </div>
-      ${project.url ? `
+      ${hasValidUrl ? `
         <a
           href="${escapeAttr(project.url)}"
           target="_blank"
           rel="noopener"
           class="open-link"
-          aria-label="Open in new tab"
+          aria-label="Open ${escapeAttr(project.title)} in new tab"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -183,18 +199,14 @@ function renderMobileProjects(container) {
         </a>
       ` : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   initMobileProjectCards(mobileProjects);
 }
 
 function initMobileProjectCards(container) {
-  container.addEventListener('click', (e) => {
-    if (e.target.closest('.open-link')) return;
-
-    const card = e.target.closest('.mobile-project-card');
-    if (!card) return;
-
+  function toggleCard(card) {
     const wasExpanded = card.classList.contains('expanded');
 
     container.querySelectorAll('.mobile-project-card.expanded').forEach(c => {
@@ -204,6 +216,24 @@ function initMobileProjectCards(container) {
     if (!wasExpanded) {
       card.classList.add('expanded');
     }
+  }
+
+  container.addEventListener('click', (e) => {
+    if (e.target.closest('.open-link')) return;
+
+    const card = e.target.closest('.mobile-project-card');
+    if (!card) return;
+    toggleCard(card);
+  });
+
+  container.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.target.closest('.open-link')) return;
+
+    const card = e.target.closest('.mobile-project-card');
+    if (!card) return;
+    e.preventDefault();
+    toggleCard(card);
   });
 }
 
@@ -223,7 +253,7 @@ function renderCarouselContent(project) {
   } else {
     return `
       <div class="slide-image">
-        <img src="${escapeAttr(piece.url)}" alt="${escapeAttr(piece.description || project.title)}" loading="lazy">
+        <img src="${escapeAttr(piece.url)}" alt="${escapeAttr(piece.description || project.title)}">
         ${piece.description ? `<div class="slide-caption">${renderMarkdownSimple(piece.description)}</div>` : ''}
       </div>
     `;
@@ -266,10 +296,7 @@ function initShelfSync() {
     restoreSelectedDescription();
   });
 
-  shelfItems.addEventListener('click', (e) => {
-    const item = e.target.closest('.shelf-item');
-    if (!item) return;
-
+  function activateShelfItem(item) {
     const projectIndex = parseInt(item.dataset.project);
     selectedIndex = projectIndex;
 
@@ -278,6 +305,20 @@ function initShelfSync() {
 
     showDescription(projectIndex);
     updateCarousel(item.dataset.project);
+  }
+
+  shelfItems.addEventListener('click', (e) => {
+    const item = e.target.closest('.shelf-item');
+    if (!item) return;
+    activateShelfItem(item);
+  });
+
+  shelfItems.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const item = e.target.closest('.shelf-item');
+    if (!item) return;
+    e.preventDefault();
+    activateShelfItem(item);
   });
 }
 

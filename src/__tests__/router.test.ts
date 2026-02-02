@@ -116,6 +116,33 @@ describe('Router', () => {
       // Draft previews are now client-rendered
       expect(handleAdmin).not.toHaveBeenCalled();
     });
+
+    it('should serve SPA shell with 200 for known routes', async () => {
+      const knownRoutes = ['/projects', '/blog', '/about', '/photography', '/blog/some-post', '/draft/share/token123'];
+      for (const route of knownRoutes) {
+        const request = new Request(`http://localhost${route}`);
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(request, env, ctx);
+        expect(response.status).toBe(200);
+      }
+    });
+
+    it('should serve SPA shell with 404 status for unknown routes', async () => {
+      const request = new Request('http://localhost/404test');
+      const ctx = createExecutionContext();
+      const response = await worker.fetch(request, env, ctx);
+
+      // Should return 404 status for crawlers, but still serve the SPA shell
+      expect(response.status).toBe(404);
+    });
+
+    it('should serve SPA shell with 404 status for deep unknown routes', async () => {
+      const request = new Request('http://localhost/some/random/path');
+      const ctx = createExecutionContext();
+      const response = await worker.fetch(request, env, ctx);
+
+      expect(response.status).toBe(404);
+    });
   });
 
   describe('Tracking redirect routes', () => {
@@ -134,7 +161,7 @@ describe('Router', () => {
   });
 
   describe('Admin routes', () => {
-    it('should route /admin/ to admin handler', async () => {
+    it('should route /admin/ to admin handler (no trailing slash redirect for admin)', async () => {
       const request = new Request('http://localhost/admin/');
       const ctx = createExecutionContext();
       const response = await worker.fetch(request, env, ctx);
@@ -143,6 +170,18 @@ describe('Router', () => {
         request,
         env,
         '/admin/'
+      );
+    });
+
+    it('should route /admin to admin handler', async () => {
+      const request = new Request('http://localhost/admin');
+      const ctx = createExecutionContext();
+      const response = await worker.fetch(request, env, ctx);
+
+      expect(handleAdmin).toHaveBeenCalledWith(
+        request,
+        env,
+        '/admin'
       );
       expect(await response.text()).toBe('admin handler');
     });

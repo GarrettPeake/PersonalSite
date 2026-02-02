@@ -30,7 +30,7 @@ class GpBlogModal extends HTMLElement {
           position: fixed;
           inset: 0;
           z-index: var(--z-modal, 1000);
-          overflow: hidden;
+          pointer-events: none;
         }
 
         .modal-overlay {
@@ -46,6 +46,8 @@ class GpBlogModal extends HTMLElement {
           -webkit-overflow-scrolling: touch;
           border-left: 1px solid var(--color-border, #e0e0e0);
           border-right: 1px solid var(--color-border, #e0e0e0);
+          outline: none;
+          pointer-events: auto;
         }
 
         @media (min-width: 901px) and (max-width: 1200px) {
@@ -142,25 +144,6 @@ class GpBlogModal extends HTMLElement {
           padding: var(--space-xl, 4rem);
         }
 
-        /* Dark mode adjustments */
-        @media (prefers-color-scheme: dark) {
-          :host {
-            --color-bg: #0a0a0a;
-            --color-text: #ffffff;
-            --color-text-muted: #999;
-            --color-border: #333;
-            --color-bg-secondary: #1a1a1a;
-          }
-        }
-
-        :host-context([data-theme="dark"]) {
-          --color-bg: #0a0a0a;
-          --color-text: #ffffff;
-          --color-text-muted: #999;
-          --color-border: #333;
-          --color-bg-secondary: #1a1a1a;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
           .modal-header {
@@ -182,7 +165,7 @@ class GpBlogModal extends HTMLElement {
       </style>
 
       <link rel="stylesheet" href="/styles/markdown-content.css">
-      <div class="modal-overlay">
+      <div class="modal-overlay" tabindex="-1">
         <header class="modal-header">
           <button class="back-btn" aria-label="Back to blog">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -227,8 +210,10 @@ class GpBlogModal extends HTMLElement {
 
       const post = await response.json();
       this.renderPost(post);
+      this.focusOverlay();
     } catch (err) {
       content.innerHTML = '<p class="error">Post not found</p>';
+      this.focusOverlay();
     }
   }
 
@@ -242,6 +227,11 @@ class GpBlogModal extends HTMLElement {
       <p class="post-meta">${this.formatDate(post.publishedAt)}</p>
       <div class="post-body md-content">${typeof window.renderMarkdown === 'function' ? window.renderMarkdown(post.content) : this.escapeHtml(post.content)}</div>
     `;
+  }
+
+  focusOverlay() {
+    const overlay = this.shadowRoot.querySelector('.modal-overlay');
+    if (overlay) overlay.focus();
   }
 
   close() {

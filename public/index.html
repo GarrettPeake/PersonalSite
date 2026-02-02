@@ -184,7 +184,7 @@
     <div class="mobile-layout">
       <!-- Mobile Header -->
       <header class="mobile-header">
-        <span class="mobile-logo">Garrett Peake</span>
+        <a href="/" class="mobile-logo">Garrett Peake</a>
         <button
           class="mobile-menu-btn"
           id="mobile-menu-btn"
@@ -198,11 +198,11 @@
       </header>
 
       <!-- Mobile Menu -->
-      <nav class="mobile-menu" id="mobile-menu">
-        <a href="/" class="mobile-nav-link" data-spa-link>/projects</a>
-        <a href="/blog" class="mobile-nav-link" data-spa-link>/blog</a>
-        <a href="/about" class="mobile-nav-link" data-spa-link>/about</a>
-        <a href="/photography" class="mobile-nav-link" data-spa-link>/photography</a>
+      <nav class="mobile-menu" id="mobile-menu" aria-hidden="true">
+        <a href="/" class="mobile-nav-link" data-spa-link tabindex="-1">/projects</a>
+        <a href="/blog" class="mobile-nav-link" data-spa-link tabindex="-1">/blog</a>
+        <a href="/about" class="mobile-nav-link" data-spa-link tabindex="-1">/about</a>
+        <a href="/photography" class="mobile-nav-link" data-spa-link tabindex="-1">/photography</a>
         <div class="mobile-theme-toggle" id="mobile-theme-toggle">
           <span class="theme-label">Theme</span>
           <div class="mini-mountains">

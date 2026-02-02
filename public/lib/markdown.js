@@ -300,11 +300,14 @@ function processLinks(text) {
 function processBoldItalic(text) {
   // Bold: **text** or __text__
   text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  text = text.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+  // Underscore bold: only at word boundaries (not mid-word like FOO__BAR)
+  // Allow after whitespace, start of string, or HTML tag closing >
+  text = text.replace(/(^|[\s>])__([^_]+)__(?=[\s<,.\-:;!?)]|$)/gm, '$1<strong>$2</strong>');
 
   // Italic: *text* or _text_
   text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  text = text.replace(/_([^_]+)_/g, '<em>$1</em>');
+  // Underscore italic: only at word boundaries (not mid-word like TECH_CONVERSIONS)
+  text = text.replace(/(^|[\s>])_([^_]+)_(?=[\s<,.\-:;!?)]|$)/gm, '$1<em>$2</em>');
 
   return text;
 }

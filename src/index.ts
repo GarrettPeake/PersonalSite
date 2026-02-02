@@ -65,7 +65,14 @@ import { jsonResponse, corsHeaders, handleCorsPreflightResponse } from './lib/re
 export default {
   async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-    const path = url.pathname;
+    let path = url.pathname;
+
+    // Strip trailing slash (redirect to canonical URL without it)
+    // Exclude /admin paths — Cloudflare ASSETS needs trailing slashes for directory indexes.
+    if (path.length > 1 && path.endsWith('/') && !path.startsWith('/admin')) {
+      url.pathname = path.slice(0, -1);
+      return Response.redirect(url.toString(), 301);
+    }
 
     // API routes
     if (path.startsWith('/api/')) {
@@ -78,7 +85,7 @@ export default {
     }
 
     // Admin routes
-    if (path.startsWith('/admin/')) {
+    if (path === '/admin' || path.startsWith('/admin/')) {
       return handleAdmin(request, env, path);
     }
 
@@ -87,22 +94,36 @@ export default {
       return handleSitemap(env);
     }
 
-    // SPA routes — serve index.html as the SPA shell.
+    // Known SPA routes — serve index.html as the SPA shell with 200 status.
     // The client-side router handles rendering for all public routes.
-    const spaRoutes = ['/projects', '/blog', '/about', '/photography', '/draft'];
-    if (spaRoutes.some(route => path === route || path.startsWith(route + '/'))) {
+    // Static routes we know are valid:
+    const knownStaticRoutes = ['/', '/projects', '/blog', '/about', '/photography'];
+    // Dynamic route patterns we accept (can't verify content without KV lookup):
+    const knownDynamicPrefixes = ['/blog/', '/draft/share/'];
+
+    const isKnownRoute =
+      knownStaticRoutes.includes(path) ||
+      knownDynamicPrefixes.some(prefix => path.startsWith(prefix) && path.length > prefix.length);
+
+    if (isKnownRoute) {
       const indexRequest = new Request(new URL('/', request.url), request);
       return env.ASSETS.fetch(indexRequest);
     }
 
-    // Try to serve from static assets; serve SPA shell for 404s
-    // (the client-side router will show its own 404 section)
+    // Try to serve from static assets (CSS, JS, images, etc.)
     const assetResponse = await env.ASSETS.fetch(request);
-    if (assetResponse.status === 404) {
-      const indexRequest = new Request(new URL('/', request.url), request);
-      return env.ASSETS.fetch(indexRequest);
+    if (assetResponse.status !== 404) {
+      return assetResponse;
     }
-    return assetResponse;
+
+    // Unknown route — serve SPA shell with 404 status for crawlers.
+    // The client-side router will still render and show the 404 page.
+    const indexRequest = new Request(new URL('/', request.url), request);
+    const spaShell = await env.ASSETS.fetch(indexRequest);
+    return new Response(spaShell.body, {
+      status: 404,
+      headers: spaShell.headers,
+    });
   },
 } satisfies ExportedHandler<Env>;
 
