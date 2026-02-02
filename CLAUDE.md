@@ -258,6 +258,7 @@ Worker handles:
     │   ├── theme.css         # CSS custom properties (colors, fonts, spacing)
     │   ├── base.css          # Reset, typography, layout utilities
     │   ├── components.css    # Reusable UI components (buttons, cards, forms)
+    │   ├── markdown-content.css # Shared rendered markdown styles (.md-content)
     │   ├── web-components.css # Shared styles for Shadow DOM components
     │   ├── admin.css         # Admin-specific layout (sidebar, header)
     │   └── /pages
@@ -386,6 +387,7 @@ The CSS is organized into layers that build on each other. Always include styles
 | `theme.css` | CSS custom properties (colors, spacing, fonts) | Always include first |
 | `base.css` | Reset, typography, containers, `body.page` layout | Always include second |
 | `components.css` | Buttons, cards, forms, dialogs, tables, utilities | When using any UI components |
+| `markdown-content.css` | Rendered markdown styles (`.md-content` class) | Any container showing markdown output |
 | `web-components.css` | Shared styles for Shadow DOM web components | Linked inside Shadow DOM |
 | `admin.css` | Admin sidebar, header, navigation | Admin pages only |
 | `pages/*.css` | Page-specific layouts and overrides | One per page |

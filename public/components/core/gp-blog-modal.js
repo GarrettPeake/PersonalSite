@@ -114,9 +114,9 @@ class GpBlogModal extends HTMLElement {
           margin-bottom: var(--space-xl, 4rem);
         }
 
+        /* Post body: layout overrides only (markdown styles from linked stylesheet) */
         .post-body {
           font-size: 1.1rem;
-          line-height: 1.8;
           color: var(--color-text, #1a1a1a);
         }
 
@@ -124,67 +124,11 @@ class GpBlogModal extends HTMLElement {
         .post-body h2,
         .post-body h3 {
           font-family: var(--font-display, system-ui);
-          margin-top: var(--space-xl, 4rem);
-          margin-bottom: var(--space-md, 1rem);
         }
 
         .post-body h1 { font-size: 2rem; }
         .post-body h2 { font-size: 1.5rem; }
         .post-body h3 { font-size: 1.25rem; }
-
-        .post-body p {
-          margin-bottom: var(--space-md, 1rem);
-        }
-
-        .post-body a {
-          color: var(--color-primary, #0066ff);
-          text-decoration: underline;
-        }
-
-        .post-body code {
-          font-family: var(--font-mono, monospace);
-          background: var(--color-bg-secondary, #f0f0f0);
-          padding: 0.15em 0.4em;
-          border-radius: 3px;
-          font-size: 0.9em;
-        }
-
-        .post-body pre {
-          background: var(--color-bg-secondary, #f0f0f0);
-          padding: var(--space-md, 1rem);
-          overflow-x: auto;
-          margin-bottom: var(--space-md, 1rem);
-          border: 1px solid var(--color-border, #e0e0e0);
-        }
-
-        .post-body pre code {
-          background: none;
-          padding: 0;
-        }
-
-        .post-body blockquote {
-          border-left: 3px solid var(--color-primary, #0066ff);
-          padding-left: var(--space-md, 1rem);
-          margin-left: 0;
-          color: var(--color-text-muted, #666);
-          font-style: italic;
-        }
-
-        .post-body img {
-          max-width: 100%;
-          height: auto;
-          margin: var(--space-lg, 2rem) 0;
-        }
-
-        .post-body ul,
-        .post-body ol {
-          margin-bottom: var(--space-md, 1rem);
-          padding-left: var(--space-lg, 2rem);
-        }
-
-        .post-body li {
-          margin-bottom: var(--space-xs, 0.25rem);
-        }
 
         .loading {
           text-align: center;
@@ -237,6 +181,7 @@ class GpBlogModal extends HTMLElement {
         }
       </style>
 
+      <link rel="stylesheet" href="/styles/markdown-content.css">
       <div class="modal-overlay">
         <header class="modal-header">
           <button class="back-btn" aria-label="Back to blog">
@@ -295,7 +240,7 @@ class GpBlogModal extends HTMLElement {
     content.innerHTML = `
       <h1 class="post-title">${this.escapeHtml(post.title)}</h1>
       <p class="post-meta">${this.formatDate(post.publishedAt)}</p>
-      <div class="post-body">${typeof window.renderMarkdown === 'function' ? window.renderMarkdown(post.content) : this.escapeHtml(post.content)}</div>
+      <div class="post-body md-content">${typeof window.renderMarkdown === 'function' ? window.renderMarkdown(post.content) : this.escapeHtml(post.content)}</div>
     `;
   }
 
