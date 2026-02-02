@@ -1,10 +1,13 @@
 /**
  * SPA Router
  *
- * Client-side router for desktop SPA navigation.
+ * Client-side router for both desktop and mobile SPA navigation.
  * Uses History API for navigation between sections.
- * Only initializes on desktop (900px+).
+ * Desktop: carousel transitions, shelf management, blog modal.
+ * Mobile: simple content swaps, inline blog post rendering.
  */
+
+const SPA_BREAKPOINT = 900;
 
 class SPARouter {
   routes = {
@@ -20,6 +23,7 @@ class SPARouter {
   loadedSections = {};
   isTransitioning = false;
   initialized = false;
+  layoutMode = null; // 'desktop' | 'mobile'
 
   constructor() {
     this.spaContent = null;
@@ -28,15 +32,22 @@ class SPARouter {
     this._popstateHandler = null;
     this._blogModalCloseHandler = null;
     this._clickHandler = null;
+    this._resizeHandler = null;
   }
 
   init() {
     // Prevent double-initialization
     if (this.initialized) return;
 
-    this.spaContent = document.getElementById('spa-content');
-    this.rightPanel = document.querySelector('.right-panel');
-    this.shelfPanel = document.querySelector('.shelf-panel');
+    this.layoutMode = window.innerWidth >= SPA_BREAKPOINT ? 'desktop' : 'mobile';
+
+    if (this.layoutMode === 'desktop') {
+      this.spaContent = document.getElementById('spa-content');
+      this.rightPanel = document.querySelector('.right-panel');
+      this.shelfPanel = document.querySelector('.shelf-panel');
+    } else {
+      this.spaContent = document.getElementById('mobile-spa-content');
+    }
 
     if (!this.spaContent) {
       console.error('SPA content container not found');
@@ -47,78 +58,85 @@ class SPARouter {
     const redirectPath = sessionStorage.getItem('spa-redirect');
     if (redirectPath) {
       sessionStorage.removeItem('spa-redirect');
-      // Update URL without reload
       history.replaceState(null, '', redirectPath);
     }
 
     // Parse initial URL and set section
     const path = window.location.pathname;
-    let initialSection = this.routes[path] || null;
-    let initialBlogSlug = null;
-
-    // Check if this is a direct link to a blog post
-    const blogPostMatch = path.match(/^\/blog\/(.+)$/);
-    if (blogPostMatch) {
-      initialSection = 'blog';
-      initialBlogSlug = blogPostMatch[1];
-    }
-
-    // If no matching section found, show 404 state
-    if (!initialSection) {
-      initialSection = 'not-found';
-    }
+    const { section: initialSection, slug: initialBlogSlug, token: initialDraftToken } = this.resolveRoute(path);
 
     // Bind popstate for browser back/forward
     this._popstateHandler = (e) => {
-      const section = e.state?.section || this.routes[window.location.pathname] || 'not-found';
-      this.showSection(section, false);
+      const path = window.location.pathname;
+      const { section, slug, token } = this.resolveRoute(path);
 
-      // Close blog modal if we navigated away from a blog post
-      if (!e.state?.slug) {
+      // Close blog modal if we navigated away from a blog post on desktop
+      if (this.layoutMode === 'desktop' && !slug) {
         const blogModal = document.querySelector('gp-blog-modal');
         if (blogModal && blogModal.hasAttribute('open')) {
           blogModal.close();
         }
       }
+
+      if (section === 'blog-post') {
+        this.showBlogPost(slug, false);
+      } else if (section === 'draft-preview') {
+        this.showDraftPreview(token, false);
+      } else {
+        this.showSection(section, false);
+      }
     };
     window.addEventListener('popstate', this._popstateHandler);
 
-    // Listen for blog modal close events
-    this._blogModalCloseHandler = () => {
-      // Update URL to /blog when modal closes
-      if (window.location.pathname.startsWith('/blog/')) {
-        history.pushState({ section: 'blog' }, '', '/blog');
-        this.updateDocumentTitle('blog');
-      }
-    };
-    document.addEventListener('blog-modal-close', this._blogModalCloseHandler);
+    // Listen for blog modal close events (desktop only)
+    if (this.layoutMode === 'desktop') {
+      this._blogModalCloseHandler = () => {
+        if (window.location.pathname.startsWith('/blog/')) {
+          history.pushState({ section: 'blog' }, '', '/blog');
+          this.updateDocumentTitle('blog');
+        }
+      };
+      document.addEventListener('blog-modal-close', this._blogModalCloseHandler);
+    }
 
     // Intercept nav link clicks
     this.setupNavigation();
 
+    // Handle resize across the breakpoint
+    this._resizeHandler = this.createResizeHandler();
+    window.addEventListener('resize', this._resizeHandler);
+
     this.initialized = true;
 
     // Load and show initial section
-    this.showSection(initialSection, false).then(() => {
-      // Remove pre-SPA shelf collapse attribute now that the router manages visibility
-      document.documentElement.removeAttribute('data-initial-section');
-      // If this was a direct link to a blog post, open it
-      if (initialBlogSlug) {
-        const blogModal = document.querySelector('gp-blog-modal');
-        if (blogModal) {
-          blogModal.open(initialBlogSlug);
+    if (initialSection === 'blog-post' && initialBlogSlug) {
+      this.showBlogPost(initialBlogSlug, false);
+    } else if (initialSection === 'draft-preview' && initialDraftToken) {
+      this.showDraftPreview(initialDraftToken, false);
+    } else {
+      this.showSection(initialSection, false).then(() => {
+        document.documentElement.removeAttribute('data-initial-section');
+        // Desktop: if this was a direct link to a blog post, open modal
+        if (this.layoutMode === 'desktop' && initialBlogSlug) {
+          const blogModal = document.querySelector('gp-blog-modal');
+          if (blogModal) {
+            blogModal.open(initialBlogSlug);
+          }
         }
-      }
-    });
+      });
+    }
 
     // Replace state with section info
-    history.replaceState({ section: initialSection, slug: initialBlogSlug }, '', window.location.pathname);
+    history.replaceState(
+      { section: initialSection, slug: initialBlogSlug, token: initialDraftToken },
+      '',
+      window.location.pathname
+    );
   }
 
   destroy() {
     if (!this.initialized) return;
 
-    // Remove event listeners
     if (this._popstateHandler) {
       window.removeEventListener('popstate', this._popstateHandler);
       this._popstateHandler = null;
@@ -131,26 +149,71 @@ class SPARouter {
       document.removeEventListener('click', this._clickHandler);
       this._clickHandler = null;
     }
+    if (this._resizeHandler) {
+      window.removeEventListener('resize', this._resizeHandler);
+      this._resizeHandler = null;
+    }
 
-    // Clean up loaded sections from DOM
     if (this.spaContent) {
       this.spaContent.innerHTML = '';
     }
 
-    // Reset state
     this.currentSection = null;
     this.loadedSections = {};
     this.isTransitioning = false;
     this.initialized = false;
+    this.layoutMode = null;
   }
 
-  /** Returns the current section name, useful for preserving state across resize */
+  /** Returns the current section name */
   getCurrentSection() {
     return this.currentSection;
   }
 
+  /** Resolve a URL path to a section name and optional params */
+  resolveRoute(path) {
+    // Blog post: /blog/:slug
+    const blogPostMatch = path.match(/^\/blog\/(.+)$/);
+    if (blogPostMatch) {
+      // On desktop, blog posts open as modal over the blog section
+      if (this.layoutMode === 'desktop') {
+        return { section: 'blog', slug: blogPostMatch[1], token: null };
+      }
+      // On mobile, blog posts are their own section
+      return { section: 'blog-post', slug: blogPostMatch[1], token: null };
+    }
+
+    // Draft preview: /draft/share/:token
+    const draftMatch = path.match(/^\/draft\/share\/(.+)$/);
+    if (draftMatch) {
+      return { section: 'draft-preview', slug: null, token: draftMatch[1] };
+    }
+
+    // Standard routes
+    const section = this.routes[path] || 'not-found';
+    return { section, slug: null, token: null };
+  }
+
+  createResizeHandler() {
+    let resizeTimer;
+    let wasDesktop = this.layoutMode === 'desktop';
+
+    return () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const isDesktop = window.innerWidth >= SPA_BREAKPOINT;
+        if (isDesktop === wasDesktop) return;
+        wasDesktop = isDesktop;
+
+        // Layout mode changed — tear down and reinitialize
+        const currentPath = window.location.pathname;
+        this.destroy();
+        this.init();
+      }, 150);
+    };
+  }
+
   setupNavigation() {
-    // Handle all nav links with data-section
     this._clickHandler = (e) => {
       const link = e.target.closest('[data-spa-link]');
       if (!link) return;
@@ -158,20 +221,44 @@ class SPARouter {
       e.preventDefault();
       const href = link.getAttribute('href');
       this.navigate(href);
+
+      // Close mobile menu if open
+      const menu = document.getElementById('mobile-menu');
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      if (menu && menu.classList.contains('open')) {
+        menu.classList.remove('open');
+        if (menuBtn) {
+          menuBtn.classList.remove('open');
+          menuBtn.setAttribute('aria-expanded', 'false');
+        }
+      }
     };
     document.addEventListener('click', this._clickHandler);
   }
 
   navigate(url, pushState = true) {
-    const section = this.routes[url];
-    if (!section) {
+    const { section, slug, token } = this.resolveRoute(url);
+
+    if (section === 'not-found' && !url.startsWith('/draft') && !url.startsWith('/blog')) {
       // Not an SPA route, do normal navigation
       window.location.href = url;
       return;
     }
 
     // Close blog modal if open before navigating
-    this.closeBlogPost();
+    if (this.layoutMode === 'desktop') {
+      this.closeBlogPost();
+    }
+
+    if (section === 'blog-post' && slug) {
+      this.showBlogPost(slug, true);
+      return;
+    }
+
+    if (section === 'draft-preview' && token) {
+      this.showDraftPreview(token, true);
+      return;
+    }
 
     if (pushState) {
       history.pushState({ section }, '', url);
@@ -219,43 +306,33 @@ class SPARouter {
     // Update document title
     this.updateDocumentTitle(name);
 
-    // Update shelf panel visibility
-    this.updateShelfVisibility(name);
+    // Update shelf panel visibility (desktop only)
+    if (this.layoutMode === 'desktop') {
+      this.updateShelfVisibility(name);
+    }
 
-    if (animate && currentEl && direction) {
-      // Set up transition classes
+    // Desktop: carousel transitions
+    if (this.layoutMode === 'desktop' && animate && currentEl && direction) {
       const exitClass = direction === 'forward' ? 'exit-left' : 'exit-right';
       const enterClass = direction === 'forward' ? 'enter-right' : 'enter-left';
 
-      // Position new section for entry WITHOUT animation
       newEl.style.transition = 'none';
       newEl.classList.add(enterClass);
       newEl.classList.add('active');
-
-      // Trigger reflow to apply position immediately
       newEl.offsetHeight;
-
-      // Re-enable transitions
       newEl.style.transition = '';
-
-      // Trigger another reflow
       newEl.offsetHeight;
 
-      // Start exit animation on current
       currentEl.classList.add(exitClass);
       currentEl.classList.remove('active');
-
-      // Start enter animation on new (animate to center)
       newEl.classList.remove(enterClass);
 
-      // Wait for transition to complete
       await new Promise(resolve => setTimeout(resolve, 400));
 
-      // Clean up and unload previous section
       currentEl.classList.remove(exitClass);
       this.unloadSection(previousSection);
     } else {
-      // No animation - just swap
+      // Mobile or no animation: simple swap
       if (currentEl) {
         currentEl.classList.remove('active');
         this.unloadSection(previousSection);
@@ -265,6 +342,93 @@ class SPARouter {
 
     this.currentSection = name;
     this.isTransitioning = false;
+
+    // Scroll to top on mobile when switching sections
+    if (this.layoutMode === 'mobile') {
+      this.spaContent.scrollTop = 0;
+      window.scrollTo(0, 0);
+    }
+  }
+
+  /** Show a blog post (mobile: inline section, desktop: modal) */
+  async showBlogPost(slug, pushState = true) {
+    if (this.layoutMode === 'desktop') {
+      // Desktop: navigate to blog section if needed, then open modal
+      if (this.currentSection !== 'blog') {
+        await this.showSection('blog', false);
+      }
+
+      if (pushState) {
+        history.pushState({ section: 'blog', slug }, '', `/blog/${slug}`);
+      }
+
+      const blogModal = document.querySelector('gp-blog-modal');
+      if (blogModal) {
+        blogModal.open(slug);
+      }
+    } else {
+      // Mobile: load blog-post section inline
+      if (pushState) {
+        history.pushState({ section: 'blog-post', slug }, '', `/blog/${slug}`);
+      }
+
+      // Unload current section
+      if (this.currentSection) {
+        const currentEl = this.spaContent.querySelector(`[data-section="${this.currentSection}"]`);
+        if (currentEl) {
+          currentEl.classList.remove('active');
+          this.unloadSection(this.currentSection);
+        }
+      }
+
+      // Load blog-post section with slug param
+      await this.loadSection('blog-post', { slug });
+      const newEl = this.spaContent.querySelector('[data-section="blog-post"]');
+      if (newEl) {
+        newEl.classList.add('active');
+      }
+      this.currentSection = 'blog-post';
+      window.scrollTo(0, 0);
+    }
+
+    // Track page view
+    const tracker = document.querySelector('gp-tracker');
+    if (tracker && tracker.trackPageView) {
+      tracker.trackPageView(`/blog/${slug}`);
+    }
+  }
+
+  /** Show a draft preview */
+  async showDraftPreview(token, pushState = true) {
+    if (pushState) {
+      history.pushState({ section: 'draft-preview', token }, '', `/draft/share/${token}`);
+    }
+
+    // Unload current section
+    if (this.currentSection) {
+      const currentEl = this.spaContent.querySelector(`[data-section="${this.currentSection}"]`);
+      if (currentEl) {
+        currentEl.classList.remove('active');
+        this.unloadSection(this.currentSection);
+      }
+    }
+
+    await this.loadSection('draft-preview', { token });
+    const newEl = this.spaContent.querySelector('[data-section="draft-preview"]');
+    if (newEl) {
+      newEl.classList.add('active');
+    }
+    this.currentSection = 'draft-preview';
+
+    if (this.layoutMode === 'mobile') {
+      window.scrollTo(0, 0);
+    }
+
+    // Track page view
+    const tracker = document.querySelector('gp-tracker');
+    if (tracker && tracker.trackPageView) {
+      tracker.trackPageView(`/draft/share/${token}`);
+    }
   }
 
   unloadSection(name) {
@@ -277,7 +441,7 @@ class SPARouter {
     delete this.loadedSections[name];
   }
 
-  async loadSection(name) {
+  async loadSection(name, params = {}) {
     try {
       // Handle not-found as a built-in section
       if (name === 'not-found') {
@@ -285,11 +449,11 @@ class SPARouter {
         sectionEl.className = 'spa-section';
         sectionEl.setAttribute('data-section', 'not-found');
         sectionEl.innerHTML = `
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:var(--space-xl) var(--space-md);">
-            <p style="font-family:var(--font-display);font-size:clamp(6rem,15vw,12rem);font-weight:700;line-height:1;color:var(--color-primary);margin:0;">404</p>
-            <h1 style="font-family:var(--font-display);font-size:clamp(1.25rem,3vw,2rem);font-weight:600;margin:var(--space-sm) 0 var(--space-md);">Page not found</h1>
-            <p style="font-family:var(--font-mono);font-size:0.875rem;color:var(--color-text-muted);background:var(--color-bg-secondary);border:var(--border-thin) solid var(--color-border);padding:var(--space-xs) var(--space-sm);margin-bottom:var(--space-lg);word-break:break-all;">${window.location.pathname}</p>
-            <p style="color:var(--color-text-muted);margin:0 0 var(--space-lg);max-width:36ch;">The page you are looking for does not exist or has been moved.</p>
+          <div class="not-found-content">
+            <p class="not-found-code">404</p>
+            <h1 class="not-found-title">Page not found</h1>
+            <p class="not-found-path">${window.location.pathname}</p>
+            <p class="not-found-message">The page you are looking for does not exist or has been moved.</p>
             <a href="/" class="btn btn--primary" data-spa-link>Back to home</a>
           </div>`;
         this.spaContent.appendChild(sectionEl);
@@ -299,7 +463,6 @@ class SPARouter {
 
       const module = await import(`/js/sections/${name}.js`);
 
-      // Create section container
       const sectionEl = document.createElement('div');
       sectionEl.className = 'spa-section';
       sectionEl.setAttribute('data-section', name);
@@ -307,9 +470,8 @@ class SPARouter {
 
       this.spaContent.appendChild(sectionEl);
 
-      // Initialize section
       if (module.default.init) {
-        await module.default.init(sectionEl);
+        await module.default.init(sectionEl, params);
       }
 
       this.loadedSections[name] = true;
@@ -319,7 +481,6 @@ class SPARouter {
   }
 
   updateNavActiveState(section) {
-    // Map section to URL for comparison
     const sectionToUrl = {
       'projects': ['/', '/projects'],
       'blog': ['/blog'],
@@ -329,7 +490,18 @@ class SPARouter {
 
     const urls = sectionToUrl[section] || [];
 
+    // Desktop nav
     document.querySelectorAll('.hero-nav .nav-link').forEach(link => {
+      const href = link.getAttribute('href');
+      if (urls.includes(href)) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+
+    // Mobile nav
+    document.querySelectorAll('.mobile-nav-link').forEach(link => {
       const href = link.getAttribute('href');
       if (urls.includes(href)) {
         link.classList.add('active');
@@ -360,30 +532,12 @@ class SPARouter {
     }
   }
 
-  // Open blog post modal
+  // Open blog post modal (desktop)
   async openBlogPost(slug) {
-    // Navigate to blog section if not there
-    if (this.currentSection !== 'blog') {
-      await this.navigate('/blog', false);
-    }
-
-    // Update URL
-    history.pushState({ section: 'blog', slug }, '', `/blog/${slug}`);
-
-    // Open modal
-    const blogModal = document.querySelector('gp-blog-modal');
-    if (blogModal) {
-      blogModal.open(slug);
-    }
-
-    // Track page view
-    const tracker = document.querySelector('gp-tracker');
-    if (tracker && tracker.trackPageView) {
-      tracker.trackPageView(`/blog/${slug}`);
-    }
+    await this.showBlogPost(slug, true);
   }
 
-  // Close blog post modal (called programmatically, not from modal's close button)
+  // Close blog post modal (called programmatically)
   closeBlogPost() {
     const blogModal = document.querySelector('gp-blog-modal');
     if (blogModal && blogModal.hasAttribute('open')) {
@@ -417,6 +571,10 @@ export function openBlogPost(slug) {
 
 export function closeBlogPost() {
   router.closeBlogPost();
+}
+
+export function getLayoutMode() {
+  return router.layoutMode;
 }
 
 export default router;

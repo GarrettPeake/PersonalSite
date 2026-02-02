@@ -11,6 +11,8 @@
     <!-- Styles -->
     <link rel="stylesheet" href="/styles/theme.css" />
     <link rel="stylesheet" href="/styles/base.css" />
+    <link rel="stylesheet" href="/styles/components.css" />
+    <link rel="stylesheet" href="/styles/markdown-content.css" />
     <link rel="stylesheet" href="/styles/pages/home.css" />
 
     <!-- Prevent FOUC -->
@@ -197,9 +199,10 @@
 
       <!-- Mobile Menu -->
       <nav class="mobile-menu" id="mobile-menu">
-        <a href="/blog" class="mobile-nav-link">/blog</a>
-        <a href="/about" class="mobile-nav-link">/about</a>
-        <a href="/photography" class="mobile-nav-link">/photography</a>
+        <a href="/" class="mobile-nav-link" data-spa-link>/projects</a>
+        <a href="/blog" class="mobile-nav-link" data-spa-link>/blog</a>
+        <a href="/about" class="mobile-nav-link" data-spa-link>/about</a>
+        <a href="/photography" class="mobile-nav-link" data-spa-link>/photography</a>
         <div class="mobile-theme-toggle" id="mobile-theme-toggle">
           <span class="theme-label">Theme</span>
           <div class="mini-mountains">
@@ -214,48 +217,9 @@
         </div>
       </nav>
 
-      <!-- Mobile Content -->
-      <main class="mobile-content">
-        <h1 class="mobile-hero-name">
-          <span>Garrett</span>
-          <span>Peake.</span>
-        </h1>
-
-        <!-- Project List -->
-        <div class="mobile-projects">
-          <!-- Projects loaded dynamically via JavaScript -->
-          <p class="loading">Loading projects...</p>
-        </div>
-
-        <!-- Social Links -->
-        <div class="mobile-social">
-          <a
-            href="https://github.com/GarrettPeake"
-            target="_blank"
-            rel="noopener"
-            aria-label="GitHub"
-          >
-            <svg viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
-              />
-            </svg>
-          </a>
-          <a
-            href="https://www.linkedin.com/in/gepeake"
-            target="_blank"
-            rel="noopener"
-            aria-label="LinkedIn"
-          >
-            <svg viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
-              />
-            </svg>
-          </a>
-        </div>
+      <!-- Mobile SPA Content -->
+      <main class="mobile-spa-content" id="mobile-spa-content">
+        <!-- Sections loaded dynamically by SPA router -->
       </main>
     </div>
 
@@ -274,40 +238,10 @@
     <!-- Home Page Script -->
     <script src="/js/home.js"></script>
 
-    <!-- SPA Router (desktop only, resize-aware) -->
+    <!-- SPA Router (both desktop and mobile) -->
     <script type="module">
       import * as spaRouter from '/js/spa/router.js';
-
-      const SPA_BREAKPOINT = 900;
-      let wasDesktop = window.innerWidth >= SPA_BREAKPOINT;
-
-      // Initialize SPA on desktop
-      if (wasDesktop) {
-        spaRouter.init();
-      }
-
-      // Handle resize across the breakpoint
-      let resizeTimer;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-          const isDesktop = window.innerWidth >= SPA_BREAKPOINT;
-
-          if (isDesktop === wasDesktop) return;
-
-          if (isDesktop && !wasDesktop) {
-            // Crossed from mobile to desktop: initialize SPA with current route
-            spaRouter.init();
-          } else if (!isDesktop && wasDesktop) {
-            // Crossed from desktop to mobile: tear down SPA cleanly
-            // The URL already reflects the current section via History API,
-            // so the mobile layout will show the correct page if navigated.
-            spaRouter.destroy();
-          }
-
-          wasDesktop = isDesktop;
-        }, 150);
-      });
+      spaRouter.init();
     </script>
   </body>
 </html>

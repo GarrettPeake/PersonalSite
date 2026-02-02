@@ -2,10 +2,11 @@
  * Blog Section Module
  *
  * Displays blog post list within the SPA.
- * Click opens modal instead of navigating.
+ * Desktop: click opens modal.
+ * Mobile: click navigates to inline blog post section.
  */
 
-import { openBlogPost } from '/js/spa/router.js';
+import { openBlogPost, navigate, getLayoutMode } from '/js/spa/router.js';
 
 const template = `
   <div class="blog-section">
@@ -53,7 +54,12 @@ function setupPostClicks(container) {
 
     e.preventDefault();
     const slug = link.dataset.spaPost;
-    openBlogPost(slug);
+
+    if (getLayoutMode() === 'desktop') {
+      openBlogPost(slug);
+    } else {
+      navigate(`/blog/${slug}`);
+    }
   });
 }
 
