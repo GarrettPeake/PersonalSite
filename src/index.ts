@@ -68,7 +68,8 @@ export default {
     let path = url.pathname;
 
     // Strip trailing slash (redirect to canonical URL without it)
-    if (path.length > 1 && path.endsWith('/')) {
+    // Exclude /admin paths — Cloudflare ASSETS needs trailing slashes for directory indexes.
+    if (path.length > 1 && path.endsWith('/') && !path.startsWith('/admin')) {
       url.pathname = path.slice(0, -1);
       return Response.redirect(url.toString(), 301);
     }

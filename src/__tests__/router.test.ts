@@ -161,13 +161,16 @@ describe('Router', () => {
   });
 
   describe('Admin routes', () => {
-    it('should redirect /admin/ to /admin (strip trailing slash)', async () => {
+    it('should route /admin/ to admin handler (no trailing slash redirect for admin)', async () => {
       const request = new Request('http://localhost/admin/');
       const ctx = createExecutionContext();
       const response = await worker.fetch(request, env, ctx);
 
-      expect(response.status).toBe(301);
-      expect(response.headers.get('Location')).toBe('http://localhost/admin');
+      expect(handleAdmin).toHaveBeenCalledWith(
+        request,
+        env,
+        '/admin/'
+      );
     });
 
     it('should route /admin to admin handler', async () => {
