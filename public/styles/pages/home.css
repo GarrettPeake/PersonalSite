@@ -613,10 +613,26 @@ body.home-page {
     opacity: 1;
   }
 
-  /* Mobile Content */
-  .mobile-content {
+  /* Mobile SPA Content */
+  .mobile-spa-content {
     flex: 1;
-    padding: var(--space-lg) var(--space-md);
+    position: relative;
+  }
+
+  .mobile-spa-content .spa-section {
+    position: relative;
+    transform: none;
+    opacity: 0;
+    display: none;
+    pointer-events: none;
+    transition: none;
+  }
+
+  .mobile-spa-content .spa-section.active {
+    transform: none;
+    opacity: 1;
+    display: block;
+    pointer-events: auto;
   }
 
   .mobile-hero-name {
@@ -630,6 +646,11 @@ body.home-page {
 
   .mobile-hero-name span {
     display: block;
+  }
+
+  /* Mobile Projects Section */
+  .mobile-projects-section {
+    padding: var(--space-lg) var(--space-md);
   }
 
   /* Mobile Projects */
@@ -1229,4 +1250,142 @@ body.home-page {
   fill: none;
   stroke: var(--color-primary);
   stroke-width: 1.5;
+}
+
+/* ==========================================================================
+   MOBILE NAV ACTIVE STATE
+   ========================================================================== */
+
+.mobile-nav-link.active {
+  color: var(--color-primary);
+}
+
+/* ==========================================================================
+   BLOG POST SECTION (mobile inline post view)
+   ========================================================================== */
+
+.blog-post-section {
+  padding: var(--space-lg) var(--space-md);
+}
+
+.blog-post-content {
+  max-width: var(--max-width-prose);
+  margin: 0 auto;
+}
+
+.blog-post-section .back-link {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  margin-bottom: var(--space-lg);
+  transition: color var(--transition-fast);
+}
+
+.blog-post-section .back-link:hover {
+  color: var(--color-primary);
+}
+
+.blog-post-section .post-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-sm);
+}
+
+.blog-post-section .post-meta {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-xl);
+}
+
+/* ==========================================================================
+   DRAFT PREVIEW SECTION
+   ========================================================================== */
+
+.draft-preview-section {
+  padding: var(--space-lg) var(--space-md);
+}
+
+.draft-preview-content {
+  max-width: var(--max-width-prose);
+  margin: 0 auto;
+}
+
+.draft-banner {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: var(--space-lg);
+}
+
+.draft-preview-section .post-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-sm);
+}
+
+.draft-preview-section .post-meta {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-xl);
+}
+
+/* ==========================================================================
+   404 NOT FOUND SECTION
+   ========================================================================== */
+
+.not-found-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: var(--space-xl) var(--space-md);
+}
+
+.not-found-code {
+  font-family: var(--font-display);
+  font-size: clamp(6rem, 15vw, 12rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.not-found-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  font-weight: 600;
+  margin: var(--space-sm) 0 var(--space-md);
+}
+
+.not-found-path {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  background: var(--color-bg-secondary);
+  border: var(--border-thin) solid var(--color-border);
+  padding: var(--space-xs) var(--space-sm);
+  margin-bottom: var(--space-lg);
+  word-break: break-all;
+}
+
+.not-found-message {
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-lg);
+  max-width: 36ch;
 }

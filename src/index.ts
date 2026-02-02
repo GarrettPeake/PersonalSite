@@ -7,8 +7,6 @@
 import { Env } from './types';
 
 // Page handlers
-import { handleBlogPost } from './handlers/pages/blog';
-import { handleDraftPreview } from './handlers/pages/draft';
 import { handleTrackingRedirect } from './handlers/pages/tracking';
 import { handleAdmin } from './handlers/pages/admin';
 import { handleSitemap } from './handlers/pages/sitemap';
@@ -60,12 +58,9 @@ import {
   handleReorderProjects,
 } from './handlers/api/projects';
 
-// Templates
-import { notFoundPage } from './templates/not-found';
-
 // Utilities
 import { isAuthenticated } from './middleware/auth';
-import { jsonResponse, htmlResponse, corsHeaders, handleCorsPreflightResponse } from './lib/response';
+import { jsonResponse, corsHeaders, handleCorsPreflightResponse } from './lib/response';
 
 export default {
   async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
@@ -82,16 +77,6 @@ export default {
       return handleTrackingRedirect(request, env, path);
     }
 
-    // Blog post (dynamic)
-    if (path.startsWith('/blog/') && path !== '/blog/') {
-      return handleBlogPost(request, env, path);
-    }
-
-    // Draft preview
-    if (path.startsWith('/draft/')) {
-      return handleDraftPreview(request, env, path);
-    }
-
     // Admin routes
     if (path.startsWith('/admin/')) {
       return handleAdmin(request, env, path);
@@ -102,17 +87,20 @@ export default {
       return handleSitemap(env);
     }
 
-    // SPA routes that should serve index.html (the SPA shell)
-    // These are client-side routes handled by the SPA router on desktop
-    if (path === '/projects') {
+    // SPA routes — serve index.html as the SPA shell.
+    // The client-side router handles rendering for all public routes.
+    const spaRoutes = ['/projects', '/blog', '/about', '/photography', '/draft'];
+    if (spaRoutes.some(route => path === route || path.startsWith(route + '/'))) {
       const indexRequest = new Request(new URL('/', request.url), request);
       return env.ASSETS.fetch(indexRequest);
     }
 
-    // Try to serve from static assets; return 404 page if asset not found
+    // Try to serve from static assets; serve SPA shell for 404s
+    // (the client-side router will show its own 404 section)
     const assetResponse = await env.ASSETS.fetch(request);
     if (assetResponse.status === 404) {
-      return htmlResponse(notFoundPage(path), 404);
+      const indexRequest = new Request(new URL('/', request.url), request);
+      return env.ASSETS.fetch(indexRequest);
     }
     return assetResponse;
   },

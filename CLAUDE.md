@@ -28,13 +28,10 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] New site header/footer components with mountain peaks theme toggle
 - [x] Photo modal component for photography page
 - [x] Tracking component (gp-tracker)
-- [x] Public pages (home, blog listing, about, photography)
 - [x] Neo-brutalist home page with three-panel layout, shelf, and carousel
 - [x] Mobile-responsive layouts with hamburger menus
 - [x] Tracking redirect page (`/s/:slug`)
 - [x] Public API endpoints (`GET /api/posts`, `GET /api/posts/:slug`, `POST /api/track`)
-- [x] Blog post detail pages (Worker-rendered with markdown)
-- [x] Draft preview pages (`/draft/share/:token`)
 - [x] Admin authentication (session-based with cookies)
 - [x] Admin login page with neo-brutalist mountain scene theme toggle
 - [x] Admin dashboard with stats
@@ -55,12 +52,14 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Admin project management page with CRUD and reorder
 - [x] Project API endpoints (public and admin)
 - [x] Home page dynamically loads projects from API
-- [x] Desktop SPA mode (900px+) with client-side routing
-- [x] SPA section modules (projects, blog, about, photography)
-- [x] Blog post modal for SPA mode
-- [x] Carousel slide transitions between sections
+- [x] Full SPA mode on both desktop (900px+) and mobile (< 900px)
+- [x] SPA section modules (projects, blog, about, photography, blog-post, draft-preview)
+- [x] Blog post modal for desktop SPA, inline rendering for mobile SPA
+- [x] Draft preview via client-side rendering (`/draft/share/:token`)
+- [x] Carousel slide transitions between sections (desktop)
 - [x] SPA navigation tracking integration
-- [x] Custom 404 page for unmatched routes (server-side and SPA)
+- [x] Client-side 404 page for unmatched routes
+- [x] No server-side HTML rendering (all public routes serve SPA shell)
 - [x] Dynamic sitemap.xml with static pages and published blog posts
 - [x] Editor autosave (3s debounce) for drafts and published posts
 - [x] Post title shown in editor preview pane
@@ -116,20 +115,24 @@ All data uses prefixed keys in a single KV namespace:
 
 ## Routing
 
-Static assets served directly (no Worker) for:
-- `/` → `public/index.html`
-- `/about` → `public/about.html`
-- `/blog` → `public/blog.html`
-- `/photography` → `public/photography.html`
-- `/styles/*`, `/components/*`, `/assets/*`, `/js/*`
+Static assets served directly for:
+- `/styles/*`, `/components/*`, `/assets/*`, `/js/*`, `/lib/*`
 
 Worker handles:
-- `/sitemap.xml` → Dynamic sitemap generation
 - `/api/*` → API endpoints
-- `/s/:slug` → Tracking redirect
-- `/blog/:slug` → Dynamic post rendering
-- `/draft/share/:uuid` → Draft preview
+- `/s/:slug` → Tracking redirect (server-side 302)
+- `/sitemap.xml` → Dynamic sitemap generation
 - `/admin/*` → Admin pages (auth required)
+- All other routes → SPA shell (`index.html`) for client-side routing
+
+SPA client-side routes (handled by `router.js`):
+- `/`, `/projects` → Projects section
+- `/blog` → Blog listing section
+- `/blog/:slug` → Blog post (desktop: modal, mobile: inline section)
+- `/about` → About section
+- `/photography` → Photography section
+- `/draft/share/:token` → Draft preview section
+- Everything else → Client-side 404
 
 ## File Structure
 
@@ -164,14 +167,10 @@ Worker handles:
 │   │   │   ├── projects.ts  # /api/projects and /api/admin/projects/* endpoints
 │   │   │   └── og.ts        # GET /api/admin/og - OpenGraph metadata fetch
 │   │   └── /pages
-│   │       ├── blog.ts      # /blog/:slug handler
-│   │       ├── draft.ts     # /draft/share/:token handler
 │   │       ├── tracking.ts  # /s/:slug handler
 │   │       ├── sitemap.ts   # /sitemap.xml dynamic generation
 │   │       └── admin.ts     # /admin/* auth guard
 │   ├── /templates
-│   │   ├── post.ts          # Blog post page template
-│   │   ├── not-found.ts     # 404 not found page template
 │   │   └── tracking-redirect.ts # Tracking redirect page template
 │   ├── /lib
 │   │   ├── kv.ts         # DEPRECATED: Use DAOs instead
@@ -202,8 +201,6 @@ Worker handles:
 │       │   │   ├── photos.test.ts
 │       │   │   └── projects.test.ts
 │       │   └── /pages
-│       │       ├── blog.test.ts
-│       │       ├── draft.test.ts
 │       │       ├── tracking.test.ts
 │       │       ├── sitemap.test.ts
 │       │       └── admin.test.ts
@@ -215,14 +212,9 @@ Worker handles:
 │       ├── /middleware
 │       │   └── auth.test.ts
 │       └── /templates
-│           ├── post.test.ts
-│           ├── not-found.test.ts
 │           └── tracking-redirect.test.ts
 └── /public
-    ├── index.html        # Home page (neo-brutalist three-panel layout)
-    ├── about.html        # About page
-    ├── blog.html         # Blog listing page
-    ├── photography.html  # Photography gallery page
+    ├── index.html        # SPA shell (serves all public routes)
     ├── /admin
     │   ├── index.html    # Admin dashboard
     │   ├── login.html    # Admin login page
@@ -233,14 +225,14 @@ Worker handles:
     │   ├── projects.html # Project management with reorder
     │   └── tracking.html # Tracking links management
     ├── /js
-    │   ├── blog.js       # Blog listing page logic
-    │   ├── home.js       # Home page interactions (theme, mobile menu)
-    │   ├── photography.js # Photography gallery modal handling
+    │   ├── home.js       # Theme toggle and mobile menu
     │   ├── /spa
-    │   │   └── router.js     # SPA router with History API navigation
+    │   │   └── router.js     # SPA router with History API (desktop + mobile)
     │   ├── /sections
-    │   │   ├── projects.js   # Projects section (carousel + shelf)
+    │   │   ├── projects.js   # Projects section (desktop: carousel, mobile: cards)
     │   │   ├── blog.js       # Blog section (post list)
+    │   │   ├── blog-post.js  # Blog post section (mobile inline view)
+    │   │   ├── draft-preview.js # Draft preview section
     │   │   ├── about.js      # About section (static content)
     │   │   └── photography.js # Photography section (photo grid)
     │   └── /admin
@@ -682,24 +674,27 @@ Shared utility functions:
   - `/LinkPreview(url, title, description, image)` - Ghost-style bookmark card
   - `/Iframe(src)` - Embedded iframe (URL or HTML)
 
-### Desktop SPA Architecture
+### SPA Architecture
 
-On desktop (900px+), the home page transforms into a Single Page Application:
+The entire site is a Single Page Application. The Worker serves `index.html` for all public routes, and the client-side router handles rendering:
 
 **Router (`/public/js/spa/router.js`)**
 - Uses History API for navigation (no page reloads)
-- Routes: `/`, `/projects`, `/blog`, `/about`, `/photography`
-- `/` and `/projects` are aliases (both show projects section)
-- Direct links to `/blog/:slug` open blog modal after loading blog section
+- Initializes on both desktop and mobile (detects `layoutMode`)
+- Routes: `/`, `/projects`, `/blog`, `/blog/:slug`, `/about`, `/photography`, `/draft/share/:token`
+- Desktop: carousel transitions, shelf management, blog modal
+- Mobile: simple content swaps, inline blog post rendering
+- Handles resize across 900px breakpoint (destroy + reinit)
 
 **Section Modules (`/public/js/sections/`)**
 Each section is a lazy-loaded ES module with:
 ```javascript
 export default {
-  template: '...',           // HTML structure
-  async init(container) {},  // Fetch data, render, bind events
+  template: '...',                    // HTML structure
+  async init(container, params) {},   // Fetch data, render, bind events
 }
 ```
+Params object may contain `{ slug }` for blog-post or `{ token }` for draft-preview.
 
 **Section Transitions**
 - Sections slide horizontally based on ordering: projects → blog → about → photography
@@ -722,9 +717,11 @@ export default {
 - Initial page load tracked automatically via `connectedCallback()`
 
 **Mobile Behavior**
-- SPA router does NOT initialize on mobile (< 900px)
-- Nav links perform normal page navigation
-- Existing separate pages (blog.html, about.html, etc.) still work
+- SPA router initializes on mobile with `layoutMode: 'mobile'`
+- Uses `#mobile-spa-content` container (no carousel transitions)
+- Blog posts render inline (full-page view with back link)
+- Projects render as vertical expandable cards
+- Nav links intercepted by router (no page reloads)
 
 ### Authentication (`src/middleware/auth.ts`)
 - Session-based with HTTP-only cookies

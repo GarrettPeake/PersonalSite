@@ -10,14 +10,6 @@ import { env, createExecutionContext } from 'cloudflare:test';
 import worker from '../index';
 
 // Mock the page handlers
-vi.mock('../handlers/pages/blog', () => ({
-  handleBlogPost: vi.fn(() => new Response('blog post handler')),
-}));
-
-vi.mock('../handlers/pages/draft', () => ({
-  handleDraftPreview: vi.fn(() => new Response('draft preview handler')),
-}));
-
 vi.mock('../handlers/pages/tracking', () => ({
   handleTrackingRedirect: vi.fn(() => new Response('tracking redirect handler')),
 }));
@@ -42,8 +34,6 @@ vi.mock('../middleware/auth', async (importOriginal) => {
 });
 
 // Import the mocked handlers for assertion
-import { handleBlogPost } from '../handlers/pages/blog';
-import { handleDraftPreview } from '../handlers/pages/draft';
 import { handleTrackingRedirect } from '../handlers/pages/tracking';
 import { handleAdmin } from '../handlers/pages/admin';
 import { handleSitemap } from '../handlers/pages/sitemap';
@@ -60,8 +50,6 @@ describe('Router', () => {
       const response = await worker.fetch(request, env, ctx);
 
       // The router delegates to env.ASSETS.fetch for static routes
-      // Since env.ASSETS is mocked, we just check that page handlers weren't called
-      expect(handleBlogPost).not.toHaveBeenCalled();
       expect(handleAdmin).not.toHaveBeenCalled();
     });
 
@@ -74,67 +62,59 @@ describe('Router', () => {
       expect(await response.text()).toBe('sitemap handler');
       expect(response.headers.get('Content-Type')).toBe('application/xml');
     });
+  });
 
-    it('should serve assets for /blog without trailing content', async () => {
+  describe('SPA shell routes', () => {
+    it('should serve SPA shell for /blog', async () => {
       const request = new Request('http://localhost/blog');
       const ctx = createExecutionContext();
       const response = await worker.fetch(request, env, ctx);
 
-      expect(handleBlogPost).not.toHaveBeenCalled();
+      // Should serve index.html (SPA shell) — not call any SSR handler
+      expect(handleAdmin).not.toHaveBeenCalled();
+      expect(handleTrackingRedirect).not.toHaveBeenCalled();
     });
-  });
 
-  describe('Blog post routes', () => {
-    it('should route /blog/:slug to blog handler', async () => {
+    it('should serve SPA shell for /blog/:slug', async () => {
       const request = new Request('http://localhost/blog/my-post');
       const ctx = createExecutionContext();
       const response = await worker.fetch(request, env, ctx);
 
-      expect(handleBlogPost).toHaveBeenCalledWith(
-        request,
-        env,
-        '/blog/my-post'
-      );
-      expect(await response.text()).toBe('blog post handler');
+      // Blog posts are now client-rendered — SPA shell is served
+      expect(handleAdmin).not.toHaveBeenCalled();
     });
 
-    it('should route /blog/nested/path to blog handler', async () => {
-      const request = new Request('http://localhost/blog/nested/path');
+    it('should serve SPA shell for /about', async () => {
+      const request = new Request('http://localhost/about');
       const ctx = createExecutionContext();
-      await worker.fetch(request, env, ctx);
+      const response = await worker.fetch(request, env, ctx);
 
-      expect(handleBlogPost).toHaveBeenCalledWith(
-        request,
-        env,
-        '/blog/nested/path'
-      );
+      expect(handleAdmin).not.toHaveBeenCalled();
     });
-  });
 
-  describe('Draft preview routes', () => {
-    it('should route /draft/share/:token to draft handler', async () => {
+    it('should serve SPA shell for /photography', async () => {
+      const request = new Request('http://localhost/photography');
+      const ctx = createExecutionContext();
+      const response = await worker.fetch(request, env, ctx);
+
+      expect(handleAdmin).not.toHaveBeenCalled();
+    });
+
+    it('should serve SPA shell for /projects', async () => {
+      const request = new Request('http://localhost/projects');
+      const ctx = createExecutionContext();
+      const response = await worker.fetch(request, env, ctx);
+
+      expect(handleAdmin).not.toHaveBeenCalled();
+    });
+
+    it('should serve SPA shell for /draft/share/:token', async () => {
       const request = new Request('http://localhost/draft/share/abc123');
       const ctx = createExecutionContext();
       const response = await worker.fetch(request, env, ctx);
 
-      expect(handleDraftPreview).toHaveBeenCalledWith(
-        request,
-        env,
-        '/draft/share/abc123'
-      );
-      expect(await response.text()).toBe('draft preview handler');
-    });
-
-    it('should route /draft/other to draft handler', async () => {
-      const request = new Request('http://localhost/draft/other');
-      const ctx = createExecutionContext();
-      await worker.fetch(request, env, ctx);
-
-      expect(handleDraftPreview).toHaveBeenCalledWith(
-        request,
-        env,
-        '/draft/other'
-      );
+      // Draft previews are now client-rendered
+      expect(handleAdmin).not.toHaveBeenCalled();
     });
   });
 
@@ -238,8 +218,6 @@ describe('API Route Matching', () => {
       const ctx = createExecutionContext();
       const response = await worker.fetch(request, env, ctx);
 
-      // Since we're not mocking the public handlers, this will try to call the real handler
-      // The handler will try to call listPosts which will fail gracefully
       expect(response.status).toBe(200);
     });
 
