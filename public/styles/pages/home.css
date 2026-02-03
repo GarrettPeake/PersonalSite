@@ -155,47 +155,9 @@ body.home-page {
 }
 
 .project-frame {
-  position: relative;
-  width: 100%;
-  max-width: 900px;
-  aspect-ratio: 16/10;
-}
-
-/* Guidelines - dotted accent lines */
-.guideline {
-  position: absolute;
-  border-style: dashed;
-  border-color: var(--color-accent);
-  border-width: 0;
-  opacity: 0.6;
-}
-
-.guideline-top {
-  top: -5px;
-  left: -100vw;
-  right: -100vw;
-  border-top-width: 1px;
-}
-
-.guideline-bottom {
-  bottom: -5px;
-  left: -100vw;
-  right: -100vw;
-  border-bottom-width: 1px;
-}
-
-.guideline-left {
-  left: -5px;
-  top: -100vh;
-  bottom: -100vh;
-  border-left-width: 1px;
-}
-
-.guideline-right {
-  right: -5px;
-  top: -100vh;
-  bottom: -100vh;
-  border-right-width: 1px;
+  width: 90%;
+  height: 100%;
+  max-height: 100%;
 }
 
 /* Carousel */

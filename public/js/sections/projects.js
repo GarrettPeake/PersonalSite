@@ -12,13 +12,6 @@ let projects = [];
 const desktopTemplate = `
   <div class="project-display">
     <div class="project-frame">
-      <!-- Guidelines -->
-      <div class="guideline guideline-top"></div>
-      <div class="guideline guideline-right"></div>
-      <div class="guideline guideline-bottom"></div>
-      <div class="guideline guideline-left"></div>
-
-      <!-- Carousel -->
       <div class="carousel" id="spa-project-carousel">
         <div class="carousel-track">
           <div class="carousel-slide active" data-project="0">
