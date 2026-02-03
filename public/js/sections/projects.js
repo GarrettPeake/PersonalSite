@@ -60,6 +60,7 @@ async function init(container) {
       renderMobileProjects(container);
     } else {
       renderDesktopProjects(container);
+      initPieceCarousels();
       initShelfSync();
     }
   } catch (err) {
@@ -223,26 +224,93 @@ function initMobileProjectCards(container) {
 }
 
 function renderCarouselContent(project) {
-  if (!project.contentPieces || project.contentPieces.length === 0) {
-    return `
-      <div class="slide-placeholder">
-        <span>${escapeHtml(project.title)}</span>
+  const pieces = project.contentPieces || [];
+  const hasPieces = pieces.length > 0;
+  const hasMultiple = pieces.length > 1;
+
+  let piecesHtml;
+  if (!hasPieces) {
+    piecesHtml = `
+      <div class="piece-viewport">
+        <div class="slide-placeholder"><span>No content yet</span></div>
       </div>
     `;
-  }
-
-  const piece = project.contentPieces[0];
-
-  if (piece.type === 'iframe') {
-    return `<iframe src="${escapeAttr(piece.url)}" title="${escapeAttr(project.title)}" loading="lazy" tabindex="-1"></iframe>`;
   } else {
-    return `
-      <div class="slide-image">
-        <img src="${escapeAttr(piece.url)}" alt="${escapeAttr(piece.description || project.title)}">
+    piecesHtml = `
+      ${hasMultiple ? `<button class="piece-chevron piece-chevron--left" aria-label="Previous content piece">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>` : ''}
+      <div class="piece-viewport">
+        ${pieces.map((piece, i) => `
+          <div class="piece-slide ${i === 0 ? 'active' : ''}" data-piece="${i}">
+            ${piece.type === 'iframe'
+              ? `<iframe src="${escapeAttr(piece.url)}" title="${escapeAttr(project.title)}" loading="lazy" tabindex="-1"></iframe>`
+              : `<div class="slide-image"><img src="${escapeAttr(piece.url)}" alt="${escapeAttr(piece.description || project.title)}"></div>`
+            }
+          </div>
+        `).join('')}
       </div>
-      ${piece.description ? `<div class="slide-caption">${renderMarkdownSimple(piece.description)}</div>` : ''}
+      ${hasMultiple ? `<button class="piece-chevron piece-chevron--right" aria-label="Next content piece">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>` : ''}
     `;
   }
+
+  const dotsHtml = hasMultiple ? `
+    <div class="piece-dots">
+      ${pieces.map((_, i) => `<span class="piece-dot ${i === 0 ? 'active' : ''}" data-piece="${i}"></span>`).join('')}
+    </div>
+  ` : '';
+
+  const firstDescription = hasPieces && pieces[0].description
+    ? `<div class="piece-description">${renderMarkdownSimple(pieces[0].description)}</div>`
+    : '<div class="piece-description"></div>';
+
+  return `
+    <div class="project-header">
+      <h2 class="project-title">${escapeHtml(project.title)}</h2>
+      <div class="project-desc md-content">${renderMarkdownSimple(project.description)}</div>
+    </div>
+    <div class="piece-carousel">
+      ${piecesHtml}
+    </div>
+    ${dotsHtml}
+    ${firstDescription}
+  `;
+}
+
+function initPieceCarousels() {
+  document.querySelectorAll('.carousel-slide').forEach(slide => {
+    const projectIndex = parseInt(slide.dataset.project);
+    const project = projects[projectIndex];
+    if (!project || !project.contentPieces || project.contentPieces.length <= 1) return;
+
+    const pieces = slide.querySelectorAll('.piece-slide');
+    const dots = slide.querySelectorAll('.piece-dot');
+    const descEl = slide.querySelector('.piece-description');
+    const leftBtn = slide.querySelector('.piece-chevron--left');
+    const rightBtn = slide.querySelector('.piece-chevron--right');
+    let current = 0;
+
+    function goTo(index) {
+      if (index < 0 || index >= pieces.length) return;
+      pieces[current].classList.remove('active');
+      dots[current].classList.remove('active');
+      current = index;
+      pieces[current].classList.add('active');
+      dots[current].classList.add('active');
+      if (descEl) {
+        const desc = project.contentPieces[current].description;
+        descEl.innerHTML = desc ? renderMarkdownSimple(desc) : '';
+      }
+    }
+
+    if (leftBtn) leftBtn.addEventListener('click', (e) => { e.stopPropagation(); goTo(current - 1); });
+    if (rightBtn) rightBtn.addEventListener('click', (e) => { e.stopPropagation(); goTo(current + 1); });
+    dots.forEach(dot => {
+      dot.addEventListener('click', (e) => { e.stopPropagation(); goTo(parseInt(dot.dataset.piece)); });
+    });
+  });
 }
 
 function initShelfSync() {
