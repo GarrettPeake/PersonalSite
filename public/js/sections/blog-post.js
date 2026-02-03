@@ -32,7 +32,7 @@ async function init(container, params = {}) {
     content.innerHTML = `
       <a href="/blog" class="back-link" data-spa-link>&larr; Back to blog</a>
       <article class="post-article">
-        <h1 class="post-title">${escapeHtml(post.title)}</h1>
+        <h2 class="post-title">${escapeHtml(post.title)}</h2>
         <p class="post-meta">${formatDate(post.publishedAt)}</p>
         <div class="md-content">${rendered}</div>
       </article>
@@ -44,7 +44,7 @@ async function init(container, params = {}) {
       <a href="/blog" class="back-link" data-spa-link>&larr; Back to blog</a>
       <div class="not-found-content">
         <p class="not-found-code">404</p>
-        <h1 class="not-found-title">Post not found</h1>
+        <h2 class="not-found-title">Post not found</h2>
         <p class="not-found-message">The post you are looking for does not exist or has been removed.</p>
       </div>
     `;

@@ -26,8 +26,9 @@ export async function handleListProjectsPublic(env: Env): Promise<Response> {
   try {
     const projects = await listProjects(env.KV);
 
-    // Return all data for public display
-    return jsonResponse(projects, corsHeaders);
+    // Strip internal IDs from public response
+    const publicProjects = projects.map(({ id, ...rest }) => rest);
+    return jsonResponse(publicProjects, corsHeaders);
   } catch (error) {
     console.error('Error listing projects:', error);
     return jsonResponse({ error: 'Failed to list projects' }, corsHeaders, 500);
@@ -122,6 +123,7 @@ export async function handleCreateProject(request: Request, env: Env): Promise<R
       title: body.title,
       icon: body.icon,
       iconType: body.iconType,
+      iconAlt: body.iconAlt || '',
       description: body.description || '',
       contentPieces: body.contentPieces.map((piece) => ({
         id: piece.id || '',

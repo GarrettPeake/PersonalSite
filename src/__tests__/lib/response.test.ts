@@ -7,27 +7,67 @@
 import { describe, it, expect } from 'vitest';
 import {
   corsHeaders,
+  getCorsHeaders,
   jsonResponse,
   htmlResponse,
   handleCorsPreflightResponse,
 } from '../../lib/response';
 
 describe('Response Helpers', () => {
-  describe('corsHeaders', () => {
-    it('should have Access-Control-Allow-Origin', () => {
-      expect(corsHeaders['Access-Control-Allow-Origin']).toBe('*');
+  describe('getCorsHeaders', () => {
+    it('should not include Access-Control-Allow-Origin when no origin provided', () => {
+      const headers = getCorsHeaders();
+      expect(headers['Access-Control-Allow-Origin']).toBeUndefined();
+    });
+
+    it('should not include Access-Control-Allow-Origin for disallowed origin', () => {
+      const headers = getCorsHeaders('https://evil.com');
+      expect(headers['Access-Control-Allow-Origin']).toBeUndefined();
+    });
+
+    it('should include Access-Control-Allow-Origin for https://gpeake.com', () => {
+      const headers = getCorsHeaders('https://gpeake.com');
+      expect(headers['Access-Control-Allow-Origin']).toBe('https://gpeake.com');
+      expect(headers['Vary']).toBe('Origin');
+    });
+
+    it('should include Access-Control-Allow-Origin for https://portfolio.gpeake.com', () => {
+      const headers = getCorsHeaders('https://portfolio.gpeake.com');
+      expect(headers['Access-Control-Allow-Origin']).toBe('https://portfolio.gpeake.com');
+    });
+
+    it('should include Access-Control-Allow-Origin for http://localhost:8787', () => {
+      const headers = getCorsHeaders('http://localhost:8787');
+      expect(headers['Access-Control-Allow-Origin']).toBe('http://localhost:8787');
+    });
+
+    it('should have Access-Control-Allow-Methods', () => {
+      const headers = getCorsHeaders();
+      expect(headers['Access-Control-Allow-Methods']).toContain('GET');
+      expect(headers['Access-Control-Allow-Methods']).toContain('POST');
+      expect(headers['Access-Control-Allow-Methods']).toContain('PUT');
+      expect(headers['Access-Control-Allow-Methods']).toContain('DELETE');
+      expect(headers['Access-Control-Allow-Methods']).toContain('OPTIONS');
+    });
+
+    it('should have Access-Control-Allow-Headers', () => {
+      const headers = getCorsHeaders();
+      expect(headers['Access-Control-Allow-Headers']).toContain('Content-Type');
+    });
+
+    it('should not include Access-Control-Allow-Origin for null origin', () => {
+      const headers = getCorsHeaders(null);
+      expect(headers['Access-Control-Allow-Origin']).toBeUndefined();
+    });
+  });
+
+  describe('corsHeaders (deprecated constant)', () => {
+    it('should not include Access-Control-Allow-Origin (no origin context)', () => {
+      expect(corsHeaders['Access-Control-Allow-Origin']).toBeUndefined();
     });
 
     it('should have Access-Control-Allow-Methods', () => {
       expect(corsHeaders['Access-Control-Allow-Methods']).toContain('GET');
-      expect(corsHeaders['Access-Control-Allow-Methods']).toContain('POST');
-      expect(corsHeaders['Access-Control-Allow-Methods']).toContain('PUT');
-      expect(corsHeaders['Access-Control-Allow-Methods']).toContain('DELETE');
-      expect(corsHeaders['Access-Control-Allow-Methods']).toContain('OPTIONS');
-    });
-
-    it('should have Access-Control-Allow-Headers', () => {
-      expect(corsHeaders['Access-Control-Allow-Headers']).toContain('Content-Type');
     });
   });
 
@@ -79,8 +119,9 @@ describe('Response Helpers', () => {
     });
 
     it('should include CORS headers when provided', () => {
-      const response = jsonResponse({ test: true }, corsHeaders);
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      const headers = getCorsHeaders('https://gpeake.com');
+      const response = jsonResponse({ test: true }, headers);
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://gpeake.com');
     });
   });
 
@@ -121,11 +162,23 @@ describe('Response Helpers', () => {
   });
 
   describe('handleCorsPreflightResponse', () => {
-    it('should return response with CORS headers', () => {
-      const response = handleCorsPreflightResponse();
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    it('should return response with CORS headers for allowed origin', () => {
+      const response = handleCorsPreflightResponse('https://gpeake.com');
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://gpeake.com');
       expect(response.headers.get('Access-Control-Allow-Methods')).toBeDefined();
       expect(response.headers.get('Access-Control-Allow-Headers')).toBeDefined();
+      expect(response.headers.get('Vary')).toBe('Origin');
+    });
+
+    it('should not include Allow-Origin for disallowed origin', () => {
+      const response = handleCorsPreflightResponse('https://evil.com');
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
+      expect(response.headers.get('Access-Control-Allow-Methods')).toBeDefined();
+    });
+
+    it('should not include Allow-Origin when no origin provided', () => {
+      const response = handleCorsPreflightResponse();
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
     });
 
     it('should have null body', async () => {

@@ -34,6 +34,11 @@ body.login-page {
   border-bottom: none;
 }
 
+.theme-scene:focus-visible {
+  outline: 2px solid var(--color-primary, #0066ff);
+  outline-offset: 2px;
+}
+
 .theme-scene:hover .mountains {
   transform: translateY(-2px);
 }

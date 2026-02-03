@@ -484,7 +484,7 @@ class SPARouter {
         sectionEl.innerHTML = `
           <div class="not-found-content">
             <p class="not-found-code">404</p>
-            <h1 class="not-found-title">Page not found</h1>
+            <h2 class="not-found-title">Page not found</h2>
             <p class="not-found-path">${window.location.pathname}</p>
             <p class="not-found-message">The page you are looking for does not exist or has been moved.</p>
             <a href="/" class="btn btn--primary" data-spa-link>Back to home</a>

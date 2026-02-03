@@ -48,7 +48,6 @@ export async function handleListPhotosPublic(env: Env): Promise<Response> {
 
     // Return only public-facing data
     const publicPhotos = photos.map((photo) => ({
-      id: photo.id,
       url: photo.url,
       location: photo.location,
       description: photo.description,

@@ -212,15 +212,30 @@ describe('Router', () => {
   });
 
   describe('API routes', () => {
-    it('should handle CORS preflight requests', async () => {
+    it('should handle CORS preflight requests with allowed origin', async () => {
       const request = new Request('http://localhost/api/posts', {
         method: 'OPTIONS',
+        headers: { 'Origin': 'https://gpeake.com' },
       });
       const ctx = createExecutionContext();
       const response = await worker.fetch(request, env, ctx);
 
       expect(response.status).toBe(200);
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://gpeake.com');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
+      expect(response.headers.get('Vary')).toBe('Origin');
+    });
+
+    it('should not set Access-Control-Allow-Origin for disallowed origin', async () => {
+      const request = new Request('http://localhost/api/posts', {
+        method: 'OPTIONS',
+        headers: { 'Origin': 'https://evil.com' },
+      });
+      const ctx = createExecutionContext();
+      const response = await worker.fetch(request, env, ctx);
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
       expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     });
 

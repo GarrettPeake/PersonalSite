@@ -3,13 +3,37 @@
  */
 
 /**
- * Standard CORS headers for API responses
+ * Allowed CORS origins. Only these origins will receive
+ * Access-Control-Allow-Origin headers on API responses.
  */
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-} as const;
+const ALLOWED_ORIGINS = [
+  'https://gpeake.com',
+  'https://portfolio.gpeake.com',
+  'http://localhost:8787',
+];
+
+/**
+ * Build CORS headers scoped to the request origin.
+ * If the origin is not in the allowlist, Access-Control-Allow-Origin is omitted.
+ */
+export function getCorsHeaders(origin?: string | null): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+    headers['Vary'] = 'Origin';
+  }
+  return headers;
+}
+
+/**
+ * @deprecated Use getCorsHeaders(origin) instead.
+ * Kept as a convenience alias that returns wildcard-free CORS headers
+ * without an Allow-Origin value (safe default).
+ */
+export const corsHeaders = getCorsHeaders();
 
 /**
  * Create a JSON response with optional status and headers
@@ -39,8 +63,8 @@ export function htmlResponse(html: string, status = 200): Response {
 }
 
 /**
- * Handle CORS preflight requests
+ * Handle CORS preflight requests, scoped to the request origin.
  */
-export function handleCorsPreflightResponse(): Response {
-  return new Response(null, { headers: corsHeaders });
+export function handleCorsPreflightResponse(origin?: string | null): Response {
+  return new Response(null, { headers: getCorsHeaders(origin) });
 }

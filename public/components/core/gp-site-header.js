@@ -106,7 +106,16 @@ class GpSiteHeader extends HTMLElement {
           height: 60px;
           cursor: pointer;
           overflow: hidden;
-          border: 1px solid var(--color-primary)
+          border: 1px solid var(--color-primary);
+          background: transparent;
+          padding: 0;
+          font: inherit;
+          color: inherit;
+        }
+
+        .theme-toggle-container:focus-visible {
+          outline: 2px solid var(--color-primary, #0066ff);
+          outline-offset: 2px;
         }
 
         .mountains-bg {
@@ -294,7 +303,7 @@ class GpSiteHeader extends HTMLElement {
             ${this.getNavLinks()}
           </div>
 
-          <div class="theme-toggle-container" role="button" aria-label="Toggle theme" tabindex="0">
+          <button class="theme-toggle-container" aria-label="Toggle theme: switch to dark mode">
             <div class="celestial sun"></div>
             <div class="celestial moon"></div>
             <div class="mountains-bg">
@@ -308,7 +317,7 @@ class GpSiteHeader extends HTMLElement {
                 <polygon points="0,32 22.5,0 45,32"/>
               </svg>
             </div>
-          </div>
+          </button>
 
           <button class="hamburger" aria-label="Menu" aria-expanded="false">
             <span></span>
@@ -349,12 +358,6 @@ class GpSiteHeader extends HTMLElement {
       ".theme-toggle-container"
     );
     themeToggle.addEventListener("click", () => this.toggleTheme());
-    themeToggle.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        this.toggleTheme();
-      }
-    });
 
     const hamburger = this.shadowRoot.querySelector(".hamburger");
     hamburger.addEventListener("click", () => this.toggleMobileMenu());
@@ -414,6 +417,12 @@ class GpSiteHeader extends HTMLElement {
     document.documentElement.setAttribute("data-theme", theme);
     this.setAttribute("theme", theme);
     localStorage.setItem("theme", theme);
+
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    const toggle = this.shadowRoot.querySelector(".theme-toggle-container");
+    if (toggle) {
+      toggle.setAttribute("aria-label", `Toggle theme: switch to ${nextTheme} mode`);
+    }
   }
 }
 

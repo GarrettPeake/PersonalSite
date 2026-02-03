@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
-  <title>Editor | Admin | Garrett Peake</title>
+  <title>Edit About | Admin</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="stylesheet" href="/styles/theme.css">
@@ -30,7 +30,7 @@
         <a href="/admin/drafts" class="nav-item">Drafts</a>
         <a href="/admin/photos" class="nav-item">Photos</a>
         <a href="/admin/projects" class="nav-item">Projects</a>
-        <a href="/admin/about" class="nav-item">About</a>
+        <a href="/admin/about" class="nav-item active">About</a>
         <a href="/admin/tracking" class="nav-item">Tracking</a>
       </nav>
 
@@ -43,18 +43,11 @@
     <main class="admin-main editor-main">
       <header class="editor-header">
         <div class="editor-meta">
-          <input type="text" id="title" placeholder="Post Title" class="title-input">
-          <div class="slug-row">
-            <span class="slug-prefix">/blog/</span>
-            <input type="text" id="slug" placeholder="post-slug" class="slug-input">
-          </div>
-          <input type="text" id="description" placeholder="Short description for blog listing (optional)" class="description-input">
+          <h1 style="margin: 0; font-size: 1.25rem;">Edit About Page</h1>
         </div>
         <div class="editor-actions">
           <span id="save-status" class="save-status"></span>
-          <button id="preview-btn" class="btn-secondary">Preview</button>
-          <button id="save-btn" class="btn-secondary">Save Draft</button>
-          <button id="publish-btn" class="btn-primary">Publish</button>
+          <button id="save-btn" class="btn-primary">Save</button>
         </div>
       </header>
 
@@ -82,7 +75,7 @@
 
       <div class="editor-split">
         <div class="editor-pane">
-          <textarea id="content" placeholder="Write your post in markdown..."></textarea>
+          <textarea id="content" placeholder="Write your about page content in markdown..."></textarea>
         </div>
         <div class="preview-pane">
           <div id="preview" class="preview-content md-content"></div>
@@ -91,6 +84,6 @@
     </main>
   </div>
 
-  <script src="/js/admin/editor.js"></script>
+  <script src="/js/admin/about.js"></script>
 </body>
 </html>

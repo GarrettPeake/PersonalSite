@@ -245,7 +245,7 @@ describe('Upload API Handler', () => {
 
       const response = await handleUpload(request, env);
 
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     });
 
     it('should return proper URL format', async () => {

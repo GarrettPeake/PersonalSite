@@ -139,7 +139,7 @@ describe('Auth API Handlers', () => {
 
       const response = await handleLogin(request, testEnv);
 
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     });
   });
 
@@ -207,7 +207,7 @@ describe('Auth API Handlers', () => {
 
       const response = await handleLogout(request, testEnv);
 
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     });
 
     it('should work even without session cookie', async () => {

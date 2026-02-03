@@ -5,12 +5,29 @@ const errorEl = document.getElementById('error');
 const themeToggle = document.getElementById('theme-toggle');
 
 // Theme toggle handler
-themeToggle.addEventListener('click', () => {
+function updateThemeLabel(theme) {
+  const nextTheme = theme === 'dark' ? 'light' : 'dark';
+  themeToggle.setAttribute('aria-label', 'Toggle theme: switch to ' + nextTheme + ' mode');
+}
+
+function toggleLoginTheme() {
   const currentTheme = document.documentElement.getAttribute('data-theme');
   const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', newTheme);
   localStorage.setItem('theme', newTheme);
+  updateThemeLabel(newTheme);
+}
+
+themeToggle.addEventListener('click', toggleLoginTheme);
+themeToggle.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    toggleLoginTheme();
+  }
 });
+
+// Set initial aria-label
+updateThemeLabel(document.documentElement.getAttribute('data-theme') || 'light');
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();

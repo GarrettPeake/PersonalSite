@@ -65,7 +65,7 @@ describe('Admin Posts API Handlers', () => {
 
     it('should include CORS headers', async () => {
       const response = await handleAdminListPosts(env);
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     });
   });
 

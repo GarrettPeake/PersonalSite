@@ -39,7 +39,20 @@ export const KV_PREFIX = {
   INDEX_TRACKING: 'index:tracking',
   INDEX_PHOTOS: 'index:photos',
   INDEX_PROJECTS: 'index:projects',
+  PAGE_ABOUT: 'page:about',
 } as const;
+
+// ============================================================================
+// Page Content Types
+// ============================================================================
+
+/**
+ * Generic page content stored in KV
+ */
+export interface PageContent {
+  content: string;
+  updatedAt: string;
+}
 
 // ============================================================================
 // Photo Types
@@ -91,6 +104,7 @@ export interface Project {
   title: string;
   icon: string;              // SVG string OR R2 image URL
   iconType: 'svg' | 'image'; // Determines how to render
+  iconAlt?: string;          // Alt text for icon image (accessibility)
   description: string;       // Markdown-formatted
   contentPieces: ContentPiece[];
   order: number;             // For custom ordering on home page

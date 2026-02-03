@@ -8,20 +8,41 @@
     const themeToggle = document.getElementById('theme-toggle');
     const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
 
+    function updateToggleLabels(theme) {
+      const nextTheme = theme === 'dark' ? 'light' : 'dark';
+      const label = 'Toggle theme: switch to ' + nextTheme + ' mode';
+      if (themeToggle) themeToggle.setAttribute('aria-label', label);
+      if (mobileThemeToggle) mobileThemeToggle.setAttribute('aria-label', label);
+    }
+
     function toggleTheme() {
       const current = document.documentElement.getAttribute('data-theme');
       const next = current === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
       localStorage.setItem('theme', next);
+      updateToggleLabels(next);
+    }
+
+    function handleToggleKeydown(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleTheme();
+      }
     }
 
     if (themeToggle) {
       themeToggle.addEventListener('click', toggleTheme);
+      themeToggle.addEventListener('keydown', handleToggleKeydown);
     }
 
     if (mobileThemeToggle) {
       mobileThemeToggle.addEventListener('click', toggleTheme);
+      mobileThemeToggle.addEventListener('keydown', handleToggleKeydown);
     }
+
+    // Set initial aria-label based on current theme
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    updateToggleLabels(currentTheme);
   }
 
   // Mobile menu functionality
