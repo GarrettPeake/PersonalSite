@@ -246,11 +246,6 @@
   background: var(--color-bg);
 }
 
-/* Thick border variant */
-.card--thick {
-  border-width: 3px;
-}
-
 /* Interactive card - lifts on hover */
 .card--interactive {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -593,10 +588,6 @@
   background: #ff4444;
 }
 
-.status-dot--inactive {
-  background: color-mix(in srgb, var(--color-text) 30%, transparent);
-}
-
 /* Status badge with text */
 .status {
   display: inline-flex;
@@ -655,27 +646,6 @@
    LAYOUT UTILITIES
    ========================================================================== */
 
-/* Flex row with space between */
-.flex-between {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* Flex row with gap */
-.flex-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-/* Flex column */
-.flex-col {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
 /* Center content */
 .text-center {
   text-align: center;
@@ -687,6 +657,3 @@
   gap: var(--space-lg);
 }
 
-.grid--auto {
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-}

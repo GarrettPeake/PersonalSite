@@ -5,6 +5,8 @@
  * Follows gp-photo-modal pattern.
  */
 
+import { escapeHtml, formatDateLong } from '/js/utils.js';
+
 class GpBlogModal extends HTMLElement {
   constructor() {
     super();
@@ -223,9 +225,9 @@ class GpBlogModal extends HTMLElement {
     document.title = `${post.title} | Garrett Peake`;
 
     content.innerHTML = `
-      <h2 class="post-title">${this.escapeHtml(post.title)}</h2>
-      <p class="post-meta">${this.formatDate(post.publishedAt)}</p>
-      <div class="post-body md-content">${typeof window.renderMarkdown === 'function' ? window.renderMarkdown(post.content) : this.escapeHtml(post.content)}</div>
+      <h2 class="post-title">${escapeHtml(post.title)}</h2>
+      <p class="post-meta">${formatDateLong(post.publishedAt)}</p>
+      <div class="post-body md-content">${typeof window.renderMarkdown === 'function' ? window.renderMarkdown(post.content) : escapeHtml(post.content)}</div>
     `;
   }
 
@@ -247,21 +249,6 @@ class GpBlogModal extends HTMLElement {
     this.dispatchEvent(new CustomEvent('blog-modal-close', { bubbles: true }));
   }
 
-  formatDate(isoString) {
-    return new Date(isoString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'UTC'
-    });
-  }
-
-  escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 }
 
 customElements.define('gp-blog-modal', GpBlogModal);

@@ -1,5 +1,7 @@
 // Admin Tracking Page JavaScript
 
+import { escapeHtml } from '/js/utils.js';
+
 // Elements
 const trackingList = document.getElementById('tracking-list');
 const createBtn = document.getElementById('create-btn');
@@ -296,11 +298,6 @@ function truncate(text, maxLength) {
   return text.substring(0, maxLength) + '...';
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
 
 // Logout handler
 document.getElementById('logout-btn').addEventListener('click', async () => {

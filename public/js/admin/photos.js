@@ -1,5 +1,7 @@
 // Admin Photos Page JavaScript
 
+import { escapeHtml } from '/js/utils.js';
+
 // Elements
 const photosGrid = document.getElementById('photos-grid');
 const uploadDialog = document.getElementById('upload-dialog');
@@ -304,17 +306,6 @@ confirmDialog.addEventListener('click', (e) => {
     hideDeleteConfirm();
   }
 });
-
-// =============================================================================
-// Utilities
-// =============================================================================
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
 
 // Logout handler
 document.getElementById('logout-btn').addEventListener('click', async () => {

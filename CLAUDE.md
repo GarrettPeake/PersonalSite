@@ -21,11 +21,10 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Base CSS reset and typography
 - [x] Unified component CSS (buttons, cards, forms, dialogs, tables)
 - [x] Web components with external shared stylesheet
-- [x] KV helper functions (CRUD for drafts, posts, tracking, sessions)
+- [x] KV data access via DAOs (CRUD for all entities)
 - [x] Custom markdown renderer with macro support (server + client)
 - [x] `/Banner` macro implementation
-- [x] Core web components (header, footer, theme toggle, peak divider)
-- [x] New site header/footer components with mountain peaks theme toggle
+- [x] Core web components (theme toggle, photo modal, blog modal)
 - [x] Photo modal component for photography page
 - [x] Tracking component (gp-tracker)
 - [x] Neo-brutalist home page with three-panel layout, shelf, and carousel
@@ -177,12 +176,11 @@ SPA client-side routes (handled by `router.js`):
 │   │       ├── sitemap.ts   # /sitemap.xml dynamic generation
 │   │       └── admin.ts     # /admin/* auth guard
 │   ├── /templates
-│   │   └── tracking-redirect.ts # Tracking redirect page template
+│   │   └── tracking-redirect.ts  # Tracking redirect page template
 │   ├── /lib
-│   │   ├── kv.ts         # DEPRECATED: Use DAOs instead
 │   │   ├── markdown.ts   # Custom markdown renderer with macros
 │   │   ├── response.ts   # HTTP response helpers (jsonResponse, corsHeaders)
-│   │   ├── utils.ts      # Shared utilities (escapeHtml, formatDate, etc.)
+│   │   ├── utils.ts      # Shared utilities (escapeHtml, escapeJs, generateRandomSlug)
 │   │   └── exif.ts       # EXIF stripping utility for JPEG images
 │   ├── /middleware
 │   │   └── auth.ts       # Authentication helpers (login, session, cookies)
@@ -233,6 +231,7 @@ SPA client-side routes (handled by `router.js`):
     │   └── tracking.html # Tracking links management
     ├── /js
     │   ├── home.js       # Theme toggle and mobile menu
+    │   ├── utils.js      # Shared client-side utilities (escapeHtml, escapeAttr, formatDate*)
     │   ├── /spa
     │   │   └── router.js     # SPA router with History API (desktop + mobile)
     │   ├── /sections
@@ -263,9 +262,6 @@ SPA client-side routes (handled by `router.js`):
     │   ├── admin.css         # Admin-specific layout (sidebar, header)
     │   └── /pages
     │       ├── home.css           # Home page three-panel layout
-    │       ├── about.css          # About page with image frame
-    │       ├── blog.css           # Blog listing with thin borders
-    │       ├── photography.css    # Photo grid and modal styles
     │       ├── login.css          # Admin login page styles
     │       ├── admin-dashboard.css # Admin dashboard styles
     │       ├── admin-editor.css   # Editor page styles
@@ -276,12 +272,7 @@ SPA client-side routes (handled by `router.js`):
     │       └── admin-tracking.css # Tracking page styles
     └── /components
         ├── /core
-        │   ├── gp-header.js       # Legacy site header with nav
-        │   ├── gp-footer.js       # Legacy site footer
-        │   ├── gp-site-header.js  # New header with mountain peaks toggle
-        │   ├── gp-site-footer.js  # New minimal footer (copyright only)
         │   ├── gp-theme-toggle.js # Dark/light mode switch
-        │   ├── gp-peak-divider.js # Mountain peak separator
         │   ├── gp-photo-modal.js  # Photography modal component
         │   └── gp-blog-modal.js   # Blog post modal for SPA mode
         └── /tracking
@@ -467,7 +458,6 @@ The CSS is organized into layers that build on each other. Always include styles
 | Class | Use For |
 |-------|---------|
 | `.card` | Base bordered container |
-| `.card--thick` | 3px border variant |
 | `.card--interactive` | Lift effect on hover (blog posts) |
 | `.card--stat` | Centered stat display with `.card__value` and `.card__label` |
 
@@ -564,12 +554,8 @@ Use proper HTML `<table>` elements with these classes:
 | `.untitled` | Italic placeholder text |
 | `.mono` | Monospace text |
 | `.hidden` | Hide element |
-| `.flex-between` | Flex with space-between |
-| `.flex-row` | Flex row with gap |
-| `.flex-col` | Flex column with gap |
 | `.text-center` | Center text |
 | `.grid` | Grid with gap |
-| `.grid--auto` | Auto-fit grid columns |
 
 ### Web Component Styles (web-components.css)
 
@@ -577,11 +563,7 @@ These classes are used inside Shadow DOM via `<link rel="stylesheet" href="/styl
 
 | Class | Component | Purpose |
 |-------|-----------|---------|
-| `.icon-btn` | gp-theme-toggle, gp-footer | 36x36 bordered icon button |
-| `.nav-link` | gp-header | Navigation link with hover |
-| `.logo` | gp-header | Logo link with icon |
-| `.footer-links` | gp-footer | Social links container |
-| `.copyright` | gp-footer | Copyright text |
+| `.icon-btn` | gp-theme-toggle | 36x36 bordered icon button |
 
 ### Page Layout Classes (base.css)
 
@@ -664,13 +646,11 @@ Request handlers are split by route type:
 
 **Templates (`src/templates/`)**
 HTML templates for server-rendered pages:
-- `post.ts`: Blog post and draft preview pages
-- `not-found.ts`: 404 not found page with neo-brutalist styling
 - `tracking-redirect.ts`: Tracking redirect page
 
 **Utilities (`src/lib/`)**
 Shared utility functions:
-- `utils.ts`: `escapeHtml`, `escapeJs`, `formatDate`, `getExcerpt`, `slugify`, `generateRandomSlug`
+- `utils.ts`: `escapeHtml`, `escapeJs`, `generateRandomSlug`
 - `response.ts`: `jsonResponse`, `htmlResponse`, `corsHeaders`
 - `markdown.ts`: Custom markdown renderer
 - `exif.ts`: EXIF stripping for JPEG images (`isJpeg`, `stripExif`)

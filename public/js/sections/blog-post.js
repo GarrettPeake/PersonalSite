@@ -5,6 +5,8 @@
  * Desktop uses the blog modal instead.
  */
 
+import { escapeHtml, formatDateLong as formatDate } from '/js/utils.js';
+
 const template = `
   <div class="blog-post-section">
     <div class="blog-post-content">
@@ -49,22 +51,6 @@ async function init(container, params = {}) {
       </div>
     `;
   }
-}
-
-function formatDate(isoString) {
-  return new Date(isoString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC'
-  });
-}
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 export default {

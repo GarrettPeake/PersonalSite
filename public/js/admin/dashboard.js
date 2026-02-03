@@ -1,5 +1,7 @@
 // Admin Dashboard Page JavaScript
 
+import { escapeHtml, formatDateShort as formatDate } from '/js/utils.js';
+
 // Logout handler
 document.getElementById('logout-btn').addEventListener('click', async () => {
   await fetch('/api/auth/logout', { method: 'POST' });
@@ -65,20 +67,6 @@ async function loadDashboard() {
   } catch (err) {
     console.error('Failed to load dashboard:', err);
   }
-}
-
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 loadDashboard();
