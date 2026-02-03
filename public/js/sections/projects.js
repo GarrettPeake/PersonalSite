@@ -6,6 +6,7 @@
  */
 
 import { getLayoutMode } from '/js/spa/router.js';
+import { escapeHtml, escapeAttr } from '/js/utils.js';
 
 let projects = [];
 
@@ -319,24 +320,6 @@ function updateCarousel(projectId) {
       }, 150);
     }
   });
-}
-
-// Utility functions
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-function escapeAttr(text) {
-  if (!text) return '';
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
 
 function renderMarkdownSimple(text) {

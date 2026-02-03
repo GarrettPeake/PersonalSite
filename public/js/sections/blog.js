@@ -7,6 +7,7 @@
  */
 
 import { openBlogPost, navigate, getLayoutMode } from '/js/spa/router.js';
+import { escapeHtml, escapeAttr, formatDateLong as formatDate } from '/js/utils.js';
 
 const template = `
   <div class="blog-section">
@@ -63,31 +64,6 @@ function setupPostClicks(container) {
   });
 }
 
-function formatDate(isoString) {
-  return new Date(isoString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC'
-  });
-}
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-function escapeAttr(text) {
-  if (!text) return '';
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 export default {
   template,

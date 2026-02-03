@@ -5,6 +5,8 @@
  * Integrates with existing gp-photo-modal component.
  */
 
+import { escapeAttr } from '/js/utils.js';
+
 let photos = [];
 
 const template = `
@@ -82,16 +84,6 @@ function initPhotoGallery(container) {
     e.preventDefault();
     openPhoto(photoItem);
   });
-}
-
-function escapeAttr(text) {
-  if (!text) return '';
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
 
 export default {

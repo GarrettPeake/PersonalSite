@@ -5,6 +5,8 @@
  * Works on both desktop and mobile layouts.
  */
 
+import { escapeHtml, formatDateLong as formatDate } from '/js/utils.js';
+
 const template = `
   <div class="draft-preview-section">
     <div class="draft-preview-content">
@@ -49,23 +51,6 @@ async function init(container, params = {}) {
       </div>
     `;
   }
-}
-
-function formatDate(isoString) {
-  if (!isoString) return '';
-  return new Date(isoString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC'
-  });
-}
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 export default {

@@ -1,5 +1,7 @@
 // Admin Posts Page JavaScript
 
+import { escapeHtml, formatDateShort as formatDate } from '/js/utils.js';
+
 // Elements
 const postsList = document.getElementById('posts-list');
 const confirmDialog = document.getElementById('confirm-dialog');
@@ -166,21 +168,6 @@ async function deletePost(id) {
   } catch (err) {
     alert('Failed to delete post');
   }
-}
-
-// Utility functions
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 // Logout handler

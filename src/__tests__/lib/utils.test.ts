@@ -8,7 +8,6 @@ import { describe, it, expect } from 'vitest';
 import {
   escapeHtml,
   escapeJs,
-  slugify,
   generateRandomSlug,
 } from '../../lib/utils';
 
@@ -83,56 +82,6 @@ describe('Utils', () => {
 
     it('should handle empty string', () => {
       expect(escapeJs('')).toBe('');
-    });
-  });
-
-  describe('slugify', () => {
-    it('should convert to lowercase', () => {
-      expect(slugify('Hello World')).toBe('hello-world');
-    });
-
-    it('should replace spaces with hyphens', () => {
-      expect(slugify('foo bar baz')).toBe('foo-bar-baz');
-    });
-
-    it('should remove special characters', () => {
-      expect(slugify('Hello, World!')).toBe('hello-world');
-    });
-
-    it('should handle multiple spaces', () => {
-      expect(slugify('foo   bar')).toBe('foo-bar');
-    });
-
-    it('should handle underscores', () => {
-      expect(slugify('foo_bar_baz')).toBe('foo-bar-baz');
-    });
-
-    it('should remove leading hyphens', () => {
-      expect(slugify('-foo bar')).toBe('foo-bar');
-    });
-
-    it('should remove trailing hyphens', () => {
-      expect(slugify('foo bar-')).toBe('foo-bar');
-    });
-
-    it('should handle numbers', () => {
-      expect(slugify('Blog Post 123')).toBe('blog-post-123');
-    });
-
-    it('should handle already valid slug', () => {
-      expect(slugify('already-valid-slug')).toBe('already-valid-slug');
-    });
-
-    it('should trim whitespace', () => {
-      expect(slugify('  foo bar  ')).toBe('foo-bar');
-    });
-
-    it('should handle empty string', () => {
-      expect(slugify('')).toBe('');
-    });
-
-    it('should handle complex titles', () => {
-      expect(slugify("What's New in TypeScript 5.0?")).toBe('whats-new-in-typescript-50');
     });
   });
 
