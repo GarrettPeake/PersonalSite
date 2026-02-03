@@ -281,6 +281,12 @@ body.home-page {
   opacity: 0.8;
 }
 
+.piece-chevron:focus-visible {
+  opacity: 0.8;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .piece-chevron svg {
   width: 24px;
   height: 24px;
@@ -315,6 +321,11 @@ body.home-page {
 .piece-dot.active {
   background: var(--color-primary);
   opacity: 1;
+}
+
+.piece-dot:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* Piece description */

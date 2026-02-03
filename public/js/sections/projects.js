@@ -255,8 +255,8 @@ function renderCarouselContent(project) {
       <button class="piece-chevron piece-chevron--left" aria-label="Previous content piece">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <div class="piece-dots">
-        ${pieces.map((_, i) => `<span class="piece-dot ${i === 0 ? 'active' : ''}" data-piece="${i}"></span>`).join('')}
+      <div class="piece-dots" role="tablist" aria-label="Content pieces">
+        ${pieces.map((_, i) => `<span class="piece-dot ${i === 0 ? 'active' : ''}" data-piece="${i}" role="tab" aria-selected="${i === 0}" aria-label="Content piece ${i + 1} of ${pieces.length}" tabindex="0"></span>`).join('')}
       </div>
       <button class="piece-chevron piece-chevron--right" aria-label="Next content piece">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -298,9 +298,11 @@ function initPieceCarousels() {
       if (index < 0 || index >= pieces.length) return;
       pieces[current].classList.remove('active');
       dots[current].classList.remove('active');
+      dots[current].setAttribute('aria-selected', 'false');
       current = index;
       pieces[current].classList.add('active');
       dots[current].classList.add('active');
+      dots[current].setAttribute('aria-selected', 'true');
       if (descEl) {
         const desc = project.contentPieces[current].description;
         descEl.innerHTML = desc ? renderMarkdownSimple(desc) : '';
@@ -311,6 +313,13 @@ function initPieceCarousels() {
     if (rightBtn) rightBtn.addEventListener('click', (e) => { e.stopPropagation(); goTo(current + 1); });
     dots.forEach(dot => {
       dot.addEventListener('click', (e) => { e.stopPropagation(); goTo(parseInt(dot.dataset.piece)); });
+      dot.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          goTo(parseInt(dot.dataset.piece));
+        }
+      });
     });
   });
 }
