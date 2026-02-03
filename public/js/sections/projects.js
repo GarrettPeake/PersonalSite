@@ -238,8 +238,8 @@ function renderCarouselContent(project) {
     return `
       <div class="slide-image">
         <img src="${escapeAttr(piece.url)}" alt="${escapeAttr(piece.description || project.title)}">
-        ${piece.description ? `<div class="slide-caption">${renderMarkdownSimple(piece.description)}</div>` : ''}
       </div>
+      ${piece.description ? `<div class="slide-caption">${renderMarkdownSimple(piece.description)}</div>` : ''}
     `;
   }
 }
