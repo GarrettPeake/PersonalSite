@@ -241,17 +241,13 @@ body.home-page {
 .piece-carousel {
   flex: 1;
   min-height: 0;
-  display: flex;
-  align-items: center;
   width: 100%;
-  gap: var(--space-sm);
 }
 
 .piece-viewport {
-  flex: 1;
-  min-height: 0;
-  position: relative;
+  width: 100%;
   height: 100%;
+  position: relative;
 }
 
 .piece-slide {
@@ -290,26 +286,35 @@ body.home-page {
   height: 24px;
 }
 
-/* Piece indicator dots */
-.piece-dots {
+/* Piece navigation (chevrons + dots) */
+.piece-nav {
   flex-shrink: 0;
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
   padding: var(--space-sm) 0;
+}
+
+.piece-dots {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
 }
 
 .piece-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--color-border);
+  background: var(--color-text-muted);
+  opacity: 0.35;
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition: background var(--transition-fast), opacity var(--transition-fast);
 }
 
 .piece-dot.active {
   background: var(--color-primary);
+  opacity: 1;
 }
 
 /* Piece description */

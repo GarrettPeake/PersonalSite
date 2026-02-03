@@ -237,9 +237,6 @@ function renderCarouselContent(project) {
     `;
   } else {
     piecesHtml = `
-      ${hasMultiple ? `<button class="piece-chevron piece-chevron--left" aria-label="Previous content piece">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>` : ''}
       <div class="piece-viewport">
         ${pieces.map((piece, i) => `
           <div class="piece-slide ${i === 0 ? 'active' : ''}" data-piece="${i}">
@@ -250,15 +247,20 @@ function renderCarouselContent(project) {
           </div>
         `).join('')}
       </div>
-      ${hasMultiple ? `<button class="piece-chevron piece-chevron--right" aria-label="Next content piece">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>` : ''}
     `;
   }
 
   const dotsHtml = hasMultiple ? `
-    <div class="piece-dots">
-      ${pieces.map((_, i) => `<span class="piece-dot ${i === 0 ? 'active' : ''}" data-piece="${i}"></span>`).join('')}
+    <div class="piece-nav">
+      <button class="piece-chevron piece-chevron--left" aria-label="Previous content piece">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="piece-dots">
+        ${pieces.map((_, i) => `<span class="piece-dot ${i === 0 ? 'active' : ''}" data-piece="${i}"></span>`).join('')}
+      </div>
+      <button class="piece-chevron piece-chevron--right" aria-label="Next content piece">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
   ` : '';
 
