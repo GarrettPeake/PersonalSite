@@ -8,8 +8,6 @@ import { describe, it, expect } from 'vitest';
 import {
   escapeHtml,
   escapeJs,
-  formatDate,
-  getExcerpt,
   slugify,
   generateRandomSlug,
 } from '../../lib/utils';
@@ -85,69 +83,6 @@ describe('Utils', () => {
 
     it('should handle empty string', () => {
       expect(escapeJs('')).toBe('');
-    });
-  });
-
-  describe('formatDate', () => {
-    it('should format ISO date string', () => {
-      const result = formatDate('2024-03-15T10:30:00Z');
-      expect(result).toBe('March 15, 2024');
-    });
-
-    it('should format date without time', () => {
-      const result = formatDate('2024-01-01');
-      expect(result).toBe('January 1, 2024');
-    });
-
-    it('should handle different months', () => {
-      expect(formatDate('2024-06-15')).toBe('June 15, 2024');
-      expect(formatDate('2024-12-25')).toBe('December 25, 2024');
-    });
-  });
-
-  describe('getExcerpt', () => {
-    it('should return short text unchanged', () => {
-      const result = getExcerpt('Short text');
-      expect(result).toBe('Short text');
-    });
-
-    it('should truncate long text with ellipsis', () => {
-      const longText = 'a'.repeat(250);
-      const result = getExcerpt(longText, 200);
-      expect(result.length).toBeLessThanOrEqual(203); // 200 + '...'
-      expect(result.endsWith('...')).toBe(true);
-    });
-
-    it('should strip headings', () => {
-      const result = getExcerpt('# Heading\nParagraph text');
-      expect(result).not.toContain('#');
-      expect(result).toContain('Paragraph text');
-    });
-
-    it('should strip links but keep text', () => {
-      const result = getExcerpt('Check out [my link](https://example.com) here');
-      expect(result).toContain('my link');
-      expect(result).not.toContain('https://');
-      expect(result).not.toContain('[');
-    });
-
-    it('should strip formatting characters', () => {
-      const result = getExcerpt('**bold** and *italic* and `code`');
-      expect(result).toBe('bold and italic and code');
-    });
-
-    it('should collapse newlines', () => {
-      const result = getExcerpt('line1\n\nline2\n\n\nline3');
-      expect(result).toBe('line1 line2 line3');
-    });
-
-    it('should handle empty string', () => {
-      expect(getExcerpt('')).toBe('');
-    });
-
-    it('should use custom max length', () => {
-      const result = getExcerpt('Hello World', 5);
-      expect(result).toBe('Hello...');
     });
   });
 

@@ -29,35 +29,6 @@ export function escapeJs(text: string): string {
 }
 
 /**
- * Format ISO date string to human-readable format
- */
-export function formatDate(isoString: string): string {
-  const date = new Date(isoString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC',
-  });
-}
-
-/**
- * Extract plain-text excerpt from markdown content
- */
-export function getExcerpt(content: string, maxLength = 200): string {
-  // Strip markdown formatting for excerpt
-  const text = content
-    .replace(/^#+\s+.+$/gm, '') // Remove headings
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links, keep text
-    .replace(/[*_`]/g, '') // Remove formatting chars
-    .replace(/\n+/g, ' ') // Collapse newlines
-    .trim();
-
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength).trim() + '...';
-}
-
-/**
  * Generate a URL-friendly slug from a title
  */
 export function slugify(title: string): string {

@@ -158,20 +158,6 @@
   width: 100%;
 }
 
-/* Icon button - square button for icons only */
-.btn--icon {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border-radius: 4px;
-}
-
-.btn--icon svg {
-  width: 20px;
-  height: 20px;
-  fill: var(--color-text);
-}
-
 /* Action button - small buttons used in tables/lists */
 .btn-action {
   display: inline-flex;
@@ -273,29 +259,6 @@
 .card--interactive:hover {
   transform: translateY(-2px);
   box-shadow: 4px 4px 0 var(--color-primary);
-}
-
-/* Stat card - centered content for numbers */
-.card--stat {
-  text-align: center;
-  padding: var(--space-lg);
-  border-width: 3px;
-}
-
-.card--stat .card__value {
-  font-size: 3rem;
-  font-weight: 900;
-  color: var(--color-primary);
-  line-height: 1;
-}
-
-.card--stat .card__label {
-  margin-top: var(--space-sm);
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: color-mix(in srgb, var(--color-text) 70%, transparent);
 }
 
 /* ==========================================================================
@@ -467,51 +430,6 @@
 .table-wrapper .admin-table {
   border: none;
   min-width: 600px;
-}
-
-/* ==========================================================================
-   DATA TABLES (Legacy grid-based - deprecated)
-   ========================================================================== */
-
-/**
- * Data table - grid-based table layout
- * Usage: <div class="data-table">...</div>
- * @deprecated Use .admin-table with proper <table> elements instead
- */
-.data-table {
-  border: 3px solid var(--color-border);
-}
-
-.data-table__header,
-.table-header {
-  display: grid;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  border-bottom: 2px solid var(--color-border);
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
-}
-
-.data-table__row,
-.table-row {
-  display: grid;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  border-bottom: 1px dashed var(--color-border);
-  align-items: center;
-}
-
-.data-table__row:last-child,
-.table-row:last-child {
-  border-bottom: none;
-}
-
-.data-table__row:hover,
-.table-row:hover {
-  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
 }
 
 /* ==========================================================================
