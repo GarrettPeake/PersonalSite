@@ -147,64 +147,25 @@ body.home-page {
    ========================================================================== */
 
 .project-display {
-  flex: 1.5;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--space-xl);
+  box-sizing: border-box;
 }
 
 .project-frame {
-  position: relative;
-  width: 100%;
-  max-width: 900px;
+  width: 90%;
+  max-height: 100%;
   aspect-ratio: 16/10;
-}
-
-/* Guidelines - dotted accent lines */
-.guideline {
-  position: absolute;
-  border-style: dashed;
-  border-color: var(--color-accent);
-  border-width: 0;
-  opacity: 0.6;
-}
-
-.guideline-top {
-  top: -5px;
-  left: -100vw;
-  right: -100vw;
-  border-top-width: 1px;
-}
-
-.guideline-bottom {
-  bottom: -5px;
-  left: -100vw;
-  right: -100vw;
-  border-bottom-width: 1px;
-}
-
-.guideline-left {
-  left: -5px;
-  top: -100vh;
-  bottom: -100vh;
-  border-left-width: 1px;
-}
-
-.guideline-right {
-  right: -5px;
-  top: -100vh;
-  bottom: -100vh;
-  border-right-width: 1px;
 }
 
 /* Carousel */
 .carousel {
   width: 100%;
   height: 100%;
-  border: 1px solid var(--color-border);
   overflow: hidden;
-  background: var(--color-bg-secondary);
 }
 
 .carousel-track {
@@ -217,6 +178,7 @@ body.home-page {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   opacity: 0;
@@ -226,12 +188,6 @@ body.home-page {
 
 .carousel-slide.active {
   opacity: 1;
-}
-
-.carousel-slide iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
 }
 
 .slide-placeholder {
@@ -258,28 +214,28 @@ body.home-page {
 
 /* Image slide content */
 .slide-image {
-  position: relative;
-  width: 100%;
-  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 0;
+  flex: 1;
 }
 
 .slide-image img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  border: 1px solid var(--color-primary);
+}
+
+.carousel-slide iframe {
+  border: 1px solid var(--color-primary);
 }
 
 .slide-caption {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: var(--space-sm) var(--space-md);
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
+  flex-shrink: 0;
+  padding: var(--space-sm) 0 0 0;
+  color: var(--color-text-muted);
   font-size: 0.85rem;
   line-height: 1.4;
 }
