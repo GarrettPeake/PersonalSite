@@ -44,7 +44,7 @@ function renderPhotoGrid(container) {
   }
 
   photoGrid.innerHTML = photos.map(photo => `
-    <div class="photo-item" role="button" tabindex="0" aria-label="${escapeAttr(photo.description || photo.location || 'View photo')}" data-id="${photo.id}" data-location="${escapeAttr(photo.location)}" data-description="${escapeAttr(photo.description)}">
+    <div class="photo-item" role="button" tabindex="0" aria-label="${escapeAttr(photo.description || photo.location || 'View photo')}" data-location="${escapeAttr(photo.location)}" data-description="${escapeAttr(photo.description)}">
       <img src="${escapeAttr(photo.url)}" alt="${escapeAttr(photo.description || 'Photo')}" loading="lazy">
     </div>
   `).join('');

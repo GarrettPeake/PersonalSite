@@ -223,7 +223,7 @@ class GpBlogModal extends HTMLElement {
     document.title = `${post.title} | Garrett Peake`;
 
     content.innerHTML = `
-      <h1 class="post-title">${this.escapeHtml(post.title)}</h1>
+      <h2 class="post-title">${this.escapeHtml(post.title)}</h2>
       <p class="post-meta">${this.formatDate(post.publishedAt)}</p>
       <div class="post-body md-content">${typeof window.renderMarkdown === 'function' ? window.renderMarkdown(post.content) : this.escapeHtml(post.content)}</div>
     `;

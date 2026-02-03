@@ -227,6 +227,19 @@
   object-fit: cover;
 }
 
+/* Responsive: stack bookmark card vertically on mobile */
+@media (max-width: 600px) {
+  .md-content .macro-bookmark {
+    flex-direction: column;
+  }
+
+  .md-content .macro-bookmark-thumbnail {
+    width: 100%;
+    height: 180px;
+    order: -1;
+  }
+}
+
 /* =========================================================================
    Macro: Iframe
    ========================================================================= */

@@ -32,7 +32,7 @@ async function init(container, params = {}) {
     content.innerHTML = `
       <div class="draft-banner">Draft Preview</div>
       <article class="post-article">
-        <h1 class="post-title">${escapeHtml(draft.title)}</h1>
+        <h2 class="post-title">${escapeHtml(draft.title)}</h2>
         <p class="post-meta">${formatDate(draft.updatedAt || draft.createdAt)}</p>
         <div class="md-content">${rendered}</div>
       </article>
@@ -43,7 +43,7 @@ async function init(container, params = {}) {
     content.innerHTML = `
       <div class="not-found-content">
         <p class="not-found-code">404</p>
-        <h1 class="not-found-title">Draft not found</h1>
+        <h2 class="not-found-title">Draft not found</h2>
         <p class="not-found-message">This draft link is invalid or has been revoked.</p>
         <a href="/" class="btn btn--primary" data-spa-link>Back to home</a>
       </div>

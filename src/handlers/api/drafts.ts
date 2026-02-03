@@ -113,5 +113,7 @@ export async function handleGetDraftByShareToken(env: Env, token: string): Promi
   if (!draft) {
     return jsonResponse({ error: 'Draft not found or share link expired' }, corsHeaders, 404);
   }
-  return jsonResponse(draft, corsHeaders);
+  // Strip internal ID from public response
+  const { id: _id, ...publicDraft } = draft;
+  return jsonResponse(publicDraft, corsHeaders);
 }

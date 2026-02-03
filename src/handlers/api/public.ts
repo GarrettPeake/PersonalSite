@@ -14,8 +14,7 @@ import { jsonResponse, corsHeaders } from '../../lib/response';
  */
 export async function handleListPosts(env: Env): Promise<Response> {
   const posts = await listPosts(env.KV);
-  const summaries = posts.map(({ id, title, slug, publishedAt, updatedAt, description }) => ({
-    id,
+  const summaries = posts.map(({ title, slug, publishedAt, updatedAt, description }) => ({
     title,
     slug,
     publishedAt,
@@ -33,7 +32,9 @@ export async function handleGetPost(env: Env, slug: string): Promise<Response> {
   if (!post) {
     return jsonResponse({ error: 'Post not found' }, corsHeaders, 404);
   }
-  return jsonResponse(post, corsHeaders);
+  // Strip internal ID from public response
+  const { id: _id, ...publicPost } = post;
+  return jsonResponse(publicPost, corsHeaders);
 }
 
 /**

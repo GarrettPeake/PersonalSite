@@ -57,10 +57,15 @@ import {
   handleDeleteProject,
   handleReorderProjects,
 } from './handlers/api/projects';
+import {
+  handleGetAboutPage,
+  handleAdminGetAboutPage,
+  handleAdminUpdateAboutPage,
+} from './handlers/api/pages';
 
 // Utilities
 import { isAuthenticated } from './middleware/auth';
-import { jsonResponse, corsHeaders, handleCorsPreflightResponse } from './lib/response';
+import { jsonResponse, corsHeaders, getCorsHeaders, handleCorsPreflightResponse } from './lib/response';
 
 export default {
   async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
@@ -132,12 +137,47 @@ export default {
  */
 export async function handleApi(request: Request, env: Env, path: string): Promise<Response> {
   const method = request.method;
+  const origin = request.headers.get('Origin');
 
   // Handle CORS preflight
   if (method === 'OPTIONS') {
-    return handleCorsPreflightResponse();
+    return handleCorsPreflightResponse(origin);
   }
 
+  // Resolve the API response, then apply origin-scoped CORS headers
+  const response = await resolveApiRoute(request, env, path, method);
+  return applyCorsHeaders(response, origin);
+}
+
+/**
+ * Apply origin-scoped CORS headers to a response.
+ * Replaces any wildcard Access-Control-Allow-Origin set by handlers
+ * with an origin-checked value (or removes it for disallowed origins).
+ */
+function applyCorsHeaders(response: Response, origin: string | null): Response {
+  const corsH = getCorsHeaders(origin);
+  const newResponse = new Response(response.body, response);
+
+  // Remove any wildcard ACAO that handlers may have set via the deprecated constant
+  newResponse.headers.delete('Access-Control-Allow-Origin');
+
+  // Set origin-scoped header only if origin is allowed
+  if (corsH['Access-Control-Allow-Origin']) {
+    newResponse.headers.set('Access-Control-Allow-Origin', corsH['Access-Control-Allow-Origin']);
+    newResponse.headers.set('Vary', 'Origin');
+  }
+
+  // Ensure methods and headers are present
+  newResponse.headers.set('Access-Control-Allow-Methods', corsH['Access-Control-Allow-Methods']);
+  newResponse.headers.set('Access-Control-Allow-Headers', corsH['Access-Control-Allow-Headers']);
+
+  return newResponse;
+}
+
+/**
+ * Internal: match API path to handler and return the response
+ */
+async function resolveApiRoute(request: Request, env: Env, path: string, method: string): Promise<Response> {
   try {
     // =========================================================================
     // Public API Endpoints
@@ -167,6 +207,11 @@ export async function handleApi(request: Request, env: Env, path: string): Promi
     // GET /api/projects - List all projects (public)
     if (path === '/api/projects' && method === 'GET') {
       return handleListProjectsPublic(env);
+    }
+
+    // GET /api/about - Get about page content (public)
+    if (path === '/api/about' && method === 'GET') {
+      return handleGetAboutPage(env);
     }
 
     // GET /api/draft/share/:token - Get draft by share token (public)
@@ -390,6 +435,20 @@ export async function handleApi(request: Request, env: Env, path: string): Promi
       if (path.match(/^\/api\/admin\/projects\/[^/]+$/) && method === 'DELETE') {
         const id = path.replace('/api/admin/projects/', '');
         return handleDeleteProject(env, id);
+      }
+
+      // -----------------------------------------------------------------------
+      // About Page
+      // -----------------------------------------------------------------------
+
+      // GET /api/admin/about - Get about page content
+      if (path === '/api/admin/about' && method === 'GET') {
+        return handleAdminGetAboutPage(env);
+      }
+
+      // PUT /api/admin/about - Update about page content
+      if (path === '/api/admin/about' && method === 'PUT') {
+        return handleAdminUpdateAboutPage(request, env);
       }
     }
 

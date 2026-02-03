@@ -56,7 +56,7 @@ describe('Admin Drafts API Handlers', () => {
 
     it('should include CORS headers', async () => {
       const response = await handleListDrafts(env);
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     });
   });
 
@@ -332,15 +332,16 @@ describe('Admin Drafts API Handlers', () => {
       const response = await handleGetDraftByShareToken(env, shareData.token);
 
       expect(response.status).toBe(200);
-      const data = await response.json() as { id: string; title: string };
-      expect(data.id).toBe(draft.id);
+      const data = await response.json() as { id?: string; title: string };
+      // Public endpoint should not expose internal ID
+      expect(data.id).toBeUndefined();
       expect(data.title).toBe('Shared Draft');
     });
 
     it('should include CORS headers', async () => {
       const response = await handleGetDraftByShareToken(env, 'any');
 
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     });
   });
 });

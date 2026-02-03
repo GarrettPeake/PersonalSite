@@ -67,8 +67,10 @@ describe('Photos API Handlers', () => {
       expect(data[0].filename).toBeUndefined();
       expect(data[0].updatedAt).toBeUndefined();
 
+      // Should NOT include internal ID in public response
+      expect(data[0].id).toBeUndefined();
+
       // Should include public fields
-      expect(data[0].id).toBeDefined();
       expect(data[0].url).toBeDefined();
       expect(data[0].location).toBeDefined();
       expect(data[0].description).toBeDefined();
@@ -77,7 +79,7 @@ describe('Photos API Handlers', () => {
 
     it('should include CORS headers', async () => {
       const response = await handleListPhotosPublic(env);
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     });
   });
 

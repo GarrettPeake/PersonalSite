@@ -65,6 +65,12 @@ class GpThemeToggle extends HTMLElement {
     document.documentElement.setAttribute('data-theme', theme);
     this.setAttribute('theme', theme);
     localStorage.setItem('theme', theme);
+
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    const btn = this.shadowRoot.querySelector('button');
+    if (btn) {
+      btn.setAttribute('aria-label', `Toggle theme: switch to ${nextTheme} mode`);
+    }
   }
 }
 

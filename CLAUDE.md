@@ -52,6 +52,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Admin project management page with CRUD and reorder
 - [x] Project API endpoints (public and admin)
 - [x] Home page dynamically loads projects from API
+- [x] Project icon alt text for accessibility (iconAlt field, fallback to title)
 - [x] Full SPA mode on both desktop (900px+) and mobile (< 900px)
 - [x] SPA section modules (projects, blog, about, photography, blog-post, draft-preview)
 - [x] Blog post modal for desktop SPA, inline rendering for mobile SPA
@@ -69,6 +70,8 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Block macros: Callout, TwoColumn, LinkPreview, Iframe
 - [x] OpenGraph metadata fetch API (`GET /api/admin/og?url=...`)
 - [x] Editor toolbar buttons for all macros
+- [x] CMS-editable about page with admin editor and public API
+- [x] Page content DAO for generic CMS page storage
 
 ### Not Yet Implemented
 
@@ -112,6 +115,7 @@ All data uses prefixed keys in a single KV namespace:
 | `index:tracking` | Array of all tracking slugs |
 | `index:photos` | Array of all photo UUIDs |
 | `index:projects` | Array of all project UUIDs |
+| `page:about` | About page CMS content |
 
 ## Routing
 
@@ -154,7 +158,8 @@ SPA client-side routes (handled by `router.js`):
 │   │   ├── tracking.dao.ts # Tracking CRUD + events
 │   │   ├── session.dao.ts  # Session CRUD
 │   │   ├── photo.dao.ts  # Photo CRUD operations
-│   │   └── project.dao.ts # Project CRUD + reorder operations
+│   │   ├── project.dao.ts # Project CRUD + reorder operations
+│   │   └── page.dao.ts   # Page content CRUD (about page, etc.)
 │   ├── /handlers
 │   │   ├── /api
 │   │   │   ├── public.ts    # GET /api/posts, POST /api/track
@@ -165,7 +170,8 @@ SPA client-side routes (handled by `router.js`):
 │   │   │   ├── upload.ts    # POST /api/admin/upload
 │   │   │   ├── photos.ts    # /api/photos and /api/admin/photos/* endpoints
 │   │   │   ├── projects.ts  # /api/projects and /api/admin/projects/* endpoints
-│   │   │   └── og.ts        # GET /api/admin/og - OpenGraph metadata fetch
+│   │   │   ├── og.ts        # GET /api/admin/og - OpenGraph metadata fetch
+│   │   │   └── pages.ts    # /api/about and /api/admin/about endpoints
 │   │   └── /pages
 │   │       ├── tracking.ts  # /s/:slug handler
 │   │       ├── sitemap.ts   # /sitemap.xml dynamic generation
@@ -223,6 +229,7 @@ SPA client-side routes (handled by `router.js`):
     │   ├── drafts.html   # Drafts list
     │   ├── photos.html   # Photo management
     │   ├── projects.html # Project management with reorder
+    │   ├── about.html    # About page editor
     │   └── tracking.html # Tracking links management
     ├── /js
     │   ├── home.js       # Theme toggle and mobile menu
@@ -243,6 +250,7 @@ SPA client-side routes (handled by `router.js`):
     │       ├── drafts.js     # Drafts list management
     │       ├── photos.js     # Photo management
     │       ├── projects.js   # Project management with reorder
+    │       ├── about.js      # About page editor
     │       └── tracking.js   # Tracking links management
     ├── /lib
     │   └── markdown.js   # Client-side markdown renderer for preview
@@ -310,6 +318,7 @@ Set via `wrangler secret put <name>`:
 | GET | `/api/draft/share/:token` | Get draft by share token |
 | GET | `/api/photos` | List all photos |
 | GET | `/api/projects` | List all projects |
+| GET | `/api/about` | Get about page content |
 
 ### Auth
 
@@ -352,6 +361,8 @@ Set via `wrangler secret put <name>`:
 | DELETE | `/api/admin/projects/:id` | Delete project |
 | PUT | `/api/admin/projects/reorder` | Reorder projects |
 | GET | `/api/admin/og?url=...` | Fetch OpenGraph metadata for link preview |
+| GET | `/api/admin/about` | Get about page content (admin) |
+| PUT | `/api/admin/about` | Update about page content |
 
 ## CSS Architecture
 
@@ -636,6 +647,7 @@ Each entity has its own DAO file with CRUD operations:
 - `session.dao.ts`: Session operations (`createSession`, `getSession`, `deleteSession`)
 - `photo.dao.ts`: Photo operations (`getPhoto`, `listPhotos`, `createPhoto`, `updatePhoto`, `deletePhoto`)
 - `project.dao.ts`: Project operations + reorder (`getProject`, `listProjects`, `createProject`, `updateProject`, `deleteProject`, `reorderProjects`)
+- `page.dao.ts`: Page content operations (`getPageContent`, `updatePageContent`)
 - `base.ts`: Shared index management (`getIndex`, `addToIndex`, `removeFromIndex`)
 
 **Handlers (`src/handlers/`)**
@@ -647,6 +659,7 @@ Request handlers are split by route type:
 - `api/tracking.ts`: Admin tracking endpoints
 - `api/photos.ts`: Photo endpoints (public and admin)
 - `api/projects.ts`: Project endpoints (public and admin) with reorder
+- `api/pages.ts`: Page content endpoints (about page, public and admin)
 - `pages/*.ts`: Page rendering handlers
 
 **Templates (`src/templates/`)**
@@ -734,6 +747,7 @@ Params object may contain `{ slug }` for blog-post or `{ token }` for draft-prev
 - **Posts** (`/admin/posts`): List published posts with edit/unpublish/delete actions
 - **Drafts** (`/admin/drafts`): List drafts with edit/share/publish/delete actions
 - **Photos** (`/admin/photos`): Grid-based photo management with upload (EXIF stripped), edit metadata, and delete. First item is "+" upload button.
+- **About** (`/admin/about`): Split-pane markdown editor for about page content with auto-save, toolbar, and file upload
 - **Tracking** (`/admin/tracking`): Create/manage tracking links, view event timelines
 
 ### Client-side Markdown Renderer (`public/lib/markdown.js`)

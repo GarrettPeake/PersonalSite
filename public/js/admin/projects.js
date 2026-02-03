@@ -15,6 +15,7 @@ const iconSvgArea = document.getElementById('icon-svg-input');
 const iconImageArea = document.getElementById('icon-image-input');
 const iconFileInput = document.getElementById('icon-file');
 const iconUrlInput = document.getElementById('icon-url');
+const iconAltInput = document.getElementById('icon-alt');
 const svgPreview = document.getElementById('svg-preview');
 const imagePreview = document.getElementById('image-preview');
 const togglePreviewBtn = document.getElementById('toggle-preview');
@@ -90,7 +91,7 @@ function renderProjects() {
         </svg>
       </div>
       <div class="project-icon">
-        ${project.iconType === 'svg' ? project.icon : `<img src="${escapeHtml(project.icon)}" alt="">`}
+        ${project.iconType === 'svg' ? project.icon : `<img src="${escapeHtml(project.icon)}" alt="${escapeHtml(project.iconAlt || project.title + ' icon')}">`}
       </div>
       <div class="project-info">
         <span class="project-title">${escapeHtml(project.title)}</span>
@@ -204,6 +205,7 @@ function showEditDialog(id) {
   projectIdInput.value = project.id;
   projectTitleInput.value = project.title;
   projectDescriptionInput.value = project.description;
+  iconAltInput.value = project.iconAlt || '';
   currentContentPieces = JSON.parse(JSON.stringify(project.contentPieces)); // Deep copy
   pendingIconFile = null;
 
@@ -331,6 +333,7 @@ projectForm.addEventListener('submit', async (e) => {
       title: projectTitleInput.value.trim(),
       icon,
       iconType,
+      iconAlt: iconAltInput.value.trim(),
       description: projectDescriptionInput.value,
       contentPieces: currentContentPieces,
     };

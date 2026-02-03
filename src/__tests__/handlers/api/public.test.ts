@@ -87,7 +87,7 @@ describe('Public API Handlers', () => {
     it('should include CORS headers', async () => {
       const response = await handleListPosts(env);
 
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     });
 
     it('should return posts in order (newest first)', async () => {
@@ -151,7 +151,7 @@ describe('Public API Handlers', () => {
     it('should include CORS headers', async () => {
       const response = await handleGetPost(env, 'any-slug');
 
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     });
   });
 
@@ -239,7 +239,7 @@ describe('Public API Handlers', () => {
 
       const response = await handleTrack(request, env);
 
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
     });
   });
 });

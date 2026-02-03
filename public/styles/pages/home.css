@@ -310,6 +310,16 @@ body.home-page {
   overflow: hidden;
 }
 
+.theme-toggle-scene:focus-visible {
+  outline: 2px solid var(--color-primary, #0066ff);
+  outline-offset: 2px;
+}
+
+.mobile-theme-toggle:focus-visible {
+  outline: 2px solid var(--color-primary, #0066ff);
+  outline-offset: 2px;
+}
+
 /* Mountains SVG */
 .mountains {
   position: absolute;
@@ -439,6 +449,7 @@ body.home-page {
 .shelf-item-legend {
   position: absolute;
   bottom: 0px;
+  left: 0px;
   right: 0px;
   background: var(--color-primary);
   padding: 2px 6px;
@@ -446,6 +457,8 @@ body.home-page {
   font-size: 0.75rem;
   color: var(--color-bg);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   border: 1px solid var(--color-bg);
 }
 
@@ -455,6 +468,8 @@ body.home-page {
   padding: var(--space-sm);
   border: 1px solid var(--color-bg);
   min-height: 60px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .description-text {
@@ -649,6 +664,7 @@ body.home-page {
     position: relative;
     transform: none;
     opacity: 0;
+    visibility: hidden;
     display: none;
     pointer-events: none;
     transition: none;
@@ -657,6 +673,7 @@ body.home-page {
   .mobile-spa-content .spa-section.active {
     transform: none;
     opacity: 1;
+    visibility: visible;
     display: block;
     pointer-events: auto;
   }
@@ -731,7 +748,7 @@ body.home-page {
     min-width: 0;
   }
 
-  .mobile-project-card .project-info h3 {
+  .mobile-project-card .project-info h2 {
     font-family: var(--font-display);
     font-size: 1rem;
     font-weight: 600;
@@ -851,26 +868,41 @@ body.home-page {
     height: 18px;
   }
 
-  /* Mobile Social */
-  .mobile-social {
+  /* Mobile Footer */
+  .mobile-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-lg) var(--space-md) var(--space-md);
+    border-top: var(--border-thin) solid var(--color-border);
+  }
+
+  .mobile-footer-social {
     display: flex;
     justify-content: center;
     gap: var(--space-md);
   }
 
-  .mobile-social a {
+  .mobile-footer-social a {
     color: var(--color-text);
     opacity: 0.6;
     transition: opacity var(--transition-fast);
   }
 
-  .mobile-social a:hover {
+  .mobile-footer-social a:hover {
     opacity: 1;
   }
 
-  .mobile-social svg {
+  .mobile-footer-social svg {
     width: 24px;
     height: 24px;
+  }
+
+  .mobile-footer-copyright {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
   }
 
   /* Mobile Photography - tight 3-column grid */
@@ -923,7 +955,8 @@ body.home-page {
   inset: 0;
   transform: translateX(100%);
   opacity: 0;
-  transition: transform 0.4s ease, opacity 0.4s ease;
+  visibility: hidden;
+  transition: transform 0.4s ease, opacity 0.4s ease, visibility 0.4s;
   pointer-events: none;
   overflow-y: auto;
 }
@@ -937,6 +970,7 @@ body.home-page {
 .spa-section.active {
   transform: translateX(0);
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 
@@ -944,12 +978,14 @@ body.home-page {
 .spa-section.exit-left {
   transform: translateX(-100%);
   opacity: 0;
+  visibility: visible;
 }
 
 /* Section exiting to the right (going backward) */
 .spa-section.exit-right {
   transform: translateX(100%);
   opacity: 0;
+  visibility: visible;
 }
 
 /* Section entering from the right (going forward) */

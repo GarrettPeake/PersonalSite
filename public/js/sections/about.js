@@ -1,13 +1,11 @@
 /**
  * About Section Module
  *
- * Static about content within the SPA.
- * No API calls needed - static template.
+ * Loads about page content from the CMS API.
+ * Falls back to hardcoded HTML if no CMS content exists.
  */
 
-const template = `
-  <div class="about-section-spa">
-    <div class="about-content">
+const fallbackHtml = `
       <div class="about-hero">
         <div class="profile-frame">
           <div class="profile-image">
@@ -59,12 +57,34 @@ const template = `
           View LinkedIn Profile
         </a>
       </section>
+`;
+
+const template = `
+  <div class="about-section-spa">
+    <div class="about-content">
+      <p class="loading">Loading...</p>
     </div>
   </div>
 `;
 
 async function init(container) {
-  // No initialization needed - static content
+  const contentEl = container.querySelector('.about-content');
+
+  try {
+    const res = await fetch('/api/about');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.content && data.content.trim()) {
+        contentEl.innerHTML = '<div class="md-content">' + window.renderMarkdown(data.content) + '</div>';
+        return;
+      }
+    }
+  } catch (err) {
+    // Fall through to fallback
+  }
+
+  // Fallback to hardcoded content
+  contentEl.innerHTML = fallbackHtml;
 }
 
 export default {
