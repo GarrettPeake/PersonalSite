@@ -27,7 +27,7 @@
 
 /**
  * Icon button - square button containing an icon
- * Used by: gp-theme-toggle, gp-footer social links
+ * Used by: gp-theme-toggle
  */
 .icon-btn {
   display: flex;
@@ -58,80 +58,3 @@
   fill: var(--color-text, #1a1a1a);
 }
 
-/* ==========================================================================
-   NAVIGATION LINK
-   ========================================================================== */
-
-/**
- * Nav link - text link with hover background
- * Used by: gp-header nav links
- */
-.nav-link {
-  color: var(--color-text, #1a1a1a);
-  text-decoration: none;
-  font-weight: 500;
-  padding: var(--space-xs, 0.25rem) var(--space-sm, 0.5rem);
-  border-radius: 4px;
-  transition: background-color 0.15s;
-}
-
-.nav-link:hover {
-  background-color: color-mix(in srgb, var(--color-primary, #0066ff) 10%, transparent);
-}
-
-.nav-link.active {
-  color: var(--color-primary, #0066ff);
-}
-
-/* ==========================================================================
-   LOGO
-   ========================================================================== */
-
-/**
- * Logo link - site logo with peak icon
- * Used by: gp-header
- */
-.logo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm, 0.5rem);
-  text-decoration: none;
-  color: var(--color-text, #1a1a1a);
-}
-
-.logo:hover {
-  text-decoration: none;
-}
-
-.logo-text {
-  font-weight: 700;
-  font-size: 1.25rem;
-  letter-spacing: -0.02em;
-}
-
-.logo-peak {
-  width: 24px;
-  height: 24px;
-}
-
-.logo-peak polygon {
-  fill: var(--color-primary, #0066ff);
-}
-
-/* ==========================================================================
-   FOOTER
-   ========================================================================== */
-
-/**
- * Footer styles
- * Used by: gp-footer
- */
-.footer-links {
-  display: flex;
-  gap: var(--space-md, 1rem);
-}
-
-.copyright {
-  font-size: 0.875rem;
-  color: color-mix(in srgb, var(--color-text, #1a1a1a) 70%, transparent);
-}
