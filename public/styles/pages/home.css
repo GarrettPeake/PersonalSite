@@ -179,17 +179,15 @@ body.home-page {
 .carousel-slide {
   position: absolute;
   inset: 0;
-  display: flex;
+  display: none;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
-  opacity: 0;
-  transition: opacity var(--transition-medium);
   overflow: hidden;
 }
 
 .carousel-slide.active {
-  opacity: 1;
+  display: flex;
 }
 
 .slide-placeholder {
