@@ -89,7 +89,6 @@ async function init(container) {
 function renderDesktopProjects(container) {
   const carouselTrack = container.querySelector('.carousel-track');
   const shelfItems = document.getElementById('shelf-items');
-  const descriptionText = document.querySelector('.description-text');
 
   if (projects.length === 0) {
     if (carouselTrack) {
@@ -132,10 +131,6 @@ function renderDesktopProjects(container) {
         <div class="shelf-item-legend" title="${escapeAttr(project.title)}">${escapeHtml(project.title)}</div>
       </div>
     `).join('');
-  }
-
-  if (descriptionText && projects.length > 0) {
-    descriptionText.innerHTML = renderMarkdownSimple(projects[0].description) || 'Select a project';
   }
 }
 
@@ -326,39 +321,10 @@ function initPieceCarousels() {
 
 function initShelfSync() {
   const shelfItems = document.getElementById('shelf-items');
-  const descriptionText = document.querySelector('.description-text');
 
   if (!shelfItems) return;
 
   let selectedIndex = 0;
-
-  function showDescription(index) {
-    const project = projects[index];
-    if (project && descriptionText) {
-      descriptionText.innerHTML = renderMarkdownSimple(project.description) || '';
-    }
-  }
-
-  function restoreSelectedDescription() {
-    if (selectedIndex !== null && projects[selectedIndex]) {
-      showDescription(selectedIndex);
-    } else if (descriptionText) {
-      descriptionText.innerHTML = 'Select a project';
-    }
-  }
-
-  shelfItems.addEventListener('mouseover', (e) => {
-    const item = e.target.closest('.shelf-item');
-    if (!item) return;
-    const projectIndex = parseInt(item.dataset.project);
-    showDescription(projectIndex);
-  });
-
-  shelfItems.addEventListener('mouseout', (e) => {
-    const related = e.relatedTarget;
-    if (related && shelfItems.contains(related)) return;
-    restoreSelectedDescription();
-  });
 
   function activateShelfItem(item) {
     const projectIndex = parseInt(item.dataset.project);
@@ -367,7 +333,6 @@ function initShelfSync() {
     shelfItems.querySelectorAll('.shelf-item').forEach(i => i.classList.remove('active'));
     item.classList.add('active');
 
-    showDescription(projectIndex);
     updateCarousel(item.dataset.project);
   }
 

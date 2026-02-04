@@ -558,24 +558,6 @@ body.home-page {
   border: 1px solid var(--color-bg);
 }
 
-/* Shelf Description */
-.shelf-description {
-  margin-top: var(--space-md);
-  padding: var(--space-sm);
-  border: 1px solid var(--color-bg);
-  min-height: 60px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.description-text {
-  font-family: var(--font-sans);
-  font-size: 0.8rem;
-  color: var(--color-bg);
-  margin: 0;
-  line-height: 1.4;
-}
-
 /* ==========================================================================
    MOBILE LAYOUT
    ========================================================================== */
@@ -1477,14 +1459,6 @@ body.home-page {
   background: var(--color-bg);
   color: var(--color-primary);
   border-color: var(--color-primary);
-}
-
-[data-theme="dark"] .shelf-description {
-  border-color: var(--color-primary);
-}
-
-[data-theme="dark"] .description-text {
-  color: var(--color-text);
 }
 
 [data-theme="dark"] .shelf-loading,
