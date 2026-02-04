@@ -47,6 +47,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Admin photo management page with upload, edit, delete
 - [x] Photo CRUD API endpoints (public and admin)
 - [x] EXIF stripping on photo upload for privacy
+- [x] Editable photo date via admin edit dialog (controls gallery ordering)
 - [x] Public photography page loads from API
 - [x] Admin project management page with CRUD and reorder
 - [x] Project API endpoints (public and admin)

@@ -198,7 +198,7 @@ export async function handleUpdatePhoto(
   id: string
 ): Promise<Response> {
   try {
-    const body = await request.json() as { location?: string; description?: string };
+    const body = await request.json() as { location?: string; description?: string; publishedAt?: string };
 
     if (typeof body.location !== 'string' || typeof body.description !== 'string') {
       return jsonResponse(
@@ -208,9 +208,20 @@ export async function handleUpdatePhoto(
       );
     }
 
+    // Use provided publishedAt or preserve existing
+    const existing = await getPhoto(env.KV, id);
+    if (!existing) {
+      return jsonResponse({ error: 'Photo not found' }, corsHeaders, 404);
+    }
+
+    const publishedAt = typeof body.publishedAt === 'string' && body.publishedAt
+      ? body.publishedAt
+      : existing.publishedAt;
+
     const photo = await updatePhoto(env.KV, id, {
       location: body.location,
       description: body.description,
+      publishedAt,
     });
 
     if (!photo) {

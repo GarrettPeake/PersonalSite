@@ -79,7 +79,7 @@ export type PhotoCreateInput = Omit<Photo, 'id' | 'publishedAt' | 'updatedAt'>;
 /**
  * Input for updating photo metadata
  */
-export type PhotoUpdateInput = Pick<Photo, 'location' | 'description'>;
+export type PhotoUpdateInput = Pick<Photo, 'location' | 'description' | 'publishedAt'>;
 
 // ============================================================================
 // Project Types
