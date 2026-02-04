@@ -16,6 +16,7 @@ const editForm = document.getElementById('edit-form');
 const editCancel = document.getElementById('edit-cancel');
 const editPhotoId = document.getElementById('edit-photo-id');
 const editPreview = document.getElementById('edit-preview');
+const editDate = document.getElementById('edit-date');
 const editLocation = document.getElementById('edit-location');
 const editDescription = document.getElementById('edit-description');
 const confirmDialog = document.getElementById('confirm-dialog');
@@ -209,6 +210,17 @@ function showEditDialog(id) {
 
   editPhotoId.value = photo.id;
   editPreview.src = photo.url;
+  // Convert ISO string to datetime-local format (YYYY-MM-DDTHH:MM)
+  if (photo.publishedAt) {
+    const dt = new Date(photo.publishedAt);
+    editDate.value = dt.getFullYear() + '-' +
+      String(dt.getMonth() + 1).padStart(2, '0') + '-' +
+      String(dt.getDate()).padStart(2, '0') + 'T' +
+      String(dt.getHours()).padStart(2, '0') + ':' +
+      String(dt.getMinutes()).padStart(2, '0');
+  } else {
+    editDate.value = '';
+  }
   editLocation.value = photo.location || '';
   editDescription.value = photo.description || '';
   editDialog.hidden = false;
@@ -235,6 +247,7 @@ editForm.addEventListener('submit', async (e) => {
       body: JSON.stringify({
         location: editLocation.value,
         description: editDescription.value,
+        publishedAt: editDate.value ? new Date(editDate.value).toISOString() : undefined,
       }),
     });
 

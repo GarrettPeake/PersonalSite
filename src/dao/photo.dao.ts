@@ -32,6 +32,8 @@ export async function listPhotos(kv: KVNamespace): Promise<Photo[]> {
     if (photo) photos.push(photo);
   }
 
+  photos.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+
   return photos;
 }
 
@@ -76,6 +78,7 @@ export async function updatePhoto(
     ...existing,
     location: data.location,
     description: data.description,
+    publishedAt: data.publishedAt,
     updatedAt: new Date().toISOString(),
   };
 
