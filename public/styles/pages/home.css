@@ -444,7 +444,7 @@ body.home-page {
 
 .celestial-body.sun {
   background: #ff6b00;
-  top: 10px;
+  top: 25px;
   opacity: 1;
 }
 
@@ -461,7 +461,7 @@ body.home-page {
 }
 
 [data-theme="dark"] .celestial-body.moon {
-  top: 10px;
+  top: 25px;
   opacity: 1;
 }
 
@@ -552,7 +552,7 @@ body.home-page {
   color: var(--color-bg);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: wrap;
   border: 1px solid var(--color-bg);
 }
 
@@ -1428,64 +1428,6 @@ body.home-page {
 
 .photography-section .photo-item:hover::after {
   background: rgba(0, 0, 0, 0.1);
-}
-
-/* ==========================================================================
-   DARK MODE: RIGHT PANEL
-   Sidebar uses page background with outlined mountains instead of filled.
-   ========================================================================== */
-
-[data-theme="dark"] .shelf-panel {
-  background: var(--color-bg);
-  border-left: 1px solid var(--color-primary);
-}
-
-[data-theme="dark"] .shelf-item-icon {
-  border-color: var(--color-primary);
-}
-
-[data-theme="dark"] .shelf-item-icon svg {
-  color: var(--color-primary);
-}
-
-[data-theme="dark"] .shelf-item.active .shelf-item-icon {
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
-}
-
-[data-theme="dark"] .shelf-item-legend {
-  background: var(--color-bg);
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-[data-theme="dark"] .shelf-loading,
-[data-theme="dark"] .shelf-empty {
-  color: var(--color-text-muted);
-}
-
-/* Mountains: outlined instead of filled in dark mode */
-[data-theme="dark"] .mountain {
-  fill: none;
-  stroke: var(--color-primary);
-  stroke-width: 1.5;
-}
-
-[data-theme="dark"] .mountain-snow {
-  fill: none;
-  stroke: var(--color-accent);
-  stroke-width: 1;
-}
-
-[data-theme="dark"] .controls-panel {
-  border-left: 1px solid var(--color-primary);
-}
-
-/* Mobile mini-mountains: outlined in dark mode */
-[data-theme="dark"] .mini-mountains polygon {
-  fill: none;
-  stroke: var(--color-primary);
-  stroke-width: 1.5;
 }
 
 /* ==========================================================================
