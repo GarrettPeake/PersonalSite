@@ -23,7 +23,6 @@
   background: transparent;
   color: var(--color-text);
   font-family: inherit;
-  font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -68,7 +67,6 @@
   background: var(--color-primary);
   color: var(--color-bg);
   font-family: inherit;
-  font-size: 0.875rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -101,7 +99,6 @@
   background: transparent;
   color: var(--color-text);
   font-family: inherit;
-  font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -126,7 +123,6 @@
   background: #ff4444;
   color: white;
   font-family: inherit;
-  font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -150,7 +146,6 @@
 /* Small button - compact actions in tables/lists */
 .btn--sm {
   padding: var(--space-xs) var(--space-sm);
-  font-size: 0.75rem;
 }
 
 /* Full width button */
@@ -168,7 +163,6 @@
   background: transparent;
   color: var(--color-text);
   font-family: inherit;
-  font-size: 0.75rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -219,7 +213,6 @@
   background: transparent;
   color: var(--color-text);
   font-family: inherit;
-  font-size: 0.75rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -248,7 +241,9 @@
 
 /* Interactive card - lifts on hover */
 .card--interactive {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .card--interactive:hover {
@@ -273,7 +268,6 @@
   display: block;
   margin-bottom: var(--space-xs);
   font-weight: 600;
-  font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -313,7 +307,6 @@
 /* Help text - small hint below inputs */
 .form-help,
 .help-text {
-  font-size: 0.75rem;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
   margin: var(--space-xs) 0 0;
 }
@@ -321,7 +314,6 @@
 /* Monospace input - for slugs, code, URLs */
 .form-input--mono {
   font-family: var(--font-mono);
-  font-size: 0.875rem;
 }
 
 /* ==========================================================================
@@ -348,7 +340,6 @@
   text-align: left;
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.75rem;
   letter-spacing: 0.1em;
   border-bottom: 2px solid var(--color-border);
   white-space: nowrap;
@@ -470,7 +461,6 @@
 }
 
 .item-row .item-date {
-  font-size: 0.875rem;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
@@ -530,7 +520,6 @@
 
 /* Meta text - secondary info like dates, slugs */
 .meta {
-  font-size: 0.875rem;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
@@ -656,4 +645,3 @@
   display: grid;
   gap: var(--space-lg);
 }
-

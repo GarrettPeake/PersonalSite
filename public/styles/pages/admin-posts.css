@@ -21,12 +21,10 @@
 
 .post-slug {
   font-family: var(--font-mono);
-  font-size: 0.875rem;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
 .post-date {
-  font-size: 0.875rem;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 

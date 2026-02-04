@@ -12,7 +12,6 @@
 
 .tracking-url {
   font-family: var(--font-mono);
-  font-size: 0.875rem;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
@@ -24,7 +23,6 @@
 }
 
 .tracking-visits {
-  font-size: 0.875rem;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
@@ -62,7 +60,6 @@
 }
 
 .event-time {
-  font-size: 0.75rem;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
   margin-bottom: var(--space-xs);
 }
@@ -73,7 +70,6 @@
 }
 
 .event-details {
-  font-size: 0.75rem;
   color: color-mix(in srgb, var(--color-text) 50%, transparent);
 }
 

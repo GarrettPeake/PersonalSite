@@ -138,7 +138,6 @@ body.home-page {
   position: absolute;
   bottom: var(--space-xl);
   left: 0;
-  font-size: 0.8rem;
   color: var(--color-text-muted);
   font-family: var(--font-sans);
   margin: 0;
@@ -198,7 +197,6 @@ body.home-page {
   height: 100%;
   color: var(--color-text-muted);
   font-family: var(--font-mono);
-  font-size: 0.9rem;
   padding: var(--space-md);
   box-sizing: border-box;
   text-align: center;
@@ -231,7 +229,6 @@ body.home-page {
 }
 
 .project-desc {
-  font-size: 0.9rem;
   line-height: 1.5;
   color: var(--color-text);
   margin: 0;
@@ -334,7 +331,6 @@ body.home-page {
 .piece-description {
   flex-shrink: 0;
   text-align: center;
-  font-size: 0.9rem;
   line-height: 1.5;
   color: var(--color-text);
   min-height: 1.5em;
@@ -372,7 +368,6 @@ body.home-page {
   flex-shrink: 0;
   padding: var(--space-sm) 0 0 0;
   color: var(--color-text-muted);
-  font-size: 0.85rem;
   line-height: 1.4;
 }
 
@@ -534,7 +529,6 @@ body.home-page {
   padding: var(--space-md);
   color: var(--color-bg);
   font-family: var(--font-mono);
-  font-size: 0.85rem;
   opacity: 0.7;
   margin: 0;
 }
@@ -548,7 +542,6 @@ body.home-page {
   background: var(--color-primary);
   padding: 2px 6px;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
   color: var(--color-bg);
   white-space: nowrap;
   overflow: hidden;
@@ -680,7 +673,6 @@ body.home-page {
 
   .theme-label {
     font-family: var(--font-mono);
-    font-size: 0.9rem;
     color: var(--color-text-muted);
   }
 
@@ -838,7 +830,6 @@ body.home-page {
   }
 
   .mobile-project-card .project-info p {
-    font-size: 0.8rem;
     color: var(--color-text-muted);
     margin: 0;
     line-height: 1.4;
@@ -990,7 +981,6 @@ body.home-page {
   }
 
   .mobile-footer-copyright {
-    font-size: 0.8rem;
     color: var(--color-text-muted);
     font-family: var(--font-sans);
   }
@@ -1227,7 +1217,6 @@ body.home-page {
 }
 
 .blog-section .post-meta {
-  font-size: 0.8rem;
   color: var(--color-text-muted);
   margin-bottom: var(--space-sm);
   font-family: var(--font-mono);
@@ -1237,7 +1226,6 @@ body.home-page {
   margin-bottom: 0;
   color: var(--color-text);
   line-height: 1.6;
-  font-size: 0.95rem;
 }
 
 /* About Section */
@@ -1454,7 +1442,6 @@ body.home-page {
 .blog-post-section .back-link {
   display: inline-block;
   font-family: var(--font-mono);
-  font-size: 0.9rem;
   color: var(--color-text-muted);
   text-decoration: none;
   margin-bottom: var(--space-lg);
@@ -1476,7 +1463,6 @@ body.home-page {
 
 .blog-post-section .post-meta {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
   color: var(--color-text-muted);
   margin-bottom: var(--space-xl);
 }
@@ -1499,7 +1485,6 @@ body.home-page {
   color: var(--color-bg);
   padding: var(--space-sm) var(--space-md);
   font-family: var(--font-mono);
-  font-size: 0.85rem;
   font-weight: 600;
   text-align: center;
   margin-bottom: var(--space-lg);
@@ -1516,7 +1501,6 @@ body.home-page {
 
 .draft-preview-section .post-meta {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
   color: var(--color-text-muted);
   margin-bottom: var(--space-xl);
 }
@@ -1553,7 +1537,6 @@ body.home-page {
 
 .not-found-path {
   font-family: var(--font-mono);
-  font-size: 0.875rem;
   color: var(--color-text-muted);
   background: var(--color-bg-secondary);
   border: var(--border-thin) solid var(--color-border);

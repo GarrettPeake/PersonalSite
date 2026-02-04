@@ -5,12 +5,12 @@
  * Follows gp-photo-modal pattern.
  */
 
-import { escapeHtml, formatDateLong } from '/js/utils.js';
+import { escapeHtml, formatDateLong } from "/js/utils.js";
 
 class GpBlogModal extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: 'open' });
+    this.attachShadow({ mode: "open" });
     this._isOpen = false;
     this._currentSlug = null;
   }
@@ -79,8 +79,7 @@ class GpBlogModal extends HTMLElement {
           border: 1px solid var(--color-border, #e0e0e0);
           color: var(--color-text, #1a1a1a);
           font-family: var(--font-mono, monospace);
-          font-size: 0.9rem;
-          cursor: pointer;
+                    cursor: pointer;
           transition: background var(--transition-fast, 0.15s ease), color var(--transition-fast, 0.15s ease);
         }
 
@@ -113,8 +112,7 @@ class GpBlogModal extends HTMLElement {
 
         .post-meta {
           font-family: var(--font-mono, monospace);
-          font-size: 0.85rem;
-          color: var(--color-text-muted, #666);
+                    color: var(--color-text-muted, #666);
           margin-bottom: var(--space-xl, 4rem);
         }
 
@@ -185,11 +183,11 @@ class GpBlogModal extends HTMLElement {
   }
 
   setupEventListeners() {
-    const backBtn = this.shadowRoot.querySelector('.back-btn');
-    backBtn.addEventListener('click', () => this.close());
+    const backBtn = this.shadowRoot.querySelector(".back-btn");
+    backBtn.addEventListener("click", () => this.close());
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this._isOpen) {
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this._isOpen) {
         this.close();
       }
     });
@@ -198,17 +196,17 @@ class GpBlogModal extends HTMLElement {
   async open(slug) {
     this._isOpen = true;
     this._currentSlug = slug;
-    this.setAttribute('open', '');
+    this.setAttribute("open", "");
 
-    const content = this.shadowRoot.querySelector('.modal-content');
+    const content = this.shadowRoot.querySelector(".modal-content");
     content.innerHTML = '<p class="loading">Loading post...</p>';
 
     // Prevent body scroll
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
 
     try {
       const response = await fetch(`/api/posts/${slug}`);
-      if (!response.ok) throw new Error('Post not found');
+      if (!response.ok) throw new Error("Post not found");
 
       const post = await response.json();
       this.renderPost(post);
@@ -220,19 +218,19 @@ class GpBlogModal extends HTMLElement {
   }
 
   renderPost(post) {
-    const content = this.shadowRoot.querySelector('.modal-content');
+    const content = this.shadowRoot.querySelector(".modal-content");
 
     document.title = `${post.title} | Garrett Peake`;
 
     content.innerHTML = `
       <h2 class="post-title">${escapeHtml(post.title)}</h2>
       <p class="post-meta">${formatDateLong(post.publishedAt)}</p>
-      <div class="post-body md-content">${typeof window.renderMarkdown === 'function' ? window.renderMarkdown(post.content) : escapeHtml(post.content)}</div>
+      <div class="post-body md-content">${typeof window.renderMarkdown === "function" ? window.renderMarkdown(post.content) : escapeHtml(post.content)}</div>
     `;
   }
 
   focusOverlay() {
-    const overlay = this.shadowRoot.querySelector('.modal-overlay');
+    const overlay = this.shadowRoot.querySelector(".modal-overlay");
     if (overlay) overlay.focus();
   }
 
@@ -241,14 +239,13 @@ class GpBlogModal extends HTMLElement {
 
     this._isOpen = false;
     this._currentSlug = null;
-    this.removeAttribute('open');
-    document.body.style.overflow = '';
-    document.title = 'Blog | Garrett Peake';
+    this.removeAttribute("open");
+    document.body.style.overflow = "";
+    document.title = "Blog | Garrett Peake";
 
     // Dispatch event for router to handle URL update
-    this.dispatchEvent(new CustomEvent('blog-modal-close', { bubbles: true }));
+    this.dispatchEvent(new CustomEvent("blog-modal-close", { bubbles: true }));
   }
-
 }
 
-customElements.define('gp-blog-modal', GpBlogModal);
+customElements.define("gp-blog-modal", GpBlogModal);

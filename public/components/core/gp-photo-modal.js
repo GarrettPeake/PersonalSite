@@ -7,7 +7,7 @@
 class GpPhotoModal extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: 'open' });
+    this.attachShadow({ mode: "open" });
     this._isOpen = false;
   }
 
@@ -95,8 +95,7 @@ class GpPhotoModal extends HTMLElement {
           align-items: center;
           gap: var(--space-xs, 0.25rem);
           font-family: var(--font-sans, system-ui);
-          font-size: 0.9rem;
-          font-weight: 600;
+                    font-weight: 600;
           color: var(--color-text, #1a1a1a);
         }
 
@@ -113,8 +112,7 @@ class GpPhotoModal extends HTMLElement {
 
         .description {
           font-family: var(--font-sans, system-ui);
-          font-size: 0.9rem;
-          line-height: 1.6;
+                    line-height: 1.6;
           color: var(--color-text, #1a1a1a);
           margin: 0;
         }
@@ -208,19 +206,19 @@ class GpPhotoModal extends HTMLElement {
   }
 
   setupEventListeners() {
-    const overlay = this.shadowRoot.querySelector('.modal-overlay');
-    const closeBtn = this.shadowRoot.querySelector('.close-btn');
+    const overlay = this.shadowRoot.querySelector(".modal-overlay");
+    const closeBtn = this.shadowRoot.querySelector(".close-btn");
 
-    closeBtn.addEventListener('click', () => this.close());
+    closeBtn.addEventListener("click", () => this.close());
 
-    overlay.addEventListener('click', (e) => {
+    overlay.addEventListener("click", (e) => {
       if (e.target === overlay) {
         this.close();
       }
     });
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this._isOpen) {
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this._isOpen) {
         this.close();
       }
     });
@@ -228,15 +226,15 @@ class GpPhotoModal extends HTMLElement {
 
   open(data) {
     this._isOpen = true;
-    this.setAttribute('open', '');
+    this.setAttribute("open", "");
 
-    const photoContainer = this.shadowRoot.querySelector('.photo-container');
-    const locationText = this.shadowRoot.querySelector('.location-text');
-    const description = this.shadowRoot.querySelector('.description');
+    const photoContainer = this.shadowRoot.querySelector(".photo-container");
+    const locationText = this.shadowRoot.querySelector(".location-text");
+    const description = this.shadowRoot.querySelector(".description");
 
     // Update content
     if (data.imageSrc) {
-      photoContainer.innerHTML = `<img src="${data.imageSrc}" alt="${data.description || 'Photo'}">`;
+      photoContainer.innerHTML = `<img src="${data.imageSrc}" alt="${data.description || "Photo"}">`;
     } else {
       photoContainer.innerHTML = `
         <div class="photo-placeholder">
@@ -249,18 +247,18 @@ class GpPhotoModal extends HTMLElement {
       `;
     }
 
-    locationText.textContent = data.location || 'Unknown location';
-    description.textContent = data.description || '';
+    locationText.textContent = data.location || "Unknown location";
+    description.textContent = data.description || "";
 
     // Prevent body scroll
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
   }
 
   close() {
     this._isOpen = false;
-    this.removeAttribute('open');
-    document.body.style.overflow = '';
+    this.removeAttribute("open");
+    document.body.style.overflow = "";
   }
 }
 
-customElements.define('gp-photo-modal', GpPhotoModal);
+customElements.define("gp-photo-modal", GpPhotoModal);

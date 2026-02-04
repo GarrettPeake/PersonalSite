@@ -94,7 +94,6 @@
 }
 
 .photo-add span {
-  font-size: 0.875rem;
   color: var(--color-text-muted);
   transition: color var(--transition-fast);
 }
@@ -194,7 +193,6 @@
 }
 
 .file-upload-placeholder span {
-  font-size: 0.875rem;
 }
 
 .file-preview {

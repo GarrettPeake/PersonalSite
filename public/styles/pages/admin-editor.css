@@ -66,12 +66,10 @@
 .slug-prefix {
   color: color-mix(in srgb, var(--color-text) 50%, transparent);
   font-family: var(--font-mono);
-  font-size: 0.875rem;
 }
 
 .slug-input {
   font-family: var(--font-mono);
-  font-size: 0.875rem;
   border: none;
   background: transparent;
   color: var(--color-text);
@@ -84,7 +82,6 @@
 }
 
 .description-input {
-  font-size: 0.875rem;
   border: none;
   border-bottom: 1px solid var(--color-border);
   background: transparent;
@@ -118,7 +115,6 @@
 }
 
 .save-status {
-  font-size: 0.75rem;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
@@ -137,7 +133,6 @@
   border: 2px solid transparent;
   background: transparent;
   color: var(--color-text);
-  font-size: 0.875rem;
   cursor: pointer;
   min-width: 32px;
   transition: all 0.1s;
@@ -174,7 +169,6 @@
   border: none;
   padding: var(--space-md);
   font-family: var(--font-mono);
-  font-size: 0.9rem;
   line-height: 1.6;
   resize: none;
   background: var(--color-bg);

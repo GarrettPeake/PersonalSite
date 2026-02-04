@@ -70,7 +70,9 @@ body.login-page {
   border-radius: 50%;
   left: 50%;
   transform: translateX(-50%);
-  transition: top var(--transition-slow), opacity var(--transition-medium);
+  transition:
+    top var(--transition-slow),
+    opacity var(--transition-medium);
 }
 
 .celestial-body.sun {
@@ -124,7 +126,6 @@ body.login-page {
 
 .login-form label {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--color-text-muted);
@@ -134,7 +135,9 @@ body.login-page {
   border-width: 3px;
   padding: var(--space-md);
   font-size: 1rem;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .login-form input:focus {
@@ -164,7 +167,6 @@ body.login-page {
   padding-top: var(--space-lg);
   border-top: 2px dashed var(--color-border);
   font-family: var(--font-mono);
-  font-size: 0.875rem;
   color: var(--color-text-muted);
   text-decoration: none;
   transition: color var(--transition-fast);

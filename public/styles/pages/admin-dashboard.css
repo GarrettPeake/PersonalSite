@@ -29,7 +29,6 @@
 
 .stat-label {
   margin-top: var(--space-sm);
-  font-size: 0.875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -52,6 +51,5 @@
 }
 
 .item-date {
-  font-size: 0.875rem;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
