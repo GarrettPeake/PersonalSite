@@ -514,6 +514,9 @@ function handleToolbarAction(action) {
       insert = `\n/Iframe("https://example.com")\n`;
       cursorOffset = 10;
       break;
+    case 'htmlsnippet':
+      handleHtmlSnippetUpload();
+      return;
   }
 
   textarea.value = textarea.value.substring(0, start) + insert + textarea.value.substring(end);
@@ -556,6 +559,76 @@ async function handleLinkPreviewInsert() {
     handleContentChange();
     saveStatus.textContent = 'Could not fetch link data';
   }
+}
+
+// Handle HTML snippet upload toolbar action
+function handleHtmlSnippetUpload() {
+  const overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = `
+    <div class="dialog" style="width: 600px;">
+      <h3 class="dialog__title">Paste HTML Snippet</h3>
+      <div class="dialog__content">
+        <textarea id="html-snippet-input" class="form-input form-input--mono" rows="12" placeholder="Paste your HTML here..."></textarea>
+      </div>
+      <div class="dialog__actions">
+        <button class="btn btn--secondary" id="html-snippet-cancel">Cancel</button>
+        <button class="btn btn--primary" id="html-snippet-upload">Upload</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const snippetInput = document.getElementById('html-snippet-input');
+  const cancelBtn = document.getElementById('html-snippet-cancel');
+  const uploadBtn = document.getElementById('html-snippet-upload');
+  snippetInput.focus();
+
+  function close() {
+    overlay.remove();
+  }
+
+  cancelBtn.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+
+  uploadBtn.addEventListener('click', async () => {
+    const html = snippetInput.value.trim();
+    if (!html) return;
+
+    close();
+    saveStatus.textContent = 'Uploading HTML...';
+
+    try {
+      const file = new File([html], 'snippet.html', { type: 'text/html' });
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        saveStatus.textContent = err.error || 'Upload failed';
+        return;
+      }
+
+      const { url } = await res.json();
+      const macro = `\n/Iframe("${url}")\n`;
+
+      const textarea = contentInput;
+      const pos = textarea.selectionStart;
+      textarea.value = textarea.value.substring(0, pos) + macro + textarea.value.substring(pos);
+      textarea.selectionStart = textarea.selectionEnd = pos + macro.length;
+      handleContentChange();
+      saveStatus.textContent = 'HTML snippet uploaded';
+    } catch {
+      saveStatus.textContent = 'Upload failed';
+    }
+  });
 }
 
 // Keyboard shortcuts

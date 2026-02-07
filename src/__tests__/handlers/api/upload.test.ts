@@ -163,6 +163,23 @@ describe('Upload API Handler', () => {
       expect(data.filename).toContain('.pdf');
     });
 
+    it('should upload HTML file successfully', async () => {
+      const formData = new FormData();
+      const file = new File(['<html><body>Hello</body></html>'], 'snippet.html', { type: 'text/html' });
+      formData.append('file', file);
+
+      const request = new Request('http://localhost/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const response = await handleUpload(request, env);
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as { filename: string };
+      expect(data.filename).toContain('.html');
+    });
+
     it('should store file in R2', async () => {
       const formData = new FormData();
       const content = 'test image content';

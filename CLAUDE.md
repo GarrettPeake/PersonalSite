@@ -66,6 +66,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Post title shown in editor preview pane
 - [x] Image alt text rendered as figcaption subtitles
 - [x] Drag-and-drop and paste file upload in editor (images and videos)
+- [x] HTML snippet upload toolbar button (uploads `.html` to R2, inserts `/Iframe()` macro)
 - [x] Video file upload support (mp4, webm, mov)
 - [x] Block macros: Callout, TwoColumn, LinkPreview, Iframe
 - [x] OpenGraph metadata fetch API (`GET /api/admin/og?url=...`)
