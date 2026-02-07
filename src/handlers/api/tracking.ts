@@ -11,7 +11,7 @@ import {
   createTrackingSlug,
   deleteTrackingSlug,
 } from '../../dao/tracking.dao';
-import { jsonResponse, corsHeaders } from '../../lib/response';
+import { jsonResponse, corsHeaders, parseJsonBody } from '../../lib/response';
 
 /**
  * GET /api/admin/tracking - List all tracking slugs
@@ -25,7 +25,10 @@ export async function handleListTracking(env: Env): Promise<Response> {
  * POST /api/admin/tracking - Create a new tracking slug
  */
 export async function handleCreateTracking(request: Request, env: Env): Promise<Response> {
-  const body = await request.json() as { tag: string; slug?: string };
+  const body = await parseJsonBody<{ tag: string; slug?: string }>(request);
+  if (!body) {
+    return jsonResponse({ error: 'Invalid JSON body' }, corsHeaders, 400);
+  }
   try {
     const tracking = await createTrackingSlug(env.KV, body.tag, body.slug);
     return jsonResponse(tracking, corsHeaders);

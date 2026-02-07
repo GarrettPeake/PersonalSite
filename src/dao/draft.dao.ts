@@ -43,14 +43,8 @@ export async function getDraft(kv: KVNamespace, id: string): Promise<Draft | nul
  */
 export async function listDrafts(kv: KVNamespace): Promise<Draft[]> {
   const ids = await getIndex(kv, KV_PREFIX.INDEX_DRAFTS);
-  const drafts: Draft[] = [];
-
-  for (const id of ids) {
-    const draft = await getDraft(kv, id);
-    if (draft) drafts.push(draft);
-  }
-
-  return drafts;
+  const results = await Promise.all(ids.map(id => getDraft(kv, id)));
+  return results.filter((draft): draft is Draft => draft !== null);
 }
 
 /**

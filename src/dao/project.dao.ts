@@ -25,12 +25,8 @@ export async function getProject(kv: KVNamespace, id: string): Promise<Project |
  */
 export async function listProjects(kv: KVNamespace): Promise<Project[]> {
   const ids = await getIndex(kv, KV_PREFIX.INDEX_PROJECTS);
-  const projects: Project[] = [];
-
-  for (const id of ids) {
-    const project = await getProject(kv, id);
-    if (project) projects.push(project);
-  }
+  const results = await Promise.all(ids.map(id => getProject(kv, id)));
+  const projects = results.filter((project): project is Project => project !== null);
 
   // Sort by order ascending
   projects.sort((a, b) => a.order - b.order);

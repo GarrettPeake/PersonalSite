@@ -25,12 +25,8 @@ export async function getPhoto(kv: KVNamespace, id: string): Promise<Photo | nul
  */
 export async function listPhotos(kv: KVNamespace): Promise<Photo[]> {
   const ids = await getIndex(kv, KV_PREFIX.INDEX_PHOTOS);
-  const photos: Photo[] = [];
-
-  for (const id of ids) {
-    const photo = await getPhoto(kv, id);
-    if (photo) photos.push(photo);
-  }
+  const results = await Promise.all(ids.map(id => getPhoto(kv, id)));
+  const photos = results.filter((photo): photo is Photo => photo !== null);
 
   photos.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 

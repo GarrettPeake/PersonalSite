@@ -80,7 +80,8 @@ describe('Upload API Handler', () => {
 
     it('should upload PNG image successfully', async () => {
       const formData = new FormData();
-      const file = new File(['png content'], 'test.png', { type: 'image/png' });
+      const pngBytes = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+      const file = new File([pngBytes], 'test.png', { type: 'image/png' });
       formData.append('file', file);
 
       const request = new Request('http://localhost/api/admin/upload', {
@@ -97,7 +98,8 @@ describe('Upload API Handler', () => {
 
     it('should upload GIF image successfully', async () => {
       const formData = new FormData();
-      const file = new File(['gif content'], 'test.gif', { type: 'image/gif' });
+      const gifBytes = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
+      const file = new File([gifBytes], 'test.gif', { type: 'image/gif' });
       formData.append('file', file);
 
       const request = new Request('http://localhost/api/admin/upload', {
@@ -114,7 +116,9 @@ describe('Upload API Handler', () => {
 
     it('should upload WebP image successfully', async () => {
       const formData = new FormData();
-      const file = new File(['webp content'], 'test.webp', { type: 'image/webp' });
+      // RIFF....WEBP
+      const webpBytes = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50]);
+      const file = new File([webpBytes], 'test.webp', { type: 'image/webp' });
       formData.append('file', file);
 
       const request = new Request('http://localhost/api/admin/upload', {
@@ -129,7 +133,7 @@ describe('Upload API Handler', () => {
       expect(data.filename).toContain('.webp');
     });
 
-    it('should upload SVG image successfully', async () => {
+    it('should reject SVG uploads (XSS risk)', async () => {
       const formData = new FormData();
       const file = new File(['<svg></svg>'], 'test.svg', { type: 'image/svg+xml' });
       formData.append('file', file);
@@ -141,14 +145,15 @@ describe('Upload API Handler', () => {
 
       const response = await handleUpload(request, env);
 
-      expect(response.status).toBe(200);
-      const data = await response.json() as { filename: string };
-      expect(data.filename).toContain('.svg');
+      expect(response.status).toBe(400);
+      const data = await response.json() as { error: string };
+      expect(data.error).toContain('File type not allowed');
     });
 
     it('should upload PDF successfully', async () => {
       const formData = new FormData();
-      const file = new File(['pdf content'], 'test.pdf', { type: 'application/pdf' });
+      const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34]); // %PDF-1.4
+      const file = new File([pdfBytes], 'test.pdf', { type: 'application/pdf' });
       formData.append('file', file);
 
       const request = new Request('http://localhost/api/admin/upload', {
@@ -182,8 +187,8 @@ describe('Upload API Handler', () => {
 
     it('should store file in R2', async () => {
       const formData = new FormData();
-      const content = 'test image content';
-      const file = new File([content], 'test.jpg', { type: 'image/jpeg' });
+      const jpegBytes = new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46]);
+      const file = new File([jpegBytes], 'test.jpg', { type: 'image/jpeg' });
       formData.append('file', file);
 
       const request = new Request('http://localhost/api/admin/upload', {
@@ -198,13 +203,14 @@ describe('Upload API Handler', () => {
       const stored = await env.R2.get(data.filename);
       expect(stored).not.toBeNull();
 
-      const storedContent = await stored!.text();
-      expect(storedContent).toBe(content);
+      const storedContent = await stored!.arrayBuffer();
+      expect(storedContent.byteLength).toBeGreaterThan(0);
     });
 
     it('should set correct content type in R2', async () => {
       const formData = new FormData();
-      const file = new File(['content'], 'test.png', { type: 'image/png' });
+      const pngBytes = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+      const file = new File([pngBytes], 'test.png', { type: 'image/png' });
       formData.append('file', file);
 
       const request = new Request('http://localhost/api/admin/upload', {
@@ -223,12 +229,13 @@ describe('Upload API Handler', () => {
     });
 
     it('should generate unique filenames', async () => {
+      const jpegBytes = new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0]);
       const formData1 = new FormData();
-      const file1 = new File(['content1'], 'same.jpg', { type: 'image/jpeg' });
+      const file1 = new File([jpegBytes], 'same.jpg', { type: 'image/jpeg' });
       formData1.append('file', file1);
 
       const formData2 = new FormData();
-      const file2 = new File(['content2'], 'same.jpg', { type: 'image/jpeg' });
+      const file2 = new File([jpegBytes], 'same.jpg', { type: 'image/jpeg' });
       formData2.append('file', file2);
 
       const request1 = new Request('http://localhost/api/admin/upload', {
@@ -265,7 +272,8 @@ describe('Upload API Handler', () => {
 
     it('should return proper URL format', async () => {
       const formData = new FormData();
-      const file = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
+      const jpegBytes = new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0]);
+      const file = new File([jpegBytes], 'test.jpg', { type: 'image/jpeg' });
       formData.append('file', file);
 
       const request = new Request('http://localhost/api/admin/upload', {

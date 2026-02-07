@@ -51,14 +51,8 @@ export async function getPostBySlug(kv: KVNamespace, slug: string): Promise<Post
  */
 export async function listPosts(kv: KVNamespace): Promise<Post[]> {
   const ids = await getIndex(kv, KV_PREFIX.INDEX_POSTS);
-  const posts: Post[] = [];
-
-  for (const id of ids) {
-    const post = await getPost(kv, id);
-    if (post) posts.push(post);
-  }
-
-  return posts;
+  const results = await Promise.all(ids.map(id => getPost(kv, id)));
+  return results.filter((post): post is Post => post !== null);
 }
 
 /**

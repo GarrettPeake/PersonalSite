@@ -132,6 +132,17 @@ describe('Tracking DAO', () => {
       expect(slugs[1].tag).toBe('Tag 2');
       expect(slugs[2].tag).toBe('Tag 1');
     });
+
+    it('should return eventCount instead of full events array', async () => {
+      await createTrackingSlug(env.KV, 'Tag 1', 'slug1');
+      await recordTrackingEvent(env.KV, 'slug1', { page: '/page1' });
+      await recordTrackingEvent(env.KV, 'slug1', { page: '/page2' });
+
+      const slugs = await listTrackingSlugs(env.KV);
+      expect(slugs).toHaveLength(1);
+      expect(slugs[0].eventCount).toBe(2);
+      expect((slugs[0] as any).events).toBeUndefined();
+    });
   });
 
   describe('deleteTrackingSlug', () => {

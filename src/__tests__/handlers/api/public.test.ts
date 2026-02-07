@@ -15,7 +15,7 @@ import { KV_PREFIX } from '../../../types';
 describe('Public API Handlers', () => {
   beforeEach(async () => {
     // Clean up all related keys
-    const prefixes = [KV_PREFIX.POST, KV_PREFIX.POST_SLUG, KV_PREFIX.DRAFT, KV_PREFIX.TRACKING];
+    const prefixes = [KV_PREFIX.POST, KV_PREFIX.POST_SLUG, KV_PREFIX.DRAFT, KV_PREFIX.TRACKING, 'trackrate:'];
     for (const prefix of prefixes) {
       const keys = await env.KV.list({ prefix });
       for (const key of keys.keys) {
@@ -240,6 +240,48 @@ describe('Public API Handlers', () => {
       const response = await handleTrack(request, env);
 
       expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
+    });
+
+    it('should truncate long page and referrer fields', async () => {
+      await createTrackingSlug(env.KV, 'Test', 'trunc');
+      const longPage = 'x'.repeat(5000);
+      const longReferrer = 'r'.repeat(5000);
+
+      const request = new Request('http://localhost/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: 'trunc',
+          page: longPage,
+          referrer: longReferrer,
+        }),
+      });
+
+      const response = await handleTrack(request, env);
+      expect(response.status).toBe(200);
+
+      const tracking = await getTrackingSlug(env.KV, 'trunc');
+      expect(tracking!.events[0].page.length).toBe(2048);
+      expect(tracking!.events[0].referrer!.length).toBe(2048);
+    });
+
+    it('should return 429 when rate limit is exceeded', async () => {
+      // Seed the rate limit counter just below the limit
+      await env.KV.put('trackrate:127.0.0.1', '100', { expirationTtl: 60 });
+
+      const request = new Request('http://localhost/api/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'CF-Connecting-IP': '127.0.0.1',
+        },
+        body: JSON.stringify({ slug: 'test', page: '/' }),
+      });
+
+      const response = await handleTrack(request, env);
+      expect(response.status).toBe(429);
+      const data = await response.json() as { error: string };
+      expect(data.error).toBe('Rate limit exceeded');
     });
   });
 });

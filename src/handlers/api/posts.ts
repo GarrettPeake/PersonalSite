@@ -12,7 +12,7 @@ import {
   deletePost,
   unpublishPost,
 } from '../../dao/post.dao';
-import { jsonResponse, corsHeaders } from '../../lib/response';
+import { jsonResponse, corsHeaders, parseJsonBody } from '../../lib/response';
 
 /**
  * GET /api/admin/posts - List all posts (admin view)
@@ -41,7 +41,10 @@ export async function handleAdminUpdatePost(
   env: Env,
   id: string
 ): Promise<Response> {
-  const body = await request.json() as Partial<{ title: string; slug: string; content: string }>;
+  const body = await parseJsonBody<Partial<{ title: string; slug: string; content: string }>>(request);
+  if (!body) {
+    return jsonResponse({ error: 'Invalid JSON body' }, corsHeaders, 400);
+  }
   try {
     const post = await updatePost(env.KV, id, body);
     if (!post) {

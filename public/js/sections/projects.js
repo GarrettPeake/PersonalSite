@@ -6,7 +6,7 @@
  */
 
 import { getLayoutMode } from '/js/spa/router.js';
-import { escapeHtml, escapeAttr } from '/js/utils.js';
+import { escapeHtml, escapeAttr, sanitizeSvg } from '/js/utils.js';
 
 let projects = [];
 
@@ -126,7 +126,7 @@ function renderDesktopProjects(container) {
         aria-label="${escapeAttr(project.title)}"
       >
         <div class="shelf-item-icon">
-          ${project.iconType === 'svg' ? project.icon : `<img src="${escapeAttr(project.icon)}" alt="${escapeAttr(project.iconAlt || project.title + ' icon')}">`}
+          ${project.iconType === 'svg' ? sanitizeSvg(project.icon) : `<img src="${escapeAttr(project.icon)}" alt="${escapeAttr(project.iconAlt || project.title + ' icon')}">`}
         </div>
         <div class="shelf-item-legend" title="${escapeAttr(project.title)}">${escapeHtml(project.title)}</div>
       </div>
@@ -147,7 +147,7 @@ function renderMobileProjects(container) {
     return `
     <div class="mobile-project-card" tabindex="0" role="button" aria-label="${escapeAttr(project.title)}">
       <div class="project-icon">
-        ${project.iconType === 'svg' ? project.icon : `<img src="${escapeAttr(project.icon)}" alt="${escapeAttr(project.iconAlt || project.title + ' icon')}" width="48" height="48">`}
+        ${project.iconType === 'svg' ? sanitizeSvg(project.icon) : `<img src="${escapeAttr(project.icon)}" alt="${escapeAttr(project.iconAlt || project.title + ' icon')}" width="48" height="48">`}
       </div>
       <div class="project-info">
         <h2>${escapeHtml(project.title)}</h2>
@@ -371,7 +371,12 @@ function renderMarkdownSimple(text) {
   return escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    .replace(/\[(.+?)\]\((.+?)\)/g, (_, text, url) => {
+      const lower = url.trim().toLowerCase();
+      if (lower.startsWith('javascript:') || lower.startsWith('data:') || lower.startsWith('vbscript:'))
+        return text;
+      return `<a href="${url}" target="_blank" rel="noopener">${text}</a>`;
+    });
 }
 
 export default {

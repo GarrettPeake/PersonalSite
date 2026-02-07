@@ -232,9 +232,14 @@ class GpPhotoModal extends HTMLElement {
     const locationText = this.shadowRoot.querySelector(".location-text");
     const description = this.shadowRoot.querySelector(".description");
 
+    // Helper to escape attributes
+    const escapeForAttr = (s) => s ? s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+
     // Update content
     if (data.imageSrc) {
-      photoContainer.innerHTML = `<img src="${data.imageSrc}" alt="${data.description || "Photo"}">`;
+      const safeDesc = escapeForAttr(data.description) || 'Photo';
+      const safeSrc = escapeForAttr(data.imageSrc);
+      photoContainer.innerHTML = `<img src="${safeSrc}" alt="${safeDesc}">`;
     } else {
       photoContainer.innerHTML = `
         <div class="photo-placeholder">

@@ -34,7 +34,7 @@ describe('Admin Tracking API Handlers', () => {
       expect(data).toEqual([]);
     });
 
-    it('should return all tracking slugs', async () => {
+    it('should return all tracking slugs with eventCount', async () => {
       await createTrackingSlug(env.KV, 'Facebook', 'fb');
       await createTrackingSlug(env.KV, 'Twitter', 'tw');
       await createTrackingSlug(env.KV, 'LinkedIn', 'li');
@@ -42,8 +42,11 @@ describe('Admin Tracking API Handlers', () => {
       const response = await handleListTracking(env);
 
       expect(response.status).toBe(200);
-      const data = await response.json() as Array<{ slug: string; tag: string }>;
+      const data = await response.json() as Array<{ slug: string; tag: string; eventCount: number }>;
       expect(data).toHaveLength(3);
+      // List response should have eventCount, not events array
+      expect(data[0].eventCount).toBe(0);
+      expect((data[0] as any).events).toBeUndefined();
     });
 
     it('should include CORS headers', async () => {

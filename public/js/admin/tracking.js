@@ -73,8 +73,8 @@ function renderTracking(items) {
         </thead>
         <tbody>
           ${items.map(item => {
-            const visited = item.events && item.events.length > 0;
-            const visitCount = item.events ? item.events.length : 0;
+            const visitCount = item.eventCount != null ? item.eventCount : (item.events ? item.events.length : 0);
+            const visited = visitCount > 0;
             return `
               <tr data-slug="${item.slug}">
                 <td class="tracking-tag">${escapeHtml(item.tag)}</td>
@@ -142,34 +142,43 @@ async function copyLink(slug) {
   }
 }
 
-// Show events dialog
+// Show events dialog (fetches full data from individual endpoint)
 async function showEvents(slug) {
   const item = trackingData.find(t => t.slug === slug);
   if (!item) return;
 
   eventsTitle.textContent = `Events for "${item.tag}"`;
-
-  if (!item.events || item.events.length === 0) {
-    eventsList.innerHTML = '<p class="no-events">No events recorded yet</p>';
-  } else {
-    // Sort events by time descending
-    const sortedEvents = [...item.events].sort((a, b) =>
-      new Date(b.timestamp) - new Date(a.timestamp)
-    );
-
-    eventsList.innerHTML = sortedEvents.map(event => `
-      <div class="event-item">
-        <div class="event-time">${formatDateTime(event.timestamp)}</div>
-        <div class="event-page">Page: ${escapeHtml(event.page)}</div>
-        <div class="event-details">
-          ${event.referrer ? `Referrer: ${escapeHtml(event.referrer)}<br>` : ''}
-          ${event.userAgent ? `Browser: ${escapeHtml(truncate(event.userAgent, 60))}` : ''}
-        </div>
-      </div>
-    `).join('');
-  }
-
+  eventsList.innerHTML = '<p class="loading">Loading events...</p>';
   eventsDialog.hidden = false;
+
+  try {
+    const res = await fetch(`/api/admin/tracking/${slug}`);
+    if (!res.ok) throw new Error('Failed to load events');
+    const fullItem = await res.json();
+
+    if (!fullItem.events || fullItem.events.length === 0) {
+      eventsList.innerHTML = '<p class="no-events">No events recorded yet</p>';
+    } else {
+      // Sort events by time descending
+      const sortedEvents = [...fullItem.events].sort((a, b) =>
+        new Date(b.timestamp) - new Date(a.timestamp)
+      );
+
+      eventsList.innerHTML = sortedEvents.map(event => `
+        <div class="event-item">
+          <div class="event-time">${formatDateTime(event.timestamp)}</div>
+          <div class="event-page">Page: ${escapeHtml(event.page)}</div>
+          <div class="event-details">
+            ${event.referrer ? `Referrer: ${escapeHtml(event.referrer)}<br>` : ''}
+            ${event.userAgent ? `Browser: ${escapeHtml(truncate(event.userAgent, 60))}` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch (err) {
+    console.error('Failed to load events:', err);
+    eventsList.innerHTML = '<p class="empty">Failed to load events</p>';
+  }
 }
 
 // Create dialog handlers

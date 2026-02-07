@@ -46,7 +46,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Optional post descriptions for blog listing (replaces auto-generated excerpts)
 - [x] Admin photo management page with upload, edit, delete
 - [x] Photo CRUD API endpoints (public and admin)
-- [x] EXIF stripping on photo upload for privacy
+- [x] Metadata stripping on photo upload for privacy (JPEG EXIF, PNG text/EXIF chunks, WebP EXIF/XMP)
 - [x] Editable photo date via admin edit dialog (controls gallery ordering)
 - [x] Public photography page loads from API
 - [x] Admin project management page with CRUD and reorder
@@ -84,6 +84,10 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Mobile touch targets meet 44x44px minimum (hamburger menu, footer social icons, project open-link buttons)
 - [x] Optimized Space Grotesk font loading (removed unused 400/500 weights)
 - [x] Fixed CSS bugs: `text-overflow: wrap` corrected to `ellipsis` on shelf item legends, mobile project card expanded max-height increased to 1000px with overflow: visible
+- [x] All inline scripts moved to external JS files for CSP `script-src 'self'` compliance (theme-init.js, spa/init.js)
+- [x] Magic byte validation on file uploads (JPEG, PNG, GIF, WebP, PDF, MP4, WebM, QuickTime)
+- [x] Request body size limit (1MB) on JSON endpoints via `isBodyTooLarge` helper in `parseJsonBody`
+- [x] PNG and WebP metadata stripping on photo upload (`stripPngMetadata`, `stripWebpMetadata` in exif.ts)
 
 ### Not Yet Implemented
 
@@ -194,7 +198,7 @@ SPA client-side routes (handled by `router.js`):
 │   │   ├── markdown.ts   # Custom markdown renderer with macros
 │   │   ├── response.ts   # HTTP response helpers (jsonResponse, corsHeaders)
 │   │   ├── utils.ts      # Shared utilities (escapeHtml, escapeJs, generateRandomSlug)
-│   │   └── exif.ts       # EXIF stripping utility for JPEG images
+│   │   └── exif.ts       # Image metadata stripping (JPEG, PNG, WebP)
 │   ├── /middleware
 │   │   └── auth.ts       # Authentication helpers (login, session, cookies)
 │   └── /__tests__
@@ -244,9 +248,11 @@ SPA client-side routes (handled by `router.js`):
     │   └── tracking.html # Tracking links management
     ├── /js
     │   ├── home.js       # Theme toggle and mobile menu
+    │   ├── theme-init.js  # Synchronous theme detection (prevents FOUC)
     │   ├── utils.js      # Shared client-side utilities (escapeHtml, escapeAttr, formatDate*)
     │   ├── /spa
-    │   │   └── router.js     # SPA router with History API (desktop + mobile)
+    │   │   ├── router.js     # SPA router with History API (desktop + mobile)
+    │   │   └── init.js       # SPA router initialization entry point
     │   ├── /sections
     │   │   ├── projects.js   # Projects section (desktop: carousel, mobile: cards)
     │   │   ├── blog.js       # Blog section (post list)
@@ -663,10 +669,10 @@ HTML templates for server-rendered pages:
 
 **Utilities (`src/lib/`)**
 Shared utility functions:
-- `utils.ts`: `escapeHtml`, `escapeJs`, `generateRandomSlug`
-- `response.ts`: `jsonResponse`, `htmlResponse`, `corsHeaders`, `addSecurityHeaders`, `requireJsonContentType`
+- `utils.ts`: `escapeHtml`, `escapeJs`, `generateRandomSlug`, `validateMagicBytes`
+- `response.ts`: `jsonResponse`, `htmlResponse`, `corsHeaders`, `addSecurityHeaders`, `requireJsonContentType`, `isBodyTooLarge`
 - `markdown.ts`: Custom markdown renderer
-- `exif.ts`: EXIF stripping for JPEG images (`isJpeg`, `stripExif`)
+- `exif.ts`: Image metadata stripping (`isJpeg`, `stripExif`, `isPng`, `stripPngMetadata`, `isWebp`, `stripWebpMetadata`)
 
 ### Markdown Renderer (`src/lib/markdown.ts`)
 - Supports: headings, paragraphs, lists, blockquotes, code blocks, links, images (with figcaption), bold, italic

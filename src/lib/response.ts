@@ -74,9 +74,6 @@ export function handleCorsPreflightResponse(origin?: string | null): Response {
  *
  * Applied at the Worker level so every response (API, SPA shell, assets,
  * admin pages, redirects) gets a consistent set of hardening headers.
- *
- * Note: Content-Security-Policy is intentionally omitted — it requires
- * careful per-page tuning to avoid breaking inline scripts/styles.
  */
 export function addSecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
@@ -87,11 +84,47 @@ export function addSecurityHeaders(response: Response): Response {
   if (!headers.has('Strict-Transport-Security')) {
     headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
+  headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://files.gpeake.com data:; media-src 'self' https://files.gpeake.com; frame-src 'self' https:; connect-src 'self'; base-uri 'self'; form-action 'self'"
+  );
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers,
   });
+}
+
+/**
+ * Check whether a request body exceeds the given size limit
+ * by inspecting the Content-Length header.
+ * Returns true if the body is too large, false otherwise.
+ * If no Content-Length header is present, returns false (chunked transfers).
+ */
+export function isBodyTooLarge(request: Request, maxBytes: number = 1_048_576): boolean {
+  const contentLength = request.headers.get('Content-Length');
+  if (contentLength !== null) {
+    const size = parseInt(contentLength, 10);
+    if (!isNaN(size) && size > maxBytes) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Safely parse JSON body from a request.
+ * Returns null if the body cannot be parsed as JSON or exceeds size limit (1MB default).
+ */
+export async function parseJsonBody<T = unknown>(request: Request): Promise<T | null> {
+  try {
+    if (isBodyTooLarge(request)) {
+      return null;
+    }
+    return await request.json() as T;
+  } catch {
+    return null;
+  }
 }
 
 /**

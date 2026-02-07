@@ -5,8 +5,9 @@
  */
 
 import { Env } from '../../types';
-import { jsonResponse, corsHeaders } from '../../lib/response';
-import { stripExif, isJpeg } from '../../lib/exif';
+import { jsonResponse, corsHeaders, parseJsonBody } from '../../lib/response';
+import { stripExif, isJpeg, stripPngMetadata, stripWebpMetadata } from '../../lib/exif';
+import { validateMagicBytes } from '../../lib/utils';
 import {
   listPhotos,
   getPhoto,
@@ -39,6 +40,9 @@ function generateFilename(ext: string): string {
 // Public Endpoints
 // ============================================================================
 
+/** Cache-Control for public GET endpoints */
+const PUBLIC_CACHE = 'public, max-age=60, s-maxage=300';
+
 /**
  * GET /api/photos - List all photos (public)
  */
@@ -54,7 +58,7 @@ export async function handleListPhotosPublic(env: Env): Promise<Response> {
       publishedAt: photo.publishedAt,
     }));
 
-    return jsonResponse(publicPhotos, corsHeaders);
+    return jsonResponse(publicPhotos, { ...corsHeaders, 'Cache-Control': PUBLIC_CACHE });
   } catch (error) {
     console.error('Error listing photos:', error);
     return jsonResponse({ error: 'Failed to list photos' }, corsHeaders, 500);
@@ -152,9 +156,22 @@ export async function handleCreatePhoto(request: Request, env: Env): Promise<Res
     // Read file data
     let arrayBuffer = await uploadedFile.arrayBuffer();
 
-    // Strip EXIF data from JPEG images
+    // Validate magic bytes match declared MIME type
+    if (!validateMagicBytes(arrayBuffer, mimeType)) {
+      return jsonResponse(
+        { error: 'File content does not match declared type' },
+        corsHeaders,
+        400
+      );
+    }
+
+    // Strip metadata from images for privacy
     if (mimeType === 'image/jpeg' && isJpeg(arrayBuffer)) {
       arrayBuffer = stripExif(arrayBuffer);
+    } else if (mimeType === 'image/png') {
+      arrayBuffer = stripPngMetadata(arrayBuffer);
+    } else if (mimeType === 'image/webp') {
+      arrayBuffer = stripWebpMetadata(arrayBuffer);
     }
 
     // Generate unique filename
@@ -198,7 +215,10 @@ export async function handleUpdatePhoto(
   id: string
 ): Promise<Response> {
   try {
-    const body = await request.json() as { location?: string; description?: string; publishedAt?: string };
+    const body = await parseJsonBody<{ location?: string; description?: string; publishedAt?: string }>(request);
+    if (!body) {
+      return jsonResponse({ error: 'Invalid JSON body' }, corsHeaders, 400);
+    }
 
     if (typeof body.location !== 'string' || typeof body.description !== 'string') {
       return jsonResponse(
