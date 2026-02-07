@@ -514,6 +514,9 @@ function handleToolbarAction(action) {
       insert = `\n/Iframe("https://example.com")\n`;
       cursorOffset = 10;
       break;
+    case 'htmlsnippet':
+      handleHtmlSnippetUpload();
+      return;
   }
 
   textarea.value = textarea.value.substring(0, start) + insert + textarea.value.substring(end);
@@ -556,6 +559,48 @@ async function handleLinkPreviewInsert() {
     handleContentChange();
     saveStatus.textContent = 'Could not fetch link data';
   }
+}
+
+// Handle HTML snippet upload toolbar action
+function handleHtmlSnippetUpload() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.html,.htm';
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    saveStatus.textContent = 'Uploading HTML...';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        saveStatus.textContent = err.error || 'Upload failed';
+        return;
+      }
+
+      const { url } = await res.json();
+      const macro = `\n/Iframe("${url}")\n`;
+
+      const textarea = contentInput;
+      const pos = textarea.selectionStart;
+      textarea.value = textarea.value.substring(0, pos) + macro + textarea.value.substring(pos);
+      textarea.selectionStart = textarea.selectionEnd = pos + macro.length;
+      handleContentChange();
+      saveStatus.textContent = 'HTML snippet uploaded';
+    } catch {
+      saveStatus.textContent = 'Upload failed';
+    }
+  });
+  input.click();
 }
 
 // Keyboard shortcuts

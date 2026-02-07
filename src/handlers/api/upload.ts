@@ -20,6 +20,7 @@ const ALLOWED_TYPES: Record<string, string> = {
   'video/mp4': 'mp4',
   'video/webm': 'webm',
   'video/quicktime': 'mov',
+  'text/html': 'html',
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
