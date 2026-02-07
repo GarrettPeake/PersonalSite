@@ -563,16 +563,45 @@ async function handleLinkPreviewInsert() {
 
 // Handle HTML snippet upload toolbar action
 function handleHtmlSnippetUpload() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.html,.htm';
-  input.addEventListener('change', async () => {
-    const file = input.files?.[0];
-    if (!file) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = `
+    <div class="dialog" style="width: 600px;">
+      <h3 class="dialog__title">Paste HTML Snippet</h3>
+      <div class="dialog__content">
+        <textarea id="html-snippet-input" class="form-input form-input--mono" rows="12" placeholder="Paste your HTML here..."></textarea>
+      </div>
+      <div class="dialog__actions">
+        <button class="btn btn--secondary" id="html-snippet-cancel">Cancel</button>
+        <button class="btn btn--primary" id="html-snippet-upload">Upload</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
 
+  const snippetInput = document.getElementById('html-snippet-input');
+  const cancelBtn = document.getElementById('html-snippet-cancel');
+  const uploadBtn = document.getElementById('html-snippet-upload');
+  snippetInput.focus();
+
+  function close() {
+    overlay.remove();
+  }
+
+  cancelBtn.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+
+  uploadBtn.addEventListener('click', async () => {
+    const html = snippetInput.value.trim();
+    if (!html) return;
+
+    close();
     saveStatus.textContent = 'Uploading HTML...';
 
     try {
+      const file = new File([html], 'snippet.html', { type: 'text/html' });
       const formData = new FormData();
       formData.append('file', file);
 
@@ -600,7 +629,6 @@ function handleHtmlSnippetUpload() {
       saveStatus.textContent = 'Upload failed';
     }
   });
-  input.click();
 }
 
 // Keyboard shortcuts
