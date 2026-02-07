@@ -189,11 +189,24 @@ class SPARouter {
     return this.currentSection;
   }
 
+  /** Permanent redirects from old URLs to new ones */
+  redirects = {
+    '/orgchart': '/blog/orgchart',
+    '/introducing-pioche': '/blog/pioche',
+  };
+
   /** Resolve a URL path to a section name and optional params */
   resolveRoute(path) {
     // Strip trailing slash (but keep "/" as-is)
     if (path.length > 1 && path.endsWith('/')) {
       path = path.slice(0, -1);
+    }
+
+    // Check for redirects
+    if (this.redirects[path]) {
+      const newPath = this.redirects[path];
+      history.replaceState(null, '', newPath);
+      return this.resolveRoute(newPath);
     }
 
     // Blog post: /blog/:slug
