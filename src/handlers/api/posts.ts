@@ -41,9 +41,12 @@ export async function handleAdminUpdatePost(
   env: Env,
   id: string
 ): Promise<Response> {
-  const body = await parseJsonBody<Partial<{ title: string; slug: string; content: string }>>(request);
+  const body = await parseJsonBody<Partial<{ title: string; slug: string; content: string; description: string; publishedAt: string }>>(request);
   if (!body) {
     return jsonResponse({ error: 'Invalid JSON body' }, corsHeaders, 400);
+  }
+  if (body.publishedAt !== undefined && (typeof body.publishedAt !== 'string' || !body.publishedAt)) {
+    delete body.publishedAt;
   }
   try {
     const post = await updatePost(env.KV, id, body);

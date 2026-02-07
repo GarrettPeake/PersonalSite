@@ -22,7 +22,7 @@ export interface Post {
   updatedAt: string;
 }
 
-export type UpdatePostInput = Partial<Omit<Post, 'id' | 'publishedAt'>>;
+export type UpdatePostInput = Partial<Omit<Post, 'id'>>;
 
 // ============================================================================
 // Post CRUD Operations
