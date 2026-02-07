@@ -72,6 +72,17 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Editor toolbar buttons for all macros
 - [x] CMS-editable about page with admin editor and public API
 - [x] Page content DAO for generic CMS page storage
+- [x] Static Open Graph and Twitter Card meta tags for social sharing
+- [x] Canonical link tag for SEO
+- [x] Security headers on all Worker responses (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security, Referrer-Policy, Permissions-Policy)
+- [x] CSRF protection via Content-Type: application/json validation on login and all admin JSON endpoints (`requireJsonContentType` helper)
+- [x] XSS fixes in client and server markdown renderers (processLinks, processInlineCode, image src, Banner macro args)
+- [x] Skip navigation links on public SPA and all admin pages (WCAG 2.4.1 compliance, `.skip-link` CSS in base.css)
+- [x] Admin login form uses `method="post" action="/api/auth/login"` for defense-in-depth
+- [x] Theme toggle button has `type="button"` to prevent implicit form submission
+- [x] Mobile touch targets meet 44x44px minimum (hamburger menu, footer social icons, project open-link buttons)
+- [x] Optimized Space Grotesk font loading (removed unused 400/500 weights)
+- [x] Fixed CSS bugs: `text-overflow: wrap` corrected to `ellipsis` on shelf item legends, mobile project card expanded max-height increased to 1000px with overflow: visible
 
 ### Not Yet Implemented
 
@@ -652,7 +663,7 @@ HTML templates for server-rendered pages:
 **Utilities (`src/lib/`)**
 Shared utility functions:
 - `utils.ts`: `escapeHtml`, `escapeJs`, `generateRandomSlug`
-- `response.ts`: `jsonResponse`, `htmlResponse`, `corsHeaders`
+- `response.ts`: `jsonResponse`, `htmlResponse`, `corsHeaders`, `addSecurityHeaders`, `requireJsonContentType`
 - `markdown.ts`: Custom markdown renderer
 - `exif.ts`: EXIF stripping for JPEG images (`isJpeg`, `stripExif`)
 
@@ -747,7 +758,7 @@ Params object may contain `{ slug }` for blog-post or `{ token }` for draft-prev
 1. Add Analytics Engine integration for page views
 2. Add drag-and-drop file upload UI in editor
 3. Add auto-save for drafts in editor
-4. SEO meta tags for blog posts
+4. Dynamic OG meta tags for individual blog posts (server-side injection per route)
 5. Add actual project URLs/iframes to home page shelf
 6. Add profile image to about page
 

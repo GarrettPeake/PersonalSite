@@ -4,18 +4,13 @@
  * Tests for file upload endpoint.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:test';
 import { handleUpload } from '../../../handlers/api/upload';
 
 describe('Upload API Handler', () => {
-  beforeEach(async () => {
-    // Clean up R2 bucket
-    const objects = await env.R2.list();
-    for (const obj of objects.objects) {
-      await env.R2.delete(obj.key);
-    }
-  });
+  // Note: R2 cleanup is handled automatically by isolated storage in @cloudflare/vitest-pool-workers.
+  // Manually listing/deleting R2 objects in beforeEach interferes with the isolated storage frame stack.
 
   describe('handleUpload', () => {
     it('should return 400 for non-multipart request', async () => {
@@ -204,7 +199,10 @@ describe('Upload API Handler', () => {
       const data = await response.json() as { filename: string };
 
       const stored = await env.R2.get(data.filename);
+      expect(stored).not.toBeNull();
       expect(stored!.httpMetadata?.contentType).toBe('image/png');
+      // Must consume the R2 object body to avoid isolated storage frame errors
+      await stored!.arrayBuffer();
     });
 
     it('should generate unique filenames', async () => {
