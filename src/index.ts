@@ -65,7 +65,7 @@ import {
 
 // Utilities
 import { isAuthenticated } from './middleware/auth';
-import { jsonResponse, corsHeaders, getCorsHeaders, handleCorsPreflightResponse } from './lib/response';
+import { jsonResponse, corsHeaders, getCorsHeaders, handleCorsPreflightResponse, requireJsonContentType, addSecurityHeaders } from './lib/response';
 
 export default {
   async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
@@ -76,27 +76,33 @@ export default {
     // Exclude /admin paths — Cloudflare ASSETS needs trailing slashes for directory indexes.
     if (path.length > 1 && path.endsWith('/') && !path.startsWith('/admin')) {
       url.pathname = path.slice(0, -1);
-      return Response.redirect(url.toString(), 301);
+      return addSecurityHeaders(Response.redirect(url.toString(), 301));
     }
+
+    let response: Response;
 
     // API routes
     if (path.startsWith('/api/')) {
-      return handleApi(request, env, path);
+      response = await handleApi(request, env, path);
+      return addSecurityHeaders(response);
     }
 
     // Tracking redirect
     if (path.startsWith('/s/')) {
-      return handleTrackingRedirect(request, env, path);
+      response = await handleTrackingRedirect(request, env, path);
+      return addSecurityHeaders(response);
     }
 
     // Admin routes
     if (path === '/admin' || path.startsWith('/admin/')) {
-      return handleAdmin(request, env, path);
+      response = await handleAdmin(request, env, path);
+      return addSecurityHeaders(response);
     }
 
     // Sitemap
     if (path === '/sitemap.xml') {
-      return handleSitemap(env);
+      response = await handleSitemap(env);
+      return addSecurityHeaders(response);
     }
 
     // Known SPA routes — serve index.html as the SPA shell with 200 status.
@@ -112,23 +118,24 @@ export default {
 
     if (isKnownRoute) {
       const indexRequest = new Request(new URL('/', request.url), request);
-      return env.ASSETS.fetch(indexRequest);
+      response = await env.ASSETS.fetch(indexRequest);
+      return addSecurityHeaders(response);
     }
 
     // Try to serve from static assets (CSS, JS, images, etc.)
     const assetResponse = await env.ASSETS.fetch(request);
     if (assetResponse.status !== 404) {
-      return assetResponse;
+      return addSecurityHeaders(assetResponse);
     }
 
     // Unknown route — serve SPA shell with 404 status for crawlers.
     // The client-side router will still render and show the 404 page.
     const indexRequest = new Request(new URL('/', request.url), request);
     const spaShell = await env.ASSETS.fetch(indexRequest);
-    return new Response(spaShell.body, {
+    return addSecurityHeaders(new Response(spaShell.body, {
       status: 404,
       headers: spaShell.headers,
-    });
+    }));
   },
 } satisfies ExportedHandler<Env>;
 
@@ -243,6 +250,19 @@ async function resolveApiRoute(request: Request, env: Env, path: string, method:
       const authenticated = await isAuthenticated(request, env);
       if (!authenticated) {
         return jsonResponse({ error: 'Unauthorized' }, corsHeaders, 401);
+      }
+
+      // Enforce Content-Type: application/json on POST/PUT routes that expect
+      // JSON bodies. Routes that use multipart/form-data (upload, photo create)
+      // or have no request body (publish, share, unpublish) are excluded.
+      if (method === 'POST' || method === 'PUT') {
+        const isMultipart = path === '/api/admin/upload' || path === '/api/admin/photos';
+        const isNoBody =
+          path.endsWith('/publish') || path.endsWith('/share') || path.endsWith('/unpublish');
+        if (!isMultipart && !isNoBody) {
+          const ctError = requireJsonContentType(request);
+          if (ctError) return ctError;
+        }
       }
 
       // -----------------------------------------------------------------------

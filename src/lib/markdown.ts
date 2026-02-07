@@ -43,8 +43,10 @@ const macros: MacroRegistry = {
 function renderBannerMacro(args: string[]): string {
   const [height = '200px', text = '', subtext = '', color = ''] = args;
 
+  const safeHeight = escapeHtml(height);
+  const safeColor = escapeHtml(color);
   const style = [
-    `min-height: ${height}`,
+    `min-height: ${safeHeight}`,
     'display: flex',
     'flex-direction: column',
     'align-items: center',
@@ -53,7 +55,7 @@ function renderBannerMacro(args: string[]): string {
     'padding: var(--space-lg)',
     'margin: var(--space-lg) 0',
     'border: 3px solid var(--color-border)',
-    color ? `background-color: ${color}` : 'background-color: var(--color-primary)',
+    color ? `background-color: ${safeColor}` : 'background-color: var(--color-primary)',
     color ? `color: ${getContrastColor(color)}` : 'color: var(--color-bg)',
   ].join('; ');
 
@@ -300,7 +302,7 @@ function processInlineMacros(text: string): string {
  * Process inline code (`code`)
  */
 function processInlineCode(text: string): string {
-  return text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  return text.replace(/`([^`]+)`/g, (_match, content: string) => `<code>${escapeHtml(content)}</code>`);
 }
 
 /**
@@ -309,14 +311,21 @@ function processInlineCode(text: string): string {
 function processLinks(text: string): string {
   // Images first - wrap in figure with figcaption if alt text exists
   text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt: string, src: string) => {
+    const safeSrc = escapeHtml(src);
     if (alt) {
-      return `<figure class="md-figure"><img src="${src}" alt="${escapeHtml(alt)}"><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
+      return `<figure class="md-figure"><img src="${safeSrc}" alt="${escapeHtml(alt)}"><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
     }
-    return `<img src="${src}" alt="">`;
+    return `<img src="${safeSrc}" alt="">`;
   });
 
   // Links
-  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, linkText: string, url: string) => {
+    const trimmedUrl = url.trim().toLowerCase();
+    if (trimmedUrl.startsWith('javascript:') || trimmedUrl.startsWith('data:') || trimmedUrl.startsWith('vbscript:')) {
+      return escapeHtml(linkText);
+    }
+    return `<a href="${escapeHtml(url)}">${linkText}</a>`;
+  });
 
   return text;
 }

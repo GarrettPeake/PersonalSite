@@ -38,6 +38,56 @@ describe('Auth API Handlers', () => {
   });
 
   describe('handleLogin', () => {
+    it('should return 400 when Content-Type is missing', async () => {
+      const request = new Request('http://localhost/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          username: 'testadmin',
+          password: 'testpassword',
+        }),
+      });
+
+      const response = await handleLogin(request, testEnv);
+
+      expect(response.status).toBe(400);
+      const data = await response.json() as { success: boolean; error: string };
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Content-Type must be application/json');
+    });
+
+    it('should return 400 when Content-Type is form-urlencoded', async () => {
+      const request = new Request('http://localhost/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'username=testadmin&password=testpassword',
+      });
+
+      const response = await handleLogin(request, testEnv);
+
+      expect(response.status).toBe(400);
+      const data = await response.json() as { success: boolean; error: string };
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Content-Type must be application/json');
+    });
+
+    it('should return 400 when Content-Type is text/plain', async () => {
+      const request = new Request('http://localhost/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          username: 'testadmin',
+          password: 'testpassword',
+        }),
+      });
+
+      const response = await handleLogin(request, testEnv);
+
+      expect(response.status).toBe(400);
+      const data = await response.json() as { success: boolean; error: string };
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Content-Type must be application/json');
+    });
+
     it('should return 401 for invalid username', async () => {
       const request = new Request('http://localhost/api/auth/login', {
         method: 'POST',

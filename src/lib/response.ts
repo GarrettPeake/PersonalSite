@@ -68,3 +68,47 @@ export function htmlResponse(html: string, status = 200): Response {
 export function handleCorsPreflightResponse(origin?: string | null): Response {
   return new Response(null, { headers: getCorsHeaders(origin) });
 }
+
+/**
+ * Add security headers to a response.
+ *
+ * Applied at the Worker level so every response (API, SPA shell, assets,
+ * admin pages, redirects) gets a consistent set of hardening headers.
+ *
+ * Note: Content-Security-Policy is intentionally omitted — it requires
+ * careful per-page tuning to avoid breaking inline scripts/styles.
+ */
+export function addSecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('X-Frame-Options', 'DENY');
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (!headers.has('Strict-Transport-Security')) {
+    headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+/**
+ * Check whether the request has a Content-Type that includes application/json.
+ *
+ * Requiring application/json provides CSRF protection because browsers will
+ * not send cross-origin requests with this Content-Type without triggering
+ * a CORS preflight, which effectively blocks cross-site form submissions.
+ */
+export function requireJsonContentType(request: Request): Response | null {
+  const contentType = request.headers.get('Content-Type') || '';
+  if (!contentType.includes('application/json')) {
+    return jsonResponse(
+      { error: 'Content-Type must be application/json' },
+      corsHeaders,
+      400,
+    );
+  }
+  return null;
+}

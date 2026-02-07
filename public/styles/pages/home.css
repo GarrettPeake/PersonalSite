@@ -545,7 +545,7 @@ body.home-page {
   color: var(--color-bg);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: wrap;
+  text-overflow: ellipsis;
   border: 1px solid var(--color-bg);
 }
 
@@ -597,9 +597,9 @@ body.home-page {
     flex-direction: column;
     justify-content: center;
     gap: 5px;
-    width: 36px;
-    height: 36px;
-    padding: 8px;
+    width: 44px;
+    height: 44px;
+    padding: 10px;
     background: transparent;
     border: 1px solid var(--color-border);
     cursor: pointer;
@@ -637,7 +637,7 @@ body.home-page {
     border-bottom: 1px solid var(--color-border);
     position: fixed;
     top: calc(
-      2 * var(--space-md) + 36px + 1px
+      2 * var(--space-md) + 44px + 1px
     ); /* header padding + button height + border */
     left: 0;
     right: 0;
@@ -848,7 +848,8 @@ body.home-page {
   }
 
   .mobile-project-card.expanded .project-description {
-    max-height: 200px;
+    max-height: 1000px;
+    overflow: visible;
     opacity: 1;
     margin-top: var(--space-xs);
   }
@@ -925,8 +926,8 @@ body.home-page {
   }
 
   .mobile-project-card .open-link {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -966,6 +967,11 @@ body.home-page {
   }
 
   .mobile-footer-social a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
     color: var(--color-text);
     opacity: 0.6;
     transition: opacity var(--transition-fast);
