@@ -1,6 +1,6 @@
 // Admin Projects Page JavaScript
 
-import { escapeHtml } from '/js/utils.js';
+import { escapeHtml, sanitizeSvg } from '/js/utils.js';
 
 // Elements
 const projectsList = document.getElementById('projects-list');
@@ -93,7 +93,7 @@ function renderProjects() {
         </svg>
       </div>
       <div class="project-icon">
-        ${project.iconType === 'svg' ? project.icon : `<img src="${escapeHtml(project.icon)}" alt="${escapeHtml(project.iconAlt || project.title + ' icon')}">`}
+        ${project.iconType === 'svg' ? sanitizeSvg(project.icon) : `<img src="${escapeHtml(project.icon)}" alt="${escapeHtml(project.iconAlt || project.title + ' icon')}">`}
       </div>
       <div class="project-info">
         <span class="project-title">${escapeHtml(project.title)}</span>
@@ -260,7 +260,7 @@ iconSvgInput.addEventListener('input', updateSvgPreview);
 function updateSvgPreview() {
   const svg = iconSvgInput.value.trim();
   if (svg.startsWith('<svg')) {
-    svgPreview.innerHTML = svg;
+    svgPreview.innerHTML = sanitizeSvg(svg);
   } else {
     svgPreview.innerHTML = '';
   }

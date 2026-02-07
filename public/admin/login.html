@@ -11,16 +11,7 @@
   <link rel="stylesheet" href="/styles/base.css">
   <link rel="stylesheet" href="/styles/components.css">
   <link rel="stylesheet" href="/styles/pages/login.css">
-  <script>
-    (function () {
-      const theme =
-        localStorage.getItem("theme") ||
-        (window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light");
-      document.documentElement.setAttribute("data-theme", theme);
-    })();
-  </script>
+  <script src="/js/theme-init.js"></script>
 </head>
 <body class="login-page">
   <main class="login-container">

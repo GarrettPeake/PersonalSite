@@ -29,23 +29,7 @@
     <link rel="stylesheet" href="/styles/pages/home.css" />
 
     <!-- Prevent FOUC -->
-    <script>
-      (function () {
-        const theme =
-          localStorage.getItem("theme") ||
-          (window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark"
-            : "light");
-        document.documentElement.setAttribute("data-theme", theme);
-
-        // Collapse shelf panel immediately on non-projects routes to prevent
-        // "Loading projects..." text from flashing before the SPA router inits
-        var path = window.location.pathname;
-        if (path !== '/' && path !== '/projects') {
-          document.documentElement.setAttribute('data-initial-section', 'non-projects');
-        }
-      })();
-    </script>
+    <script src="/js/theme-init.js"></script>
   </head>
   <body class="home-page">
     <a href="#main" class="skip-link">Skip to content</a>
@@ -261,9 +245,6 @@
     <script src="/js/home.js"></script>
 
     <!-- SPA Router (both desktop and mobile) -->
-    <script type="module">
-      import * as spaRouter from '/js/spa/router.js';
-      spaRouter.init();
-    </script>
+    <script type="module" src="/js/spa/init.js"></script>
   </body>
 </html>

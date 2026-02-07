@@ -26,6 +26,17 @@ export interface TrackingEvent {
   userAgent?: string;
 }
 
+/** Summary returned by listTrackingSlugs (events stripped, count included) */
+export interface TrackingSlugSummary {
+  slug: string;
+  tag: string;
+  createdAt: string;
+  eventCount: number;
+}
+
+/** Maximum number of events stored per tracking slug */
+const MAX_EVENTS = 10000;
+
 // ============================================================================
 // Tracking CRUD Operations
 // ============================================================================
@@ -43,18 +54,23 @@ export async function getTrackingSlug(
 }
 
 /**
- * List all tracking slugs
+ * List all tracking slugs (returns summaries without full events array)
  */
-export async function listTrackingSlugs(kv: KVNamespace): Promise<TrackingSlug[]> {
+export async function listTrackingSlugs(kv: KVNamespace): Promise<TrackingSlugSummary[]> {
   const slugs = await getIndex(kv, KV_PREFIX.INDEX_TRACKING);
-  const results: TrackingSlug[] = [];
 
-  for (const slug of slugs) {
-    const tracking = await getTrackingSlug(kv, slug);
-    if (tracking) results.push(tracking);
-  }
+  const results = await Promise.all(
+    slugs.map(slug => getTrackingSlug(kv, slug))
+  );
 
-  return results;
+  return results
+    .filter((t): t is TrackingSlug => t !== null)
+    .map(({ slug, tag, createdAt, events }) => ({
+      slug,
+      tag,
+      createdAt,
+      eventCount: events.length,
+    }));
 }
 
 /**
@@ -126,6 +142,11 @@ export async function recordTrackingEvent(
   };
 
   tracking.events.push(newEvent);
+
+  // Cap events array to prevent unbounded growth
+  while (tracking.events.length > MAX_EVENTS) {
+    tracking.events.shift();
+  }
 
   await kv.put(`${KV_PREFIX.TRACKING}${slug}`, JSON.stringify(tracking));
   return tracking;

@@ -6,6 +6,7 @@
 
 import { Env } from '../../types';
 import { jsonResponse, corsHeaders } from '../../lib/response';
+import { validateMagicBytes } from '../../lib/utils';
 
 /**
  * Allowed file types and their extensions
@@ -15,7 +16,6 @@ const ALLOWED_TYPES: Record<string, string> = {
   'image/png': 'png',
   'image/gif': 'gif',
   'image/webp': 'webp',
-  'image/svg+xml': 'svg',
   'application/pdf': 'pdf',
   'video/mp4': 'mp4',
   'video/webm': 'webm',
@@ -83,11 +83,20 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
       );
     }
 
+    // Read file data and validate magic bytes
+    const arrayBuffer = await uploadedFile.arrayBuffer();
+    if (!validateMagicBytes(arrayBuffer, mimeType)) {
+      return jsonResponse(
+        { error: 'File content does not match declared type' },
+        corsHeaders,
+        400
+      );
+    }
+
     // Generate unique filename
     const filename = generateFilename(ext);
 
     // Upload to R2
-    const arrayBuffer = await uploadedFile.arrayBuffer();
     await env.R2.put(filename, arrayBuffer, {
       httpMetadata: {
         contentType: mimeType,

@@ -33,7 +33,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const computedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    return computedHash === storedHash;
+    return timingSafeCompare(computedHash, storedHash);
   }
 
   // Fallback: direct comparison (for development only)
@@ -127,4 +127,18 @@ export function createSessionCookie(token: string, maxAge: number = SESSION_TTL)
  */
 export function clearSessionCookie(): string {
   return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`;
+}
+
+/**
+ * Constant-time string comparison to prevent timing attacks.
+ * Returns false immediately if lengths differ (length is not secret).
+ */
+function timingSafeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+
+  const encoder = new TextEncoder();
+  const bufA = encoder.encode(a);
+  const bufB = encoder.encode(b);
+
+  return crypto.subtle.timingSafeEqual(bufA, bufB);
 }

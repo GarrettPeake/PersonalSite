@@ -5,7 +5,7 @@
  */
 
 import { Env, ProjectCreateInput, ProjectUpdateInput } from '../../types';
-import { jsonResponse, corsHeaders } from '../../lib/response';
+import { jsonResponse, corsHeaders, parseJsonBody } from '../../lib/response';
 import {
   listProjects,
   getProject,
@@ -19,6 +19,9 @@ import {
 // Public Endpoints
 // ============================================================================
 
+/** Cache-Control for public GET endpoints */
+const PUBLIC_CACHE = 'public, max-age=60, s-maxage=300';
+
 /**
  * GET /api/projects - List all projects (public)
  */
@@ -28,7 +31,7 @@ export async function handleListProjectsPublic(env: Env): Promise<Response> {
 
     // Strip internal IDs from public response
     const publicProjects = projects.map(({ id, ...rest }) => rest);
-    return jsonResponse(publicProjects, corsHeaders);
+    return jsonResponse(publicProjects, { ...corsHeaders, 'Cache-Control': PUBLIC_CACHE });
   } catch (error) {
     console.error('Error listing projects:', error);
     return jsonResponse({ error: 'Failed to list projects' }, corsHeaders, 500);
@@ -82,7 +85,10 @@ export async function handleAdminGetProject(env: Env, id: string): Promise<Respo
  */
 export async function handleCreateProject(request: Request, env: Env): Promise<Response> {
   try {
-    const body = (await request.json()) as ProjectCreateInput;
+    const body = await parseJsonBody<ProjectCreateInput>(request);
+    if (!body) {
+      return jsonResponse({ error: 'Invalid JSON body' }, corsHeaders, 400);
+    }
 
     // Validate required fields
     if (!body.title || typeof body.title !== 'string') {
@@ -152,7 +158,10 @@ export async function handleUpdateProject(
   id: string
 ): Promise<Response> {
   try {
-    const body = (await request.json()) as ProjectUpdateInput;
+    const body = await parseJsonBody<ProjectUpdateInput>(request);
+    if (!body) {
+      return jsonResponse({ error: 'Invalid JSON body' }, corsHeaders, 400);
+    }
 
     // Validate iconType if provided
     if (body.iconType !== undefined && !['svg', 'image'].includes(body.iconType)) {
@@ -218,7 +227,10 @@ export async function handleDeleteProject(env: Env, id: string): Promise<Respons
  */
 export async function handleReorderProjects(request: Request, env: Env): Promise<Response> {
   try {
-    const body = (await request.json()) as { ids?: string[] };
+    const body = await parseJsonBody<{ ids?: string[] }>(request);
+    if (!body) {
+      return jsonResponse({ error: 'Invalid JSON body' }, corsHeaders, 400);
+    }
 
     if (!body.ids || !Array.isArray(body.ids)) {
       return jsonResponse({ error: 'ids array is required' }, corsHeaders, 400);
