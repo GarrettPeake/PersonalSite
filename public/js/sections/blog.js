@@ -36,8 +36,7 @@ async function init(container) {
     postsContainer.innerHTML = posts.map(post => `
       <article class="post-card" data-slug="${escapeAttr(post.slug)}">
         <h2><a href="/blog/${escapeAttr(post.slug)}" data-spa-post="${escapeAttr(post.slug)}">${escapeHtml(post.title)}</a></h2>
-        <p class="post-meta">${formatDate(post.publishedAt)}</p>
-        ${post.description ? `<p class="post-excerpt">${escapeHtml(post.description)}</p>` : ''}
+        <p class="post-excerpt"><span class="post-date">[${formatDate(post.publishedAt)}]</span>${post.description ? ` ${escapeHtml(post.description)}` : ''}</p>
       </article>
     `).join('');
 
