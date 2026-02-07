@@ -1172,7 +1172,7 @@ body.home-page {
 
 .blog-section-content {
   width: 100%;
-  max-width: var(--max-width-prose);
+  max-width: var(--max-width-full);
   margin: 0 auto;
 }
 
@@ -1191,7 +1191,7 @@ body.home-page {
 }
 
 .blog-section .post-card {
-  padding: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
   border-bottom: var(--border-thin) solid var(--color-border);
   transition: background var(--transition-fast);
 }
@@ -1206,7 +1206,7 @@ body.home-page {
 
 .blog-section .post-card h2 {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.15rem;
   margin-bottom: var(--space-xs);
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -1222,16 +1222,15 @@ body.home-page {
   color: var(--color-primary);
 }
 
-.blog-section .post-meta {
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-sm);
-  font-family: var(--font-mono);
-}
-
 .blog-section .post-excerpt {
   margin-bottom: 0;
-  color: var(--color-text);
+  color: var(--color-text-muted);
   line-height: 1.6;
+}
+
+.blog-section .post-excerpt .post-date {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
 }
 
 /* About Section */
