@@ -171,6 +171,49 @@ describe('Admin Posts API Handlers', () => {
       const data = await response.json() as { error: string };
       expect(data.error).toContain('already in use');
     });
+
+    it('should update publishedAt', async () => {
+      const draft = await createDraft(env.KV, {
+        title: 'Post',
+        slug: 'date-test',
+        content: 'Content',
+      });
+      const post = await publishDraft(env.KV, draft.id);
+
+      const newDate = '2020-06-15T10:30:00.000Z';
+      const request = new Request(`http://localhost/api/admin/posts/${post.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publishedAt: newDate }),
+      });
+
+      const response = await handleAdminUpdatePost(request, env, post.id);
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as { publishedAt: string };
+      expect(data.publishedAt).toBe(newDate);
+    });
+
+    it('should preserve publishedAt when not provided', async () => {
+      const draft = await createDraft(env.KV, {
+        title: 'Post',
+        slug: 'preserve-date',
+        content: 'Content',
+      });
+      const post = await publishDraft(env.KV, draft.id);
+
+      const request = new Request(`http://localhost/api/admin/posts/${post.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Updated' }),
+      });
+
+      const response = await handleAdminUpdatePost(request, env, post.id);
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as { publishedAt: string };
+      expect(data.publishedAt).toBe(post.publishedAt);
+    });
   });
 
   describe('handleAdminDeletePost', () => {

@@ -191,6 +191,35 @@ describe('Post DAO', () => {
       expect(updated!.slug).toBe('same-slug');
     });
 
+    it('should update publishedAt when provided', async () => {
+      const draft = await createDraft(env.KV, {
+        title: 'Post',
+        slug: 'slug-date',
+        content: 'Content',
+      });
+      const post = await publishDraft(env.KV, draft.id);
+
+      const newDate = '2020-01-15T12:00:00.000Z';
+      const updated = await updatePost(env.KV, post.id, { publishedAt: newDate });
+
+      expect(updated).not.toBeNull();
+      expect(updated!.publishedAt).toBe(newDate);
+      expect(updated!.publishedAt).not.toBe(post.publishedAt);
+    });
+
+    it('should preserve publishedAt when not provided in update', async () => {
+      const draft = await createDraft(env.KV, {
+        title: 'Post',
+        slug: 'slug-preserve',
+        content: 'Content',
+      });
+      const post = await publishDraft(env.KV, draft.id);
+
+      const updated = await updatePost(env.KV, post.id, { title: 'New Title' });
+
+      expect(updated!.publishedAt).toBe(post.publishedAt);
+    });
+
     it('should update updatedAt timestamp', async () => {
       const draft = await createDraft(env.KV, {
         title: 'Post',

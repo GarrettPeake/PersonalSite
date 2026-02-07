@@ -22,7 +22,7 @@ export interface Post {
   updatedAt: string;
 }
 
-export type UpdatePostInput = Partial<Omit<Post, 'id' | 'publishedAt'>>;
+export type UpdatePostInput = Partial<Omit<Post, 'id'>>;
 
 // ============================================================================
 // Post CRUD Operations
@@ -52,7 +52,9 @@ export async function getPostBySlug(kv: KVNamespace, slug: string): Promise<Post
 export async function listPosts(kv: KVNamespace): Promise<Post[]> {
   const ids = await getIndex(kv, KV_PREFIX.INDEX_POSTS);
   const results = await Promise.all(ids.map(id => getPost(kv, id)));
-  return results.filter((post): post is Post => post !== null);
+  const posts = results.filter((post): post is Post => post !== null);
+  posts.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  return posts;
 }
 
 /**

@@ -107,6 +107,30 @@
   color: color-mix(in srgb, var(--color-text) 40%, transparent);
 }
 
+.date-input {
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  padding: var(--space-xs) 0;
+  width: auto;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+.date-input:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.date-input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.date-input:focus {
+  border-bottom-color: var(--color-primary);
+}
+
 .editor-actions {
   display: flex;
   align-items: center;

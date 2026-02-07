@@ -17,6 +17,7 @@ const saveStatus = document.getElementById('save-status');
 const saveBtn = document.getElementById('save-btn');
 const publishBtn = document.getElementById('publish-btn');
 const previewBtn = document.getElementById('preview-btn');
+const publishedDateInput = document.getElementById('published-date');
 
 // Initialize
 async function init() {
@@ -36,6 +37,7 @@ async function init() {
   slugInput.addEventListener('input', handleChange);
   descriptionInput.addEventListener('input', handleChange);
   contentInput.addEventListener('input', handleContentChange);
+  publishedDateInput.addEventListener('input', handleChange);
 
   // Toolbar buttons
   document.querySelectorAll('.toolbar button').forEach(btn => {
@@ -139,6 +141,15 @@ async function loadPost(id) {
     slugInput.value = post.slug || '';
     descriptionInput.value = post.description || '';
     contentInput.value = post.content || '';
+    if (post.publishedAt) {
+      const dt = new Date(post.publishedAt);
+      publishedDateInput.value = dt.getFullYear() + '-' +
+        String(dt.getMonth() + 1).padStart(2, '0') + '-' +
+        String(dt.getDate()).padStart(2, '0') + 'T' +
+        String(dt.getHours()).padStart(2, '0') + ':' +
+        String(dt.getMinutes()).padStart(2, '0');
+      publishedDateInput.hidden = false;
+    }
     updatePreview();
     publishBtn.textContent = 'Update';
     saveBtn.style.display = 'none';
@@ -225,10 +236,14 @@ async function autoSave() {
       });
     } else {
       // Published post
+      const postData = { ...data };
+      if (publishedDateInput.value) {
+        postData.publishedAt = new Date(publishedDateInput.value).toISOString();
+      }
       res = await fetch(`/api/admin/posts/${currentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(postData),
       });
     }
 
@@ -412,15 +427,19 @@ async function handlePublish() {
       }
     } else {
       // Update published post
+      const updateData = {
+        title: titleInput.value,
+        slug: slugInput.value,
+        description: descriptionInput.value,
+        content: contentInput.value,
+      };
+      if (publishedDateInput.value) {
+        updateData.publishedAt = new Date(publishedDateInput.value).toISOString();
+      }
       const res = await fetch(`/api/admin/posts/${currentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: titleInput.value,
-          slug: slugInput.value,
-          description: descriptionInput.value,
-          content: contentInput.value,
-        }),
+        body: JSON.stringify(updateData),
       });
 
       if (res.ok) {
