@@ -991,9 +991,14 @@ body.home-page {
     font-family: var(--font-sans);
   }
 
-  /* Mobile Blog - reduced padding */
+  /* Mobile Blog - full-width with xs padding */
   .blog-section {
-    padding: var(--space-sm) var(--space-xs);
+    padding: var(--space-sm) 0;
+  }
+
+  .blog-section .posts {
+    border-left: none;
+    border-right: none;
   }
 
   .blog-section .post-card {
@@ -1397,7 +1402,7 @@ body.home-page {
 
 .photography-section .photo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1px;
 }
 
