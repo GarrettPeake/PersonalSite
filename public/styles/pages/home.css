@@ -991,9 +991,22 @@ body.home-page {
     font-family: var(--font-sans);
   }
 
-  /* Mobile Photography - tight 3-column grid */
+  /* Mobile Blog - reduced padding */
+  .blog-section {
+    padding: var(--space-sm) 0;
+  }
+
+  .blog-section .post-card {
+    padding: var(--space-sm) var(--space-sm);
+  }
+
+  .blog-post-section {
+    padding: var(--space-sm) var(--space-xs);
+  }
+
+  /* Mobile Photography - tight 3-column grid, edge-to-edge */
   .photography-section {
-    padding: var(--space-xs);
+    padding: 0;
   }
 
   .photography-section .photo-grid {
