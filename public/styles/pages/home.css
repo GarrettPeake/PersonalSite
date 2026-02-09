@@ -991,33 +991,6 @@ body.home-page {
     font-family: var(--font-sans);
   }
 
-  /* Mobile Blog - full-width with xs padding */
-  .blog-section {
-    padding: var(--space-xs);
-  }
-
-  .blog-section .posts {
-    border-left: none;
-    border-right: none;
-  }
-
-  .blog-section .post-card {
-    padding: var(--space-sm) var(--space-xs);
-  }
-
-  .blog-post-section {
-    padding: var(--space-sm) var(--space-xs);
-  }
-
-  /* Mobile Photography - tight 3-column grid, edge-to-edge */
-  .photography-section {
-    padding: 0;
-  }
-
-  .photography-section .photo-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-  }
 }
 
 /* ==========================================================================
@@ -1572,4 +1545,37 @@ body.home-page {
   color: var(--color-text-muted);
   margin: 0 0 var(--space-lg);
   max-width: 36ch;
+}
+
+/* ==========================================================================
+   MOBILE SPA SECTION OVERRIDES
+   Must come after base SPA section styles for correct cascade precedence.
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .blog-section {
+    padding: var(--space-xs);
+  }
+
+  .blog-section .posts {
+    border-left: none;
+    border-right: none;
+  }
+
+  .blog-section .post-card {
+    padding: var(--space-sm) var(--space-xs);
+  }
+
+  .blog-post-section {
+    padding: var(--space-sm) var(--space-xs);
+  }
+
+  .photography-section {
+    padding: 0;
+  }
+
+  .photography-section .photo-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+  }
 }
