@@ -993,7 +993,7 @@ body.home-page {
 
   /* Mobile Blog - full-width with xs padding */
   .blog-section {
-    padding: var(--space-sm) 0;
+    padding: var(--space-xs);
   }
 
   .blog-section .posts {
