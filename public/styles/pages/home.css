@@ -1375,7 +1375,7 @@ body.home-page {
 
 .photography-section .photo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(250px, 33.33%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(250px, calc(33.33% - 1px)), 1fr));
   gap: 1px;
 }
 
