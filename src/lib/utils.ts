@@ -51,6 +51,8 @@ export function validateMagicBytes(buffer: ArrayBuffer, declaredType: string): b
       return bytes.length >= 4 && bytes[0] === 0x1A && bytes[1] === 0x45 && bytes[2] === 0xDF && bytes[3] === 0xA3;
     case 'video/quicktime':
       return bytes.length >= 8 && bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70;
+    case 'text/html':
+      return true;
     default:
       return false;
   }
