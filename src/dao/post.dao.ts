@@ -1,12 +1,11 @@
 /**
  * Post Data Access Object
  *
- * Manages published blog posts with slug-based lookups.
+ * Manages published blog posts with slug-based lookups using D1.
  */
 
-import { KV_PREFIX } from '../types';
-import { getIndex, addToIndex, removeFromIndex } from './base';
-import { getDraft, deleteDraft, createDraft, type Draft } from './draft.dao';
+import { queryOne, queryAll, execute } from './base';
+import type { Draft } from './draft.dao';
 
 // ============================================================================
 // Types
@@ -25,80 +24,83 @@ export interface Post {
 export type UpdatePostInput = Partial<Omit<Post, 'id'>>;
 
 // ============================================================================
+// SQL Column Lists
+// ============================================================================
+
+const POST_COLUMNS = 'id, title, slug, content, description, published_at as publishedAt, updated_at as updatedAt';
+const POST_SUMMARY_COLUMNS = 'id, title, slug, description, published_at as publishedAt, updated_at as updatedAt';
+
+// ============================================================================
 // Post CRUD Operations
 // ============================================================================
 
 /**
  * Get a post by ID
  */
-export async function getPost(kv: KVNamespace, id: string): Promise<Post | null> {
-  const data = await kv.get(`${KV_PREFIX.POST}${id}`);
-  if (!data) return null;
-  return JSON.parse(data);
+export async function getPost(db: D1Database, id: string): Promise<Post | null> {
+  return queryOne<Post>(db, `SELECT ${POST_COLUMNS} FROM posts WHERE id = ?`, [id]);
 }
 
 /**
  * Get a post by its URL slug
  */
-export async function getPostBySlug(kv: KVNamespace, slug: string): Promise<Post | null> {
-  const id = await kv.get(`${KV_PREFIX.POST_SLUG}${slug}`);
-  if (!id) return null;
-  return getPost(kv, id);
+export async function getPostBySlug(db: D1Database, slug: string): Promise<Post | null> {
+  return queryOne<Post>(db, `SELECT ${POST_COLUMNS} FROM posts WHERE slug = ?`, [slug]);
 }
 
 /**
- * List all posts (newest first)
+ * List all posts (newest first), without content field
  */
-export async function listPosts(kv: KVNamespace): Promise<Post[]> {
-  const ids = await getIndex(kv, KV_PREFIX.INDEX_POSTS);
-  const results = await Promise.all(ids.map(id => getPost(kv, id)));
-  const posts = results.filter((post): post is Post => post !== null);
-  posts.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-  return posts;
+export async function listPosts(db: D1Database): Promise<Omit<Post, 'content'>[]> {
+  return queryAll<Omit<Post, 'content'>>(
+    db,
+    `SELECT ${POST_SUMMARY_COLUMNS} FROM posts ORDER BY published_at DESC`
+  );
 }
 
 /**
  * Update an existing post
  */
 export async function updatePost(
-  kv: KVNamespace,
+  db: D1Database,
   id: string,
   data: UpdatePostInput
 ): Promise<Post | null> {
-  const existing = await getPost(kv, id);
+  const existing = await getPost(db, id);
   if (!existing) return null;
 
-  // If slug changed, update slug lookup
-  if (data.slug && data.slug !== existing.slug) {
-    const slugTaken = await getPostBySlug(kv, data.slug);
-    if (slugTaken && slugTaken.id !== id) {
-      throw new Error(`Slug "${data.slug}" is already in use`);
-    }
-    await kv.delete(`${KV_PREFIX.POST_SLUG}${existing.slug}`);
-    await kv.put(`${KV_PREFIX.POST_SLUG}${data.slug}`, id);
-  }
-
+  const now = new Date().toISOString();
   const updated: Post = {
     ...existing,
     ...data,
-    updatedAt: new Date().toISOString(),
+    updatedAt: now,
   };
 
-  await kv.put(`${KV_PREFIX.POST}${id}`, JSON.stringify(updated));
+  try {
+    await execute(
+      db,
+      'UPDATE posts SET title = ?, slug = ?, content = ?, description = ?, published_at = ?, updated_at = ? WHERE id = ?',
+      [updated.title, updated.slug, updated.content, updated.description ?? null, updated.publishedAt, updated.updatedAt, id]
+    );
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg.includes('UNIQUE constraint failed') && msg.includes('slug')) {
+      throw new Error(`Slug "${data.slug}" is already in use`);
+    }
+    throw e;
+  }
+
   return updated;
 }
 
 /**
  * Delete a post
  */
-export async function deletePost(kv: KVNamespace, id: string): Promise<boolean> {
-  const post = await getPost(kv, id);
-  if (!post) return false;
+export async function deletePost(db: D1Database, id: string): Promise<boolean> {
+  const existing = await getPost(db, id);
+  if (!existing) return false;
 
-  await kv.delete(`${KV_PREFIX.POST}${id}`);
-  await kv.delete(`${KV_PREFIX.POST_SLUG}${post.slug}`);
-  await removeFromIndex(kv, KV_PREFIX.INDEX_POSTS, id);
-
+  await execute(db, 'DELETE FROM posts WHERE id = ?', [id]);
   return true;
 }
 
@@ -108,13 +110,19 @@ export async function deletePost(kv: KVNamespace, id: string): Promise<boolean> 
 
 /**
  * Publish a draft as a post
+ *
+ * Reads the draft directly from D1, creates a post, and removes the draft atomically.
  */
-export async function publishDraft(kv: KVNamespace, draftId: string): Promise<Post> {
-  const draft = await getDraft(kv, draftId);
+export async function publishDraft(db: D1Database, draftId: string): Promise<Post> {
+  const draft = await queryOne<Draft>(
+    db,
+    'SELECT id, title, slug, content, description, share_token as shareToken, created_at as createdAt, updated_at as updatedAt FROM drafts WHERE id = ?',
+    [draftId]
+  );
   if (!draft) throw new Error('Draft not found');
 
   // Check if slug is already taken
-  const existingPost = await getPostBySlug(kv, draft.slug);
+  const existingPost = await getPostBySlug(db, draft.slug);
   if (existingPost) {
     throw new Error(`Slug "${draft.slug}" is already in use`);
   }
@@ -132,34 +140,46 @@ export async function publishDraft(kv: KVNamespace, draftId: string): Promise<Po
     updatedAt: now,
   };
 
-  // Save post and create slug lookup
-  await kv.put(`${KV_PREFIX.POST}${id}`, JSON.stringify(post));
-  await kv.put(`${KV_PREFIX.POST_SLUG}${post.slug}`, id);
-  await addToIndex(kv, KV_PREFIX.INDEX_POSTS, id);
-
-  // Delete the draft
-  await deleteDraft(kv, draftId);
+  // Atomic batch: insert post + delete draft
+  await db.batch([
+    db.prepare(
+      'INSERT INTO posts (id, title, slug, content, description, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(post.id, post.title, post.slug, post.content, post.description ?? null, post.publishedAt, post.updatedAt),
+    db.prepare('DELETE FROM drafts WHERE id = ?').bind(draftId),
+  ]);
 
   return post;
 }
 
 /**
  * Unpublish a post back to a draft
+ *
+ * Reads the post, creates a draft, and removes the post atomically.
  */
-export async function unpublishPost(kv: KVNamespace, postId: string): Promise<Draft> {
-  const post = await getPost(kv, postId);
+export async function unpublishPost(db: D1Database, postId: string): Promise<Draft> {
+  const post = await getPost(db, postId);
   if (!post) throw new Error('Post not found');
 
-  // Create draft from post
-  const draft = await createDraft(kv, {
+  const draftId = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  const draft: Draft = {
+    id: draftId,
     title: post.title,
     slug: post.slug,
     content: post.content,
     description: post.description,
-  });
+    createdAt: now,
+    updatedAt: now,
+  };
 
-  // Delete the post
-  await deletePost(kv, postId);
+  // Atomic batch: insert draft + delete post
+  await db.batch([
+    db.prepare(
+      'INSERT INTO drafts (id, title, slug, content, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(draft.id, draft.title, draft.slug, draft.content, draft.description ?? null, draft.createdAt, draft.updatedAt),
+    db.prepare('DELETE FROM posts WHERE id = ?').bind(postId),
+  ]);
 
   return draft;
 }

@@ -1,103 +1,83 @@
 /**
  * Base DAO Tests
  *
- * Tests for index management utilities used across all DAOs.
+ * Tests for D1 query utilities used across all DAOs.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
-import { getIndex, addToIndex, removeFromIndex } from '../../dao/base';
+import { queryOne, queryAll, execute } from '../../dao/base';
 
-const TEST_INDEX_KEY = 'test:index';
+describe('Base DAO - D1 utilities', () => {
+  beforeAll(async () => {
+    await env.DB.exec('CREATE TABLE IF NOT EXISTS test_items (id TEXT PRIMARY KEY, name TEXT NOT NULL, value INTEGER NOT NULL DEFAULT 0);');
+  });
 
-describe('Base DAO - Index Management', () => {
   beforeEach(async () => {
-    // Clean up test index before each test
-    await env.KV.delete(TEST_INDEX_KEY);
+    await env.DB.exec('DELETE FROM test_items');
   });
 
-  describe('getIndex', () => {
-    it('should return empty array for non-existent index', async () => {
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual([]);
+  describe('execute', () => {
+    it('should insert a row and return changes count', async () => {
+      const changes = await execute(
+        env.DB,
+        'INSERT INTO test_items (id, name, value) VALUES (?, ?, ?)',
+        ['1', 'test', 42]
+      );
+      expect(changes).toBe(1);
     });
 
-    it('should return parsed array for existing index', async () => {
-      await env.KV.put(TEST_INDEX_KEY, JSON.stringify(['id1', 'id2', 'id3']));
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual(['id1', 'id2', 'id3']);
+    it('should return 0 when no rows affected', async () => {
+      const changes = await execute(
+        env.DB,
+        'DELETE FROM test_items WHERE id = ?',
+        ['nonexistent']
+      );
+      expect(changes).toBe(0);
     });
 
-    it('should return empty array for invalid JSON', async () => {
-      await env.KV.put(TEST_INDEX_KEY, 'not valid json');
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual([]);
-    });
-  });
-
-  describe('addToIndex', () => {
-    it('should add ID to beginning of empty index', async () => {
-      await addToIndex(env.KV, TEST_INDEX_KEY, 'id1');
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual(['id1']);
-    });
-
-    it('should add new ID to beginning of existing index', async () => {
-      await env.KV.put(TEST_INDEX_KEY, JSON.stringify(['id2', 'id3']));
-      await addToIndex(env.KV, TEST_INDEX_KEY, 'id1');
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual(['id1', 'id2', 'id3']);
-    });
-
-    it('should not add duplicate ID', async () => {
-      await env.KV.put(TEST_INDEX_KEY, JSON.stringify(['id1', 'id2']));
-      await addToIndex(env.KV, TEST_INDEX_KEY, 'id1');
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual(['id1', 'id2']);
-    });
-
-    it('should add multiple IDs correctly', async () => {
-      await addToIndex(env.KV, TEST_INDEX_KEY, 'id3');
-      await addToIndex(env.KV, TEST_INDEX_KEY, 'id2');
-      await addToIndex(env.KV, TEST_INDEX_KEY, 'id1');
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual(['id1', 'id2', 'id3']);
+    it('should update rows', async () => {
+      await execute(env.DB, 'INSERT INTO test_items (id, name, value) VALUES (?, ?, ?)', ['1', 'a', 1]);
+      await execute(env.DB, 'INSERT INTO test_items (id, name, value) VALUES (?, ?, ?)', ['2', 'b', 2]);
+      const changes = await execute(env.DB, 'UPDATE test_items SET value = ?', [99]);
+      expect(changes).toBe(2);
     });
   });
 
-  describe('removeFromIndex', () => {
-    it('should remove existing ID from index', async () => {
-      await env.KV.put(TEST_INDEX_KEY, JSON.stringify(['id1', 'id2', 'id3']));
-      await removeFromIndex(env.KV, TEST_INDEX_KEY, 'id2');
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual(['id1', 'id3']);
+  describe('queryOne', () => {
+    it('should return a single row', async () => {
+      await execute(env.DB, 'INSERT INTO test_items (id, name, value) VALUES (?, ?, ?)', ['1', 'hello', 10]);
+      const row = await queryOne<{ id: string; name: string; value: number }>(
+        env.DB,
+        'SELECT * FROM test_items WHERE id = ?',
+        ['1']
+      );
+      expect(row).toEqual({ id: '1', name: 'hello', value: 10 });
     });
 
-    it('should handle removing non-existent ID', async () => {
-      await env.KV.put(TEST_INDEX_KEY, JSON.stringify(['id1', 'id2']));
-      await removeFromIndex(env.KV, TEST_INDEX_KEY, 'id3');
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual(['id1', 'id2']);
+    it('should return null when no match', async () => {
+      const row = await queryOne(env.DB, 'SELECT * FROM test_items WHERE id = ?', ['nope']);
+      expect(row).toBeNull();
+    });
+  });
+
+  describe('queryAll', () => {
+    it('should return all matching rows', async () => {
+      await execute(env.DB, 'INSERT INTO test_items (id, name, value) VALUES (?, ?, ?)', ['1', 'a', 1]);
+      await execute(env.DB, 'INSERT INTO test_items (id, name, value) VALUES (?, ?, ?)', ['2', 'b', 2]);
+      await execute(env.DB, 'INSERT INTO test_items (id, name, value) VALUES (?, ?, ?)', ['3', 'c', 3]);
+      const rows = await queryAll<{ id: string; name: string; value: number }>(
+        env.DB,
+        'SELECT * FROM test_items ORDER BY value ASC'
+      );
+      expect(rows).toHaveLength(3);
+      expect(rows[0].name).toBe('a');
+      expect(rows[2].name).toBe('c');
     });
 
-    it('should handle removing from empty index', async () => {
-      await removeFromIndex(env.KV, TEST_INDEX_KEY, 'id1');
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual([]);
-    });
-
-    it('should remove first ID', async () => {
-      await env.KV.put(TEST_INDEX_KEY, JSON.stringify(['id1', 'id2', 'id3']));
-      await removeFromIndex(env.KV, TEST_INDEX_KEY, 'id1');
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual(['id2', 'id3']);
-    });
-
-    it('should remove last ID', async () => {
-      await env.KV.put(TEST_INDEX_KEY, JSON.stringify(['id1', 'id2', 'id3']));
-      await removeFromIndex(env.KV, TEST_INDEX_KEY, 'id3');
-      const index = await getIndex(env.KV, TEST_INDEX_KEY);
-      expect(index).toEqual(['id1', 'id2']);
+    it('should return empty array when no matches', async () => {
+      const rows = await queryAll(env.DB, 'SELECT * FROM test_items WHERE value > ?', [999]);
+      expect(rows).toEqual([]);
     });
   });
 });

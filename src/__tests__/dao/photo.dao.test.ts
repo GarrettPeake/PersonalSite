@@ -1,10 +1,10 @@
 /**
  * Photo DAO Tests
  *
- * Tests for photo CRUD operations.
+ * Tests for photo CRUD operations against D1.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
   getPhoto,
@@ -13,33 +13,34 @@ import {
   updatePhoto,
   deletePhoto,
 } from '../../dao/photo.dao';
-import { KV_PREFIX } from '../../types';
+
 
 describe('Photo DAO', () => {
+  beforeAll(async () => {
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS photos (id TEXT PRIMARY KEY, url TEXT NOT NULL, filename TEXT NOT NULL, location TEXT NOT NULL DEFAULT '', description TEXT NOT NULL DEFAULT '', published_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+  });
+
   beforeEach(async () => {
-    // Clean up all photo related keys
-    const photoKeys = await env.KV.list({ prefix: KV_PREFIX.PHOTO });
-    for (const key of photoKeys.keys) {
-      await env.KV.delete(key.name);
-    }
-    await env.KV.delete(KV_PREFIX.INDEX_PHOTOS);
+    await env.DB.exec('DELETE FROM photos');
   });
 
   describe('getPhoto', () => {
     it('should return null for non-existent photo', async () => {
-      const photo = await getPhoto(env.KV, 'non-existent-id');
+      const photo = await getPhoto(env.DB, 'non-existent-id');
       expect(photo).toBeNull();
     });
 
     it('should return photo by ID', async () => {
-      const created = await createPhoto(env.KV, {
+      const created = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'Tokyo, Japan',
         description: 'Cherry blossoms',
       });
 
-      const retrieved = await getPhoto(env.KV, created.id);
+      const retrieved = await getPhoto(env.DB, created.id);
       expect(retrieved).not.toBeNull();
       expect(retrieved!.id).toBe(created.id);
       expect(retrieved!.location).toBe('Tokyo, Japan');
@@ -49,31 +50,50 @@ describe('Photo DAO', () => {
 
   describe('listPhotos', () => {
     it('should return empty array when no photos exist', async () => {
-      const photos = await listPhotos(env.KV);
+      const photos = await listPhotos(env.DB);
       expect(photos).toEqual([]);
     });
 
     it('should return all photos in order (newest first)', async () => {
-      await createPhoto(env.KV, {
+      // Insert with explicit timestamps to guarantee ordering
+      const photo1 = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/1.jpg',
         filename: 'photos/1.jpg',
         location: 'Location 1',
         description: 'Photo 1',
       });
-      await createPhoto(env.KV, {
+      // Update published_at to control ordering
+      await updatePhoto(env.DB, photo1.id, {
+        location: 'Location 1',
+        description: 'Photo 1',
+        publishedAt: '2024-01-01T00:00:00.000Z',
+      });
+
+      const photo2 = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/2.jpg',
         filename: 'photos/2.jpg',
         location: 'Location 2',
         description: 'Photo 2',
       });
-      await createPhoto(env.KV, {
+      await updatePhoto(env.DB, photo2.id, {
+        location: 'Location 2',
+        description: 'Photo 2',
+        publishedAt: '2024-02-01T00:00:00.000Z',
+      });
+
+      const photo3 = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/3.jpg',
         filename: 'photos/3.jpg',
         location: 'Location 3',
         description: 'Photo 3',
       });
+      await updatePhoto(env.DB, photo3.id, {
+        location: 'Location 3',
+        description: 'Photo 3',
+        publishedAt: '2024-03-01T00:00:00.000Z',
+      });
 
-      const photos = await listPhotos(env.KV);
+      const photos = await listPhotos(env.DB);
       expect(photos).toHaveLength(3);
       expect(photos[0].description).toBe('Photo 3');
       expect(photos[1].description).toBe('Photo 2');
@@ -83,7 +103,7 @@ describe('Photo DAO', () => {
 
   describe('createPhoto', () => {
     it('should create photo with provided data', async () => {
-      const photo = await createPhoto(env.KV, {
+      const photo = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'Paris, France',
@@ -99,20 +119,20 @@ describe('Photo DAO', () => {
       expect(photo.updatedAt).toBeDefined();
     });
 
-    it('should add photo to index', async () => {
-      await createPhoto(env.KV, {
+    it('should be retrievable after creation', async () => {
+      await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'Test',
         description: 'Test',
       });
 
-      const photos = await listPhotos(env.KV);
+      const photos = await listPhotos(env.DB);
       expect(photos).toHaveLength(1);
     });
 
     it('should create photo with empty location and description', async () => {
-      const photo = await createPhoto(env.KV, {
+      const photo = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: '',
@@ -126,24 +146,26 @@ describe('Photo DAO', () => {
 
   describe('updatePhoto', () => {
     it('should return null for non-existent photo', async () => {
-      const result = await updatePhoto(env.KV, 'non-existent', {
+      const result = await updatePhoto(env.DB, 'non-existent', {
         location: 'New Location',
         description: 'New Description',
+        publishedAt: new Date().toISOString(),
       });
       expect(result).toBeNull();
     });
 
     it('should update location and description', async () => {
-      const created = await createPhoto(env.KV, {
+      const created = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'Original Location',
         description: 'Original Description',
       });
 
-      const updated = await updatePhoto(env.KV, created.id, {
+      const updated = await updatePhoto(env.DB, created.id, {
         location: 'Updated Location',
         description: 'Updated Description',
+        publishedAt: created.publishedAt,
       });
 
       expect(updated).not.toBeNull();
@@ -154,7 +176,7 @@ describe('Photo DAO', () => {
     });
 
     it('should update updatedAt timestamp', async () => {
-      const created = await createPhoto(env.KV, {
+      const created = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'Location',
@@ -164,9 +186,10 @@ describe('Photo DAO', () => {
 
       await new Promise((r) => setTimeout(r, 10));
 
-      const updated = await updatePhoto(env.KV, created.id, {
+      const updated = await updatePhoto(env.DB, created.id, {
         location: 'New Location',
         description: 'New Description',
+        publishedAt: created.publishedAt,
       });
 
       expect(new Date(updated!.updatedAt).getTime()).toBeGreaterThan(
@@ -177,36 +200,36 @@ describe('Photo DAO', () => {
 
   describe('deletePhoto', () => {
     it('should return false for non-existent photo', async () => {
-      const result = await deletePhoto(env.KV, 'non-existent');
+      const result = await deletePhoto(env.DB, 'non-existent');
       expect(result).toBe(false);
     });
 
-    it('should delete photo from KV', async () => {
-      const created = await createPhoto(env.KV, {
+    it('should delete photo from D1', async () => {
+      const created = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'Location',
         description: 'Description',
       });
 
-      const result = await deletePhoto(env.KV, created.id);
+      const result = await deletePhoto(env.DB, created.id);
       expect(result).toBe(true);
 
-      const retrieved = await getPhoto(env.KV, created.id);
+      const retrieved = await getPhoto(env.DB, created.id);
       expect(retrieved).toBeNull();
     });
 
-    it('should remove photo from index', async () => {
-      const created = await createPhoto(env.KV, {
+    it('should remove photo from list', async () => {
+      const created = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'Location',
         description: 'Description',
       });
 
-      await deletePhoto(env.KV, created.id);
+      await deletePhoto(env.DB, created.id);
 
-      const photos = await listPhotos(env.KV);
+      const photos = await listPhotos(env.DB);
       expect(photos).toHaveLength(0);
     });
   });

@@ -1,10 +1,10 @@
 /**
  * Admin Tracking API Handlers Tests
  *
- * Tests for tracking slug management endpoints.
+ * Tests for tracking slug management endpoints against D1.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
   handleListTracking,
@@ -13,16 +13,19 @@ import {
   handleDeleteTracking,
 } from '../../../handlers/api/tracking';
 import { createTrackingSlug, getTrackingSlug, recordTrackingEvent } from '../../../dao/tracking.dao';
-import { KV_PREFIX } from '../../../types';
 
 describe('Admin Tracking API Handlers', () => {
+  beforeAll(async () => {
+    await env.DB.exec('PRAGMA foreign_keys = ON');
+    await env.DB.exec("CREATE TABLE IF NOT EXISTS tracking_slugs (slug TEXT PRIMARY KEY, tag TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)");
+    await env.DB.exec('CREATE INDEX IF NOT EXISTS idx_tracking_slugs_created_at ON tracking_slugs(created_at DESC)');
+    await env.DB.exec("CREATE TABLE IF NOT EXISTS tracking_events (id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT NOT NULL REFERENCES tracking_slugs(slug) ON DELETE CASCADE, timestamp TEXT NOT NULL, page TEXT NOT NULL, referrer TEXT, user_agent TEXT)");
+    await env.DB.exec('CREATE INDEX IF NOT EXISTS idx_tracking_events_slug ON tracking_events(slug, timestamp ASC)');
+  });
+
   beforeEach(async () => {
-    // Clean up all tracking related keys
-    const keys = await env.KV.list({ prefix: KV_PREFIX.TRACKING });
-    for (const key of keys.keys) {
-      await env.KV.delete(key.name);
-    }
-    await env.KV.delete(KV_PREFIX.INDEX_TRACKING);
+    await env.DB.exec('DELETE FROM tracking_events');
+    await env.DB.exec('DELETE FROM tracking_slugs');
   });
 
   describe('handleListTracking', () => {
@@ -35,9 +38,9 @@ describe('Admin Tracking API Handlers', () => {
     });
 
     it('should return all tracking slugs with eventCount', async () => {
-      await createTrackingSlug(env.KV, 'Facebook', 'fb');
-      await createTrackingSlug(env.KV, 'Twitter', 'tw');
-      await createTrackingSlug(env.KV, 'LinkedIn', 'li');
+      await createTrackingSlug(env.DB, 'Facebook', 'fb');
+      await createTrackingSlug(env.DB, 'Twitter', 'tw');
+      await createTrackingSlug(env.DB, 'LinkedIn', 'li');
 
       const response = await handleListTracking(env);
 
@@ -55,9 +58,13 @@ describe('Admin Tracking API Handlers', () => {
     });
 
     it('should return slugs in order (newest first)', async () => {
-      await createTrackingSlug(env.KV, 'First', 'f1');
-      await createTrackingSlug(env.KV, 'Second', 'f2');
-      await createTrackingSlug(env.KV, 'Third', 'f3');
+      // Insert with explicit timestamps to guarantee ordering
+      await env.DB.prepare('INSERT INTO tracking_slugs (slug, tag, created_at) VALUES (?, ?, ?)')
+        .bind('f1', 'First', '2024-01-01T00:00:00.000Z').run();
+      await env.DB.prepare('INSERT INTO tracking_slugs (slug, tag, created_at) VALUES (?, ?, ?)')
+        .bind('f2', 'Second', '2024-02-01T00:00:00.000Z').run();
+      await env.DB.prepare('INSERT INTO tracking_slugs (slug, tag, created_at) VALUES (?, ?, ?)')
+        .bind('f3', 'Third', '2024-03-01T00:00:00.000Z').run();
 
       const response = await handleListTracking(env);
       const data = await response.json() as Array<{ tag: string }>;
@@ -115,7 +122,7 @@ describe('Admin Tracking API Handlers', () => {
     });
 
     it('should return 400 for duplicate slug', async () => {
-      await createTrackingSlug(env.KV, 'First', 'dup');
+      await createTrackingSlug(env.DB, 'First', 'dup');
 
       const request = new Request('http://localhost/api/admin/tracking', {
         method: 'POST',
@@ -130,7 +137,7 @@ describe('Admin Tracking API Handlers', () => {
       expect(data.error).toContain('already exists');
     });
 
-    it('should persist tracking slug in KV', async () => {
+    it('should persist tracking slug in D1', async () => {
       const request = new Request('http://localhost/api/admin/tracking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,7 +146,7 @@ describe('Admin Tracking API Handlers', () => {
 
       await handleCreateTracking(request, env);
 
-      const stored = await getTrackingSlug(env.KV, 'per1');
+      const stored = await getTrackingSlug(env.DB, 'per1');
       expect(stored).not.toBeNull();
       expect(stored!.tag).toBe('Persisted');
     });
@@ -155,7 +162,7 @@ describe('Admin Tracking API Handlers', () => {
     });
 
     it('should return tracking slug by slug', async () => {
-      await createTrackingSlug(env.KV, 'My Tag', 'mytag');
+      await createTrackingSlug(env.DB, 'My Tag', 'mytag');
 
       const response = await handleGetTracking(env, 'mytag');
 
@@ -167,9 +174,9 @@ describe('Admin Tracking API Handlers', () => {
     });
 
     it('should include events in response', async () => {
-      await createTrackingSlug(env.KV, 'With Events', 'evts');
-      await recordTrackingEvent(env.KV, 'evts', { page: '/page1' });
-      await recordTrackingEvent(env.KV, 'evts', { page: '/page2' });
+      await createTrackingSlug(env.DB, 'With Events', 'evts');
+      await recordTrackingEvent(env.DB, 'evts', { page: '/page1' });
+      await recordTrackingEvent(env.DB, 'evts', { page: '/page2' });
 
       const response = await handleGetTracking(env, 'evts');
 
@@ -191,7 +198,7 @@ describe('Admin Tracking API Handlers', () => {
     });
 
     it('should delete tracking slug', async () => {
-      await createTrackingSlug(env.KV, 'To Delete', 'del1');
+      await createTrackingSlug(env.DB, 'To Delete', 'del1');
 
       const response = await handleDeleteTracking(env, 'del1');
 
@@ -199,19 +206,19 @@ describe('Admin Tracking API Handlers', () => {
       const data = await response.json() as { ok: boolean };
       expect(data.ok).toBe(true);
 
-      const deleted = await getTrackingSlug(env.KV, 'del1');
+      const deleted = await getTrackingSlug(env.DB, 'del1');
       expect(deleted).toBeNull();
     });
 
     it('should delete tracking slug with events', async () => {
-      await createTrackingSlug(env.KV, 'With Events', 'evts');
-      await recordTrackingEvent(env.KV, 'evts', { page: '/' });
+      await createTrackingSlug(env.DB, 'With Events', 'evts');
+      await recordTrackingEvent(env.DB, 'evts', { page: '/' });
 
       const response = await handleDeleteTracking(env, 'evts');
 
       expect(response.status).toBe(200);
 
-      const deleted = await getTrackingSlug(env.KV, 'evts');
+      const deleted = await getTrackingSlug(env.DB, 'evts');
       expect(deleted).toBeNull();
     });
   });

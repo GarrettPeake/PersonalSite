@@ -24,7 +24,7 @@ export async function handleTrackingRedirect(
   }
 
   // Verify slug exists (optional - could skip for privacy)
-  const tracking = await getTrackingSlug(env.KV, slug);
+  const tracking = await getTrackingSlug(env.DB, slug);
   if (!tracking) {
     // Redirect anyway to not reveal tracking info
     return Response.redirect(new URL('/', request.url).toString(), 302);

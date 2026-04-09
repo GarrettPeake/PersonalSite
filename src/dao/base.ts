@@ -1,39 +1,39 @@
 /**
- * Base DAO utilities for KV index management
- *
- * The single-table KV design uses index arrays to track all IDs/slugs
- * for listing operations. These functions manage those indexes.
+ * Base DAO utilities for D1 database operations
  */
 
 /**
- * Get an index array from KV
+ * Execute a SELECT query and return the first matching row, or null.
  */
-export async function getIndex(kv: KVNamespace, key: string): Promise<string[]> {
-  const data = await kv.get(key);
-  if (!data) return [];
-  try {
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
+export async function queryOne<T>(
+  db: D1Database,
+  sql: string,
+  params: unknown[] = []
+): Promise<T | null> {
+  const result = await db.prepare(sql).bind(...params).first<T>();
+  return result ?? null;
 }
 
 /**
- * Add an ID to the beginning of an index (newest first)
+ * Execute a SELECT query and return all matching rows.
  */
-export async function addToIndex(kv: KVNamespace, key: string, id: string): Promise<void> {
-  const index = await getIndex(kv, key);
-  if (!index.includes(id)) {
-    index.unshift(id);
-    await kv.put(key, JSON.stringify(index));
-  }
+export async function queryAll<T>(
+  db: D1Database,
+  sql: string,
+  params: unknown[] = []
+): Promise<T[]> {
+  const { results } = await db.prepare(sql).bind(...params).all<T>();
+  return results;
 }
 
 /**
- * Remove an ID from an index
+ * Execute a write statement (INSERT, UPDATE, DELETE) and return the number of rows changed.
  */
-export async function removeFromIndex(kv: KVNamespace, key: string, id: string): Promise<void> {
-  const index = await getIndex(kv, key);
-  const filtered = index.filter((item) => item !== id);
-  await kv.put(key, JSON.stringify(filtered));
+export async function execute(
+  db: D1Database,
+  sql: string,
+  params: unknown[] = []
+): Promise<number> {
+  const result = await db.prepare(sql).bind(...params).run();
+  return result.meta.changes;
 }

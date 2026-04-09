@@ -4,7 +4,7 @@
  * Handles CMS-editable page content (e.g., About page).
  */
 
-import { Env, KV_PREFIX } from '../../types';
+import { Env } from '../../types';
 import { getPageContent, updatePageContent } from '../../dao/page.dao';
 import { jsonResponse, corsHeaders, parseJsonBody } from '../../lib/response';
 
@@ -16,7 +16,7 @@ const PUBLIC_CACHE = 'public, max-age=60, s-maxage=300';
  */
 export async function handleGetAboutPage(env: Env): Promise<Response> {
   try {
-    const page = await getPageContent(env.KV, KV_PREFIX.PAGE_ABOUT);
+    const page = await getPageContent(env.DB, 'about');
     if (!page) {
       return jsonResponse({ content: '', updatedAt: null }, { ...corsHeaders, 'Cache-Control': PUBLIC_CACHE });
     }
@@ -32,7 +32,7 @@ export async function handleGetAboutPage(env: Env): Promise<Response> {
  */
 export async function handleAdminGetAboutPage(env: Env): Promise<Response> {
   try {
-    const page = await getPageContent(env.KV, KV_PREFIX.PAGE_ABOUT);
+    const page = await getPageContent(env.DB, 'about');
     if (!page) {
       return jsonResponse({ content: '', updatedAt: null }, corsHeaders);
     }
@@ -60,7 +60,7 @@ export async function handleAdminUpdateAboutPage(
       return jsonResponse({ error: 'content is required' }, corsHeaders, 400);
     }
 
-    const page = await updatePageContent(env.KV, KV_PREFIX.PAGE_ABOUT, body.content);
+    const page = await updatePageContent(env.DB, 'about', body.content);
     return jsonResponse(page, corsHeaders);
   } catch (error) {
     console.error('Error updating about page:', error);

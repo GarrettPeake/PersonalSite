@@ -22,7 +22,7 @@ const STATIC_PAGES = [
  * Handle GET /sitemap.xml
  */
 export async function handleSitemap(env: Env): Promise<Response> {
-  const posts = await listPosts(env.KV);
+  const posts = await listPosts(env.DB);
 
   const staticEntries = STATIC_PAGES.map(
     (page) => `  <url>

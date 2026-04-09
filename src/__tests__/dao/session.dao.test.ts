@@ -7,12 +7,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession, getSession, deleteSession } from '../../dao/session.dao';
-import { KV_PREFIX } from '../../types';
+import { KV_KEY } from '../../types';
 
 describe('Session DAO', () => {
   beforeEach(async () => {
     // Clean up all session related keys
-    const keys = await env.KV.list({ prefix: KV_PREFIX.SESSION });
+    const keys = await env.KV.list({ prefix: KV_KEY.SESSION });
     for (const key of keys.keys) {
       await env.KV.delete(key.name);
     }
@@ -58,7 +58,7 @@ describe('Session DAO', () => {
     it('should store session in KV', async () => {
       const session = await createSession(env.KV, 3600);
 
-      const stored = await env.KV.get(`${KV_PREFIX.SESSION}${session.token}`);
+      const stored = await env.KV.get(`${KV_KEY.SESSION}${session.token}`);
       expect(stored).toBeDefined();
 
       const parsed = JSON.parse(stored!);
@@ -99,7 +99,7 @@ describe('Session DAO', () => {
         token,
         expiresAt: new Date(Date.now() - 1000).toISOString(), // 1 second ago
       };
-      await env.KV.put(`${KV_PREFIX.SESSION}${token}`, JSON.stringify(expiredSession));
+      await env.KV.put(`${KV_KEY.SESSION}${token}`, JSON.stringify(expiredSession));
 
       const retrieved = await getSession(env.KV, token);
       expect(retrieved).toBeNull();
@@ -111,12 +111,12 @@ describe('Session DAO', () => {
         token,
         expiresAt: new Date(Date.now() - 1000).toISOString(),
       };
-      await env.KV.put(`${KV_PREFIX.SESSION}${token}`, JSON.stringify(expiredSession));
+      await env.KV.put(`${KV_KEY.SESSION}${token}`, JSON.stringify(expiredSession));
 
       await getSession(env.KV, token);
 
       // Session should be deleted
-      const stored = await env.KV.get(`${KV_PREFIX.SESSION}${token}`);
+      const stored = await env.KV.get(`${KV_KEY.SESSION}${token}`);
       expect(stored).toBeNull();
     });
 
@@ -149,7 +149,7 @@ describe('Session DAO', () => {
 
       await deleteSession(env.KV, created.token);
 
-      const stored = await env.KV.get(`${KV_PREFIX.SESSION}${created.token}`);
+      const stored = await env.KV.get(`${KV_KEY.SESSION}${created.token}`);
       expect(stored).toBeNull();
     });
 

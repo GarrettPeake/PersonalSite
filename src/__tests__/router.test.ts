@@ -5,7 +5,7 @@
  * Uses mocked handlers to verify routing logic independently.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { env, createExecutionContext } from 'cloudflare:test';
 import worker from '../index';
 
@@ -262,6 +262,13 @@ describe('Router', () => {
 });
 
 describe('API Route Matching', () => {
+  beforeAll(async () => {
+    // Create D1 tables needed by non-mocked API handlers
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', slug TEXT NOT NULL UNIQUE, content TEXT NOT NULL DEFAULT '', description TEXT, published_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });

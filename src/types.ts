@@ -2,8 +2,11 @@
  * Environment bindings available to the Worker
  */
 export interface Env {
-  // KV Namespace for all data storage (single-table design)
+  // KV Namespace (sessions only)
   KV: KVNamespace;
+
+  // D1 Database for all structured data
+  DB: D1Database;
 
   // R2 Bucket for file uploads
   R2: R2Bucket;
@@ -23,23 +26,10 @@ export interface Env {
 }
 
 /**
- * KV key prefixes for single-table design
+ * KV key prefix (sessions only — all other data is in D1)
  */
-export const KV_PREFIX = {
-  DRAFT: 'draft:',
-  POST: 'post:',
-  POST_SLUG: 'post-slug:',
-  SHARE: 'share:',
+export const KV_KEY = {
   SESSION: 'session:',
-  TRACKING: 'tracking:',
-  PHOTO: 'photo:',
-  PROJECT: 'project:',
-  INDEX_DRAFTS: 'index:drafts',
-  INDEX_POSTS: 'index:posts',
-  INDEX_TRACKING: 'index:tracking',
-  INDEX_PHOTOS: 'index:photos',
-  INDEX_PROJECTS: 'index:projects',
-  PAGE_ABOUT: 'page:about',
 } as const;
 
 // ============================================================================

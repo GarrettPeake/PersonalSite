@@ -18,7 +18,7 @@ import { jsonResponse, corsHeaders, parseJsonBody } from '../../lib/response';
  * GET /api/admin/posts - List all posts (admin view)
  */
 export async function handleAdminListPosts(env: Env): Promise<Response> {
-  const posts = await listPosts(env.KV);
+  const posts = await listPosts(env.DB);
   return jsonResponse(posts, corsHeaders);
 }
 
@@ -26,7 +26,7 @@ export async function handleAdminListPosts(env: Env): Promise<Response> {
  * GET /api/admin/posts/:id - Get a post by ID
  */
 export async function handleAdminGetPost(env: Env, id: string): Promise<Response> {
-  const post = await getPost(env.KV, id);
+  const post = await getPost(env.DB, id);
   if (!post) {
     return jsonResponse({ error: 'Not found' }, corsHeaders, 404);
   }
@@ -49,7 +49,7 @@ export async function handleAdminUpdatePost(
     delete body.publishedAt;
   }
   try {
-    const post = await updatePost(env.KV, id, body);
+    const post = await updatePost(env.DB, id, body);
     if (!post) {
       return jsonResponse({ error: 'Not found' }, corsHeaders, 404);
     }
@@ -63,7 +63,7 @@ export async function handleAdminUpdatePost(
  * DELETE /api/admin/posts/:id - Delete a post
  */
 export async function handleAdminDeletePost(env: Env, id: string): Promise<Response> {
-  const success = await deletePost(env.KV, id);
+  const success = await deletePost(env.DB, id);
   if (!success) {
     return jsonResponse({ error: 'Not found' }, corsHeaders, 404);
   }
@@ -75,7 +75,7 @@ export async function handleAdminDeletePost(env: Env, id: string): Promise<Respo
  */
 export async function handleUnpublishPost(env: Env, id: string): Promise<Response> {
   try {
-    const draft = await unpublishPost(env.KV, id);
+    const draft = await unpublishPost(env.DB, id);
     return jsonResponse(draft, corsHeaders);
   } catch (e) {
     return jsonResponse({ error: (e as Error).message }, corsHeaders, 400);

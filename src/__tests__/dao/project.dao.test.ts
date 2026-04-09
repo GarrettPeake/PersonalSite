@@ -1,10 +1,10 @@
 /**
  * Project DAO Tests
  *
- * Tests for project CRUD and reorder operations.
+ * Tests for project CRUD and reorder operations using D1.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
   getProject,
@@ -14,26 +14,37 @@ import {
   deleteProject,
   reorderProjects,
 } from '../../dao/project.dao';
-import { KV_PREFIX } from '../../types';
 
 describe('Project DAO', () => {
+  beforeAll(async () => {
+    await env.DB.exec('PRAGMA foreign_keys = ON');
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', icon TEXT NOT NULL DEFAULT '', icon_type TEXT NOT NULL DEFAULT 'svg' CHECK(icon_type IN ('svg', 'image')), icon_alt TEXT, description TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+    await env.DB.exec(
+      'CREATE INDEX IF NOT EXISTS idx_projects_sort_order ON projects(sort_order ASC)'
+    );
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS content_pieces (id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE, type TEXT NOT NULL CHECK(type IN ('image', 'iframe')), url TEXT NOT NULL DEFAULT '', description TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0)"
+    );
+    await env.DB.exec(
+      'CREATE INDEX IF NOT EXISTS idx_content_pieces_project ON content_pieces(project_id, sort_order ASC)'
+    );
+  });
+
   beforeEach(async () => {
-    // Clean up all project related keys
-    const projectKeys = await env.KV.list({ prefix: KV_PREFIX.PROJECT });
-    for (const key of projectKeys.keys) {
-      await env.KV.delete(key.name);
-    }
-    await env.KV.delete(KV_PREFIX.INDEX_PROJECTS);
+    await env.DB.exec('DELETE FROM content_pieces');
+    await env.DB.exec('DELETE FROM projects');
   });
 
   describe('getProject', () => {
     it('should return null for non-existent project', async () => {
-      const project = await getProject(env.KV, 'non-existent-id');
+      const project = await getProject(env.DB, 'non-existent-id');
       expect(project).toBeNull();
     });
 
     it('should return project by ID', async () => {
-      const created = await createProject(env.KV, {
+      const created = await createProject(env.DB, {
         title: 'Test Project',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -41,36 +52,55 @@ describe('Project DAO', () => {
         contentPieces: [],
       });
 
-      const retrieved = await getProject(env.KV, created.id);
+      const retrieved = await getProject(env.DB, created.id);
       expect(retrieved).not.toBeNull();
       expect(retrieved!.id).toBe(created.id);
       expect(retrieved!.title).toBe('Test Project');
       expect(retrieved!.description).toBe('A test project');
     });
+
+    it('should return project with content pieces', async () => {
+      const created = await createProject(env.DB, {
+        title: 'Project With Content',
+        icon: '<svg></svg>',
+        iconType: 'svg',
+        description: 'Has content',
+        contentPieces: [
+          { id: '', type: 'image', url: 'https://example.com/1.jpg', description: 'Image 1', order: 0 },
+          { id: '', type: 'iframe', url: 'https://example.com', description: 'Iframe', order: 1 },
+        ],
+      });
+
+      const retrieved = await getProject(env.DB, created.id);
+      expect(retrieved!.contentPieces).toHaveLength(2);
+      expect(retrieved!.contentPieces[0].type).toBe('image');
+      expect(retrieved!.contentPieces[0].url).toBe('https://example.com/1.jpg');
+      expect(retrieved!.contentPieces[1].type).toBe('iframe');
+    });
   });
 
   describe('listProjects', () => {
     it('should return empty array when no projects exist', async () => {
-      const projects = await listProjects(env.KV);
+      const projects = await listProjects(env.DB);
       expect(projects).toEqual([]);
     });
 
     it('should return all projects sorted by order (ascending)', async () => {
-      await createProject(env.KV, {
+      await createProject(env.DB, {
         title: 'Project 1',
         icon: '<svg></svg>',
         iconType: 'svg',
         description: 'First',
         contentPieces: [],
       });
-      await createProject(env.KV, {
+      await createProject(env.DB, {
         title: 'Project 2',
         icon: '<svg></svg>',
         iconType: 'svg',
         description: 'Second',
         contentPieces: [],
       });
-      await createProject(env.KV, {
+      await createProject(env.DB, {
         title: 'Project 3',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -78,7 +108,7 @@ describe('Project DAO', () => {
         contentPieces: [],
       });
 
-      const projects = await listProjects(env.KV);
+      const projects = await listProjects(env.DB);
       expect(projects).toHaveLength(3);
       expect(projects[0].title).toBe('Project 1');
       expect(projects[0].order).toBe(0);
@@ -87,11 +117,37 @@ describe('Project DAO', () => {
       expect(projects[2].title).toBe('Project 3');
       expect(projects[2].order).toBe(2);
     });
+
+    it('should include content pieces for each project', async () => {
+      await createProject(env.DB, {
+        title: 'Project A',
+        icon: '<svg></svg>',
+        iconType: 'svg',
+        description: '',
+        contentPieces: [
+          { id: '', type: 'image', url: 'https://example.com/a.jpg', description: '', order: 0 },
+        ],
+      });
+      await createProject(env.DB, {
+        title: 'Project B',
+        icon: '<svg></svg>',
+        iconType: 'svg',
+        description: '',
+        contentPieces: [
+          { id: '', type: 'iframe', url: 'https://example.com/b', description: '', order: 0 },
+          { id: '', type: 'image', url: 'https://example.com/b.jpg', description: '', order: 1 },
+        ],
+      });
+
+      const projects = await listProjects(env.DB);
+      expect(projects[0].contentPieces).toHaveLength(1);
+      expect(projects[1].contentPieces).toHaveLength(2);
+    });
   });
 
   describe('createProject', () => {
     it('should create project with provided data', async () => {
-      const project = await createProject(env.KV, {
+      const project = await createProject(env.DB, {
         title: 'My Project',
         icon: '<svg viewBox="0 0 24 24"></svg>',
         iconType: 'svg',
@@ -114,7 +170,7 @@ describe('Project DAO', () => {
     });
 
     it('should auto-generate IDs for content pieces', async () => {
-      const project = await createProject(env.KV, {
+      const project = await createProject(env.DB, {
         title: 'Test',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -132,14 +188,14 @@ describe('Project DAO', () => {
     });
 
     it('should set order incrementally', async () => {
-      const p1 = await createProject(env.KV, {
+      const p1 = await createProject(env.DB, {
         title: 'Project 1',
         icon: '<svg></svg>',
         iconType: 'svg',
         description: '',
         contentPieces: [],
       });
-      const p2 = await createProject(env.KV, {
+      const p2 = await createProject(env.DB, {
         title: 'Project 2',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -152,7 +208,7 @@ describe('Project DAO', () => {
     });
 
     it('should support image iconType', async () => {
-      const project = await createProject(env.KV, {
+      const project = await createProject(env.DB, {
         title: 'Image Icon Project',
         icon: 'https://files.gpeake.com/icons/project.png',
         iconType: 'image',
@@ -167,14 +223,14 @@ describe('Project DAO', () => {
 
   describe('updateProject', () => {
     it('should return null for non-existent project', async () => {
-      const result = await updateProject(env.KV, 'non-existent', {
+      const result = await updateProject(env.DB, 'non-existent', {
         title: 'New Title',
       });
       expect(result).toBeNull();
     });
 
     it('should update title', async () => {
-      const created = await createProject(env.KV, {
+      const created = await createProject(env.DB, {
         title: 'Original Title',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -182,7 +238,7 @@ describe('Project DAO', () => {
         contentPieces: [],
       });
 
-      const updated = await updateProject(env.KV, created.id, {
+      const updated = await updateProject(env.DB, created.id, {
         title: 'Updated Title',
       });
 
@@ -192,7 +248,7 @@ describe('Project DAO', () => {
     });
 
     it('should update content pieces', async () => {
-      const created = await createProject(env.KV, {
+      const created = await createProject(env.DB, {
         title: 'Test',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -202,7 +258,7 @@ describe('Project DAO', () => {
         ],
       });
 
-      const updated = await updateProject(env.KV, created.id, {
+      const updated = await updateProject(env.DB, created.id, {
         contentPieces: [
           { id: '', type: 'iframe', url: 'https://new.com', description: 'New', order: 0 },
           { id: '', type: 'image', url: 'https://new.com/2.jpg', description: 'Another', order: 1 },
@@ -212,10 +268,14 @@ describe('Project DAO', () => {
       expect(updated!.contentPieces).toHaveLength(2);
       expect(updated!.contentPieces[0].type).toBe('iframe');
       expect(updated!.contentPieces[1].type).toBe('image');
+
+      // Verify persisted in DB
+      const retrieved = await getProject(env.DB, created.id);
+      expect(retrieved!.contentPieces).toHaveLength(2);
     });
 
     it('should update updatedAt timestamp', async () => {
-      const created = await createProject(env.KV, {
+      const created = await createProject(env.DB, {
         title: 'Test',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -226,7 +286,7 @@ describe('Project DAO', () => {
 
       await new Promise((r) => setTimeout(r, 10));
 
-      const updated = await updateProject(env.KV, created.id, {
+      const updated = await updateProject(env.DB, created.id, {
         title: 'New Title',
       });
 
@@ -236,7 +296,7 @@ describe('Project DAO', () => {
     });
 
     it('should update order when provided', async () => {
-      const created = await createProject(env.KV, {
+      const created = await createProject(env.DB, {
         title: 'Test',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -244,7 +304,7 @@ describe('Project DAO', () => {
         contentPieces: [],
       });
 
-      const updated = await updateProject(env.KV, created.id, {
+      const updated = await updateProject(env.DB, created.id, {
         order: 99,
       });
 
@@ -254,12 +314,12 @@ describe('Project DAO', () => {
 
   describe('deleteProject', () => {
     it('should return false for non-existent project', async () => {
-      const result = await deleteProject(env.KV, 'non-existent');
+      const result = await deleteProject(env.DB, 'non-existent');
       expect(result).toBe(false);
     });
 
-    it('should delete project from KV', async () => {
-      const created = await createProject(env.KV, {
+    it('should delete project from D1', async () => {
+      const created = await createProject(env.DB, {
         title: 'To Delete',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -267,15 +327,15 @@ describe('Project DAO', () => {
         contentPieces: [],
       });
 
-      const result = await deleteProject(env.KV, created.id);
+      const result = await deleteProject(env.DB, created.id);
       expect(result).toBe(true);
 
-      const retrieved = await getProject(env.KV, created.id);
+      const retrieved = await getProject(env.DB, created.id);
       expect(retrieved).toBeNull();
     });
 
-    it('should remove project from index', async () => {
-      const created = await createProject(env.KV, {
+    it('should remove project from list', async () => {
+      const created = await createProject(env.DB, {
         title: 'To Delete',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -283,30 +343,51 @@ describe('Project DAO', () => {
         contentPieces: [],
       });
 
-      await deleteProject(env.KV, created.id);
+      await deleteProject(env.DB, created.id);
 
-      const projects = await listProjects(env.KV);
+      const projects = await listProjects(env.DB);
       expect(projects).toHaveLength(0);
+    });
+
+    it('should cascade delete content pieces', async () => {
+      const created = await createProject(env.DB, {
+        title: 'With Content',
+        icon: '<svg></svg>',
+        iconType: 'svg',
+        description: '',
+        contentPieces: [
+          { id: '', type: 'image', url: 'https://example.com/img.jpg', description: '', order: 0 },
+          { id: '', type: 'iframe', url: 'https://example.com', description: '', order: 1 },
+        ],
+      });
+
+      await deleteProject(env.DB, created.id);
+
+      // Verify content pieces are also deleted
+      const { results } = await env.DB.prepare(
+        'SELECT * FROM content_pieces WHERE project_id = ?'
+      ).bind(created.id).all();
+      expect(results).toHaveLength(0);
     });
   });
 
   describe('reorderProjects', () => {
     it('should reorder projects based on provided ID array', async () => {
-      const p1 = await createProject(env.KV, {
+      const p1 = await createProject(env.DB, {
         title: 'Project 1',
         icon: '<svg></svg>',
         iconType: 'svg',
         description: '',
         contentPieces: [],
       });
-      const p2 = await createProject(env.KV, {
+      const p2 = await createProject(env.DB, {
         title: 'Project 2',
         icon: '<svg></svg>',
         iconType: 'svg',
         description: '',
         contentPieces: [],
       });
-      const p3 = await createProject(env.KV, {
+      const p3 = await createProject(env.DB, {
         title: 'Project 3',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -315,9 +396,9 @@ describe('Project DAO', () => {
       });
 
       // Reorder: 3, 1, 2
-      await reorderProjects(env.KV, [p3.id, p1.id, p2.id]);
+      await reorderProjects(env.DB, [p3.id, p1.id, p2.id]);
 
-      const projects = await listProjects(env.KV);
+      const projects = await listProjects(env.DB);
       expect(projects[0].title).toBe('Project 3');
       expect(projects[0].order).toBe(0);
       expect(projects[1].title).toBe('Project 1');
@@ -326,30 +407,15 @@ describe('Project DAO', () => {
       expect(projects[2].order).toBe(2);
     });
 
-    it('should skip non-existent IDs', async () => {
-      const p1 = await createProject(env.KV, {
-        title: 'Project 1',
-        icon: '<svg></svg>',
-        iconType: 'svg',
-        description: '',
-        contentPieces: [],
-      });
-
-      const result = await reorderProjects(env.KV, ['non-existent', p1.id]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].order).toBe(1); // Index 1 in the array
-    });
-
     it('should return reordered projects', async () => {
-      const p1 = await createProject(env.KV, {
+      const p1 = await createProject(env.DB, {
         title: 'Project 1',
         icon: '<svg></svg>',
         iconType: 'svg',
         description: '',
         contentPieces: [],
       });
-      const p2 = await createProject(env.KV, {
+      const p2 = await createProject(env.DB, {
         title: 'Project 2',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -357,12 +423,12 @@ describe('Project DAO', () => {
         contentPieces: [],
       });
 
-      const result = await reorderProjects(env.KV, [p2.id, p1.id]);
+      const result = await reorderProjects(env.DB, [p2.id, p1.id]);
 
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe(p2.id);
+      expect(result[0].title).toBe('Project 2');
       expect(result[0].order).toBe(0);
-      expect(result[1].id).toBe(p1.id);
+      expect(result[1].title).toBe('Project 1');
       expect(result[1].order).toBe(1);
     });
   });

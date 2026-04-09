@@ -1,10 +1,10 @@
 /**
  * Admin Drafts API Handlers Tests
  *
- * Tests for draft management endpoints.
+ * Tests for draft management endpoints against D1.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
   handleListDrafts,
@@ -18,20 +18,23 @@ import {
   handleGetDraftByShareToken,
 } from '../../../handlers/api/drafts';
 import { createDraft, getDraft, getDraftByShareToken } from '../../../dao/draft.dao';
-import { KV_PREFIX } from '../../../types';
 
 describe('Admin Drafts API Handlers', () => {
+  beforeAll(async () => {
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS drafts (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', slug TEXT NOT NULL DEFAULT '', content TEXT NOT NULL DEFAULT '', description TEXT, share_token TEXT UNIQUE, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+    await env.DB.exec("CREATE INDEX IF NOT EXISTS idx_drafts_updated_at ON drafts(updated_at DESC)");
+    await env.DB.exec("CREATE INDEX IF NOT EXISTS idx_drafts_share_token ON drafts(share_token)");
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', slug TEXT NOT NULL UNIQUE, content TEXT NOT NULL DEFAULT '', description TEXT, published_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+    await env.DB.exec("CREATE INDEX IF NOT EXISTS idx_posts_published_at ON posts(published_at DESC)");
+  });
+
   beforeEach(async () => {
-    // Clean up all related keys
-    const prefixes = [KV_PREFIX.DRAFT, KV_PREFIX.SHARE, KV_PREFIX.POST, KV_PREFIX.POST_SLUG];
-    for (const prefix of prefixes) {
-      const keys = await env.KV.list({ prefix });
-      for (const key of keys.keys) {
-        await env.KV.delete(key.name);
-      }
-    }
-    await env.KV.delete(KV_PREFIX.INDEX_DRAFTS);
-    await env.KV.delete(KV_PREFIX.INDEX_POSTS);
+    await env.DB.exec('DELETE FROM drafts');
+    await env.DB.exec('DELETE FROM posts');
   });
 
   describe('handleListDrafts', () => {
@@ -44,8 +47,8 @@ describe('Admin Drafts API Handlers', () => {
     });
 
     it('should return all drafts', async () => {
-      await createDraft(env.KV, { title: 'Draft 1', slug: 'draft-1', content: 'Content 1' });
-      await createDraft(env.KV, { title: 'Draft 2', slug: 'draft-2', content: 'Content 2' });
+      await createDraft(env.DB, { title: 'Draft 1', slug: 'draft-1', content: 'Content 1' });
+      await createDraft(env.DB, { title: 'Draft 2', slug: 'draft-2', content: 'Content 2' });
 
       const response = await handleListDrafts(env);
 
@@ -80,7 +83,7 @@ describe('Admin Drafts API Handlers', () => {
       expect(data.title).toBe('New Draft');
     });
 
-    it('should persist draft in KV', async () => {
+    it('should persist draft in D1', async () => {
       const request = new Request('http://localhost/api/admin/drafts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,7 +97,7 @@ describe('Admin Drafts API Handlers', () => {
       const response = await handleCreateDraft(request, env);
       const data = await response.json() as { id: string };
 
-      const stored = await getDraft(env.KV, data.id);
+      const stored = await getDraft(env.DB, data.id);
       expect(stored).not.toBeNull();
       expect(stored!.title).toBe('Persisted Draft');
     });
@@ -110,7 +113,7 @@ describe('Admin Drafts API Handlers', () => {
     });
 
     it('should return draft by ID', async () => {
-      const draft = await createDraft(env.KV, {
+      const draft = await createDraft(env.DB, {
         title: 'My Draft',
         slug: 'my-draft',
         content: 'Content',
@@ -139,7 +142,7 @@ describe('Admin Drafts API Handlers', () => {
     });
 
     it('should update draft fields', async () => {
-      const draft = await createDraft(env.KV, {
+      const draft = await createDraft(env.DB, {
         title: 'Original',
         slug: 'original',
         content: 'Original content',
@@ -168,7 +171,7 @@ describe('Admin Drafts API Handlers', () => {
     });
 
     it('should delete draft', async () => {
-      const draft = await createDraft(env.KV, {
+      const draft = await createDraft(env.DB, {
         title: 'To Delete',
         slug: 'to-delete',
         content: 'Content',
@@ -180,7 +183,7 @@ describe('Admin Drafts API Handlers', () => {
       const data = await response.json() as { ok: boolean };
       expect(data.ok).toBe(true);
 
-      const deleted = await getDraft(env.KV, draft.id);
+      const deleted = await getDraft(env.DB, draft.id);
       expect(deleted).toBeNull();
     });
   });
@@ -195,7 +198,7 @@ describe('Admin Drafts API Handlers', () => {
     });
 
     it('should publish draft and return post', async () => {
-      const draft = await createDraft(env.KV, {
+      const draft = await createDraft(env.DB, {
         title: 'Draft to Publish',
         slug: 'draft-to-publish',
         content: 'Content',
@@ -209,17 +212,17 @@ describe('Admin Drafts API Handlers', () => {
       expect(data.publishedAt).toBeDefined();
 
       // Draft should be deleted
-      const deletedDraft = await getDraft(env.KV, draft.id);
+      const deletedDraft = await getDraft(env.DB, draft.id);
       expect(deletedDraft).toBeNull();
     });
 
     it('should return 400 for duplicate slug', async () => {
-      const draft1 = await createDraft(env.KV, {
+      const draft1 = await createDraft(env.DB, {
         title: 'First',
         slug: 'same-slug',
         content: 'C1',
       });
-      const draft2 = await createDraft(env.KV, {
+      const draft2 = await createDraft(env.DB, {
         title: 'Second',
         slug: 'same-slug',
         content: 'C2',
@@ -242,7 +245,7 @@ describe('Admin Drafts API Handlers', () => {
     });
 
     it('should create share token and return URL', async () => {
-      const draft = await createDraft(env.KV, {
+      const draft = await createDraft(env.DB, {
         title: 'Draft to Share',
         slug: 'draft-to-share',
         content: 'Content',
@@ -258,7 +261,7 @@ describe('Admin Drafts API Handlers', () => {
     });
 
     it('should create usable share token', async () => {
-      const draft = await createDraft(env.KV, {
+      const draft = await createDraft(env.DB, {
         title: 'Draft to Share',
         slug: 'draft-to-share',
         content: 'Content',
@@ -267,7 +270,7 @@ describe('Admin Drafts API Handlers', () => {
       const response = await handleShareDraft(env, draft.id);
       const data = await response.json() as { token: string };
 
-      const sharedDraft = await getDraftByShareToken(env.KV, data.token);
+      const sharedDraft = await getDraftByShareToken(env.DB, data.token);
       expect(sharedDraft).not.toBeNull();
       expect(sharedDraft!.id).toBe(draft.id);
     });
@@ -275,7 +278,7 @@ describe('Admin Drafts API Handlers', () => {
 
   describe('handleRevokeShareDraft', () => {
     it('should return ok for draft without share token', async () => {
-      const draft = await createDraft(env.KV, {
+      const draft = await createDraft(env.DB, {
         title: 'Draft',
         slug: 'draft',
         content: 'Content',
@@ -289,7 +292,7 @@ describe('Admin Drafts API Handlers', () => {
     });
 
     it('should revoke share token', async () => {
-      const draft = await createDraft(env.KV, {
+      const draft = await createDraft(env.DB, {
         title: 'Draft',
         slug: 'draft',
         content: 'Content',
@@ -305,7 +308,7 @@ describe('Admin Drafts API Handlers', () => {
       expect(revokeResponse.status).toBe(200);
 
       // Token should no longer work
-      const sharedDraft = await getDraftByShareToken(env.KV, shareData.token);
+      const sharedDraft = await getDraftByShareToken(env.DB, shareData.token);
       expect(sharedDraft).toBeNull();
     });
   });
@@ -320,7 +323,7 @@ describe('Admin Drafts API Handlers', () => {
     });
 
     it('should return draft by share token', async () => {
-      const draft = await createDraft(env.KV, {
+      const draft = await createDraft(env.DB, {
         title: 'Shared Draft',
         slug: 'shared-draft',
         content: 'Content',
