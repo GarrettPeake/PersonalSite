@@ -27,7 +27,7 @@ const PUBLIC_CACHE = 'public, max-age=60, s-maxage=300';
  */
 export async function handleListProjectsPublic(env: Env): Promise<Response> {
   try {
-    const projects = await listProjects(env.KV);
+    const projects = await listProjects(env.DB);
 
     // Strip internal IDs from public response
     const publicProjects = projects.map(({ id, ...rest }) => rest);
@@ -47,7 +47,7 @@ export async function handleListProjectsPublic(env: Env): Promise<Response> {
  */
 export async function handleAdminListProjects(env: Env): Promise<Response> {
   try {
-    const projects = await listProjects(env.KV);
+    const projects = await listProjects(env.DB);
     return jsonResponse(projects, corsHeaders);
   } catch (error) {
     console.error('Error listing projects:', error);
@@ -60,7 +60,7 @@ export async function handleAdminListProjects(env: Env): Promise<Response> {
  */
 export async function handleAdminGetProject(env: Env, id: string): Promise<Response> {
   try {
-    const project = await getProject(env.KV, id);
+    const project = await getProject(env.DB, id);
 
     if (!project) {
       return jsonResponse({ error: 'Project not found' }, corsHeaders, 404);
@@ -125,7 +125,7 @@ export async function handleCreateProject(request: Request, env: Env): Promise<R
       }
     }
 
-    const project = await createProject(env.KV, {
+    const project = await createProject(env.DB, {
       title: body.title,
       icon: body.icon,
       iconType: body.iconType,
@@ -188,7 +188,7 @@ export async function handleUpdateProject(
       }
     }
 
-    const project = await updateProject(env.KV, id, body);
+    const project = await updateProject(env.DB, id, body);
 
     if (!project) {
       return jsonResponse({ error: 'Project not found' }, corsHeaders, 404);
@@ -206,7 +206,7 @@ export async function handleUpdateProject(
  */
 export async function handleDeleteProject(env: Env, id: string): Promise<Response> {
   try {
-    const deleted = await deleteProject(env.KV, id);
+    const deleted = await deleteProject(env.DB, id);
 
     if (!deleted) {
       return jsonResponse({ error: 'Project not found' }, corsHeaders, 404);
@@ -243,7 +243,7 @@ export async function handleReorderProjects(request: Request, env: Env): Promise
       }
     }
 
-    const projects = await reorderProjects(env.KV, body.ids);
+    const projects = await reorderProjects(env.DB, body.ids);
     return jsonResponse(projects, corsHeaders);
   } catch (error) {
     console.error('Error reordering projects:', error);

@@ -14,14 +14,14 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 ### Implemented
 
 - [x] Project scaffolding (npm, TypeScript, Wrangler)
-- [x] Cloudflare bindings configured (KV, R2, Analytics Engine)
+- [x] Cloudflare bindings configured (D1, KV, R2, Analytics Engine)
 - [x] Basic Worker entry point with route handling skeleton
 - [x] Static asset configuration with `run_worker_first` routing
 - [x] Theme CSS variables (light/dark mode) with Space Grotesk display font
 - [x] Base CSS reset and typography
 - [x] Unified component CSS (buttons, cards, forms, dialogs, tables)
 - [x] Web components with external shared stylesheet
-- [x] KV data access via DAOs (CRUD for all entities)
+- [x] D1 data access via DAOs (CRUD for all entities)
 - [x] Custom markdown renderer with macro support (server + client)
 - [x] `/Banner` macro implementation
 - [x] Core web components (theme toggle, photo modal, blog modal)
@@ -42,7 +42,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Modular backend architecture (DAOs, handlers, templates)
 - [x] Vitest testing infrastructure for Workers
 - [x] File upload to R2 (`POST /api/admin/upload`)
-- [x] Comprehensive test coverage for all backend modules (527 tests)
+- [x] Comprehensive test coverage for all backend modules (504 tests)
 - [x] Optional post descriptions for blog listing (replaces auto-generated excerpts)
 - [x] Admin photo management page with upload, edit, delete
 - [x] Photo CRUD API endpoints (public and admin)
@@ -89,6 +89,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Magic byte validation on file uploads (JPEG, PNG, GIF, WebP, PDF, MP4, WebM, QuickTime)
 - [x] Request body size limit (1MB) on JSON endpoints via `isBodyTooLarge` helper in `parseJsonBody`
 - [x] PNG and WebP metadata stripping on photo upload (`stripPngMetadata`, `stripWebpMetadata` in exif.ts)
+- [x] D1 migration: all entity storage moved from KV to D1 (SQLite), KV retained only for sessions and rate limiting
 
 ### Not Yet Implemented
 
@@ -100,39 +101,47 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 |-------|------------|
 | Frontend | Vanilla HTML, CSS, JS with Web Components |
 | Backend | Cloudflare Workers (TypeScript) |
-| Storage | Cloudflare KV (single-table design) |
+| Storage | Cloudflare D1 (SQLite) |
+| Sessions | Cloudflare KV (TTL-based expiry for sessions and rate limiting) |
 | Files | Cloudflare R2 (`gpeake-files` bucket) |
 | Analytics | Workers Analytics Engine |
 
 ## Cloudflare Bindings
 
 ```
-KV        → env.KV       (namespace: gpeake-data, id: 255ea6f6b3514decb5483765d99cf66a)
+DB        → env.DB       (D1 database: personal-site, id: 9ed05dc5-17fa-4422-a09e-e5fb2c75f86d)
+KV        → env.KV       (namespace: gpeake-data — sessions and rate limiting only)
 R2        → env.R2       (bucket: gpeake-files)
 ANALYTICS → env.ANALYTICS (dataset: page_views)
 ASSETS    → env.ASSETS   (static file serving)
 ```
 
-## KV Single-Table Design
+## D1 Schema
 
-All data uses prefixed keys in a single KV namespace:
+All entity data is stored in a D1 (SQLite) database. Schema defined in `scripts/schema.sql`.
 
-| Prefix | Purpose |
-|--------|---------|
-| `draft:{uuid}` | Draft content |
-| `post:{uuid}` | Published post content |
-| `post-slug:{slug}` | Slug → UUID lookup |
-| `share:{token}` | Share token → draft UUID lookup |
-| `session:{token}` | Auth session data |
-| `tracking:{slug}` | Tracking slug data + events |
-| `photo:{uuid}` | Photo metadata |
-| `project:{uuid}` | Project metadata with content pieces |
-| `index:drafts` | Array of all draft UUIDs |
-| `index:posts` | Array of all post UUIDs |
-| `index:tracking` | Array of all tracking slugs |
-| `index:photos` | Array of all photo UUIDs |
-| `index:projects` | Array of all project UUIDs |
-| `page:about` | About page CMS content |
+| Table | Purpose |
+|-------|---------|
+| `posts` | Published blog posts (id, title, slug UNIQUE, content, description, published_at, updated_at) |
+| `drafts` | Draft posts (id, title, slug, content, description, share_token UNIQUE, created_at, updated_at) |
+| `photos` | Photo metadata (id, url, filename, location, description, published_at, updated_at) |
+| `projects` | Project metadata (id, title, icon, icon_type, icon_alt, description, sort_order, created_at, updated_at) |
+| `content_pieces` | Project content pieces, FK → projects (id, project_id, type, url, description, sort_order) |
+| `tracking_slugs` | Tracking link slugs (slug PK, tag, created_at) |
+| `tracking_events` | Tracking events, FK → tracking_slugs (id AUTOINCREMENT, slug, timestamp, page, referrer, user_agent) |
+| `pages` | CMS page content (key PK, content, updated_at) |
+
+Foreign keys use `ON DELETE CASCADE`: deleting a project cascades to its content_pieces, deleting a tracking slug cascades to its events.
+
+## KV Keys (Sessions and Rate Limiting Only)
+
+KV is used only for data that benefits from TTL-based auto-expiry:
+
+| Key Pattern | Purpose |
+|-------------|---------|
+| `session:{token}` | Auth session data (7-day TTL) |
+| `ratelimit:{ip}` | Login rate limiting (TTL-based) |
+| `trackrate:{ip}` | Tracking rate limiting (TTL-based) |
 
 ## Routing
 
@@ -165,11 +174,14 @@ SPA client-side routes (handled by `router.js`):
 ├── vitest.config.ts      # Vitest configuration for Workers testing
 ├── DESIGN.md             # Full design spec (end goal)
 ├── CLAUDE.md             # This file (current state)
+├── /scripts
+│   ├── schema.sql            # D1 database schema
+│   └── migrate-kv-to-d1.ts  # KV → D1 migration script
 ├── /src
 │   ├── index.ts          # Worker entry point (router only)
-│   ├── types.ts          # TypeScript types and KV prefixes
+│   ├── types.ts          # TypeScript types and KV_KEY constants
 │   ├── /dao              # Data Access Objects (one per entity)
-│   │   ├── base.ts       # Shared index management utilities
+│   │   ├── base.ts       # D1 query utilities (queryOne, queryAll, execute)
 │   │   ├── draft.dao.ts  # Draft CRUD + sharing operations
 │   │   ├── post.dao.ts   # Post CRUD + publish/unpublish
 │   │   ├── tracking.dao.ts # Tracking CRUD + events
@@ -642,15 +654,15 @@ This separation ensures:
 The backend is organized into modular, testable components:
 
 **Data Access Objects (`src/dao/`)**
-Each entity has its own DAO file with CRUD operations:
-- `draft.dao.ts`: Draft operations + sharing (`getDraft`, `listDrafts`, `createDraft`, `updateDraft`, `deleteDraft`, `createShareToken`, `getDraftByShareToken`)
-- `post.dao.ts`: Post operations + publishing (`getPost`, `getPostBySlug`, `listPosts`, `updatePost`, `deletePost`, `publishDraft`, `unpublishPost`)
-- `tracking.dao.ts`: Tracking operations + events (`getTrackingSlug`, `listTrackingSlugs`, `createTrackingSlug`, `deleteTrackingSlug`, `recordTrackingEvent`)
-- `session.dao.ts`: Session operations (`createSession`, `getSession`, `deleteSession`)
-- `photo.dao.ts`: Photo operations (`getPhoto`, `listPhotos`, `createPhoto`, `updatePhoto`, `deletePhoto`)
-- `project.dao.ts`: Project operations + reorder (`getProject`, `listProjects`, `createProject`, `updateProject`, `deleteProject`, `reorderProjects`)
-- `page.dao.ts`: Page content operations (`getPageContent`, `updatePageContent`)
-- `base.ts`: Shared index management (`getIndex`, `addToIndex`, `removeFromIndex`)
+All DAOs use D1 (`env.DB`) except session.dao.ts which uses KV (`env.KV`) for TTL-based expiry:
+- `draft.dao.ts`: Draft operations + sharing (`getDraft`, `listDrafts`, `createDraft`, `updateDraft`, `deleteDraft`, `createShareToken`, `getDraftByShareToken`) — D1
+- `post.dao.ts`: Post operations + publishing (`getPost`, `getPostBySlug`, `listPosts`, `updatePost`, `deletePost`, `publishDraft`, `unpublishPost`) — D1. `listPosts` returns `Omit<Post, 'content'>[]`.
+- `tracking.dao.ts`: Tracking operations + events (`getTrackingSlug`, `listTrackingSlugs`, `createTrackingSlug`, `deleteTrackingSlug`, `recordTrackingEvent`) — D1. Events normalized into `tracking_events` table.
+- `session.dao.ts`: Session operations (`createSession`, `getSession`, `deleteSession`) — KV (uses TTL auto-expiry)
+- `photo.dao.ts`: Photo operations (`getPhoto`, `listPhotos`, `createPhoto`, `updatePhoto`, `deletePhoto`) — D1
+- `project.dao.ts`: Project operations + reorder (`getProject`, `listProjects`, `createProject`, `updateProject`, `deleteProject`, `reorderProjects`) — D1. Content pieces normalized into `content_pieces` table. Reorder uses D1 batch transaction.
+- `page.dao.ts`: Page content operations (`getPageContent`, `updatePageContent`) — D1
+- `base.ts`: D1 query utilities (`queryOne<T>`, `queryAll<T>`, `execute`)
 
 **Handlers (`src/handlers/`)**
 Request handlers are split by route type:

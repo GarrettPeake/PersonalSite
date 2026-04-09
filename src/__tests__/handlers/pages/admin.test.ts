@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { env } from 'cloudflare:test';
 import { handleAdmin } from '../../../handlers/pages/admin';
 import { createSession } from '../../../dao/session.dao';
-import { KV_PREFIX } from '../../../types';
+import { KV_KEY } from '../../../types';
 
 // Mock ASSETS.fetch
 const mockAssetsFetch = vi.fn(() => Promise.resolve(new Response('admin page')));
@@ -18,7 +18,7 @@ describe('Admin Page Handler', () => {
 
   beforeEach(async () => {
     // Clean up sessions
-    const keys = await env.KV.list({ prefix: KV_PREFIX.SESSION });
+    const keys = await env.KV.list({ prefix: KV_KEY.SESSION });
     for (const key of keys.keys) {
       await env.KV.delete(key.name);
     }
@@ -162,7 +162,7 @@ describe('Admin Page Handler', () => {
         token,
         expiresAt: new Date(Date.now() - 1000).toISOString(),
       };
-      await testEnv.KV.put(`${KV_PREFIX.SESSION}${token}`, JSON.stringify(expiredSession));
+      await testEnv.KV.put(`${KV_KEY.SESSION}${token}`, JSON.stringify(expiredSession));
 
       const request = new Request('http://localhost/admin/', {
         headers: { Cookie: `gp_session=${token}` },

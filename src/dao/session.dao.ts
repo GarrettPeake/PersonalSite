@@ -4,7 +4,7 @@
  * Manages authentication sessions stored in KV with TTL-based expiration.
  */
 
-import { KV_PREFIX } from '../types';
+import { KV_KEY } from '../types';
 
 // ============================================================================
 // Types
@@ -32,7 +32,7 @@ export async function createSession(
   const session: Session = { token, expiresAt };
 
   // Store with TTL so it auto-expires
-  await kv.put(`${KV_PREFIX.SESSION}${token}`, JSON.stringify(session), {
+  await kv.put(`${KV_KEY.SESSION}${token}`, JSON.stringify(session), {
     expirationTtl: ttlSeconds,
   });
 
@@ -43,7 +43,7 @@ export async function createSession(
  * Get a session by token, returns null if expired or not found
  */
 export async function getSession(kv: KVNamespace, token: string): Promise<Session | null> {
-  const data = await kv.get(`${KV_PREFIX.SESSION}${token}`);
+  const data = await kv.get(`${KV_KEY.SESSION}${token}`);
   if (!data) return null;
 
   const session: Session = JSON.parse(data);
@@ -61,5 +61,5 @@ export async function getSession(kv: KVNamespace, token: string): Promise<Sessio
  * Delete a session
  */
 export async function deleteSession(kv: KVNamespace, token: string): Promise<void> {
-  await kv.delete(`${KV_PREFIX.SESSION}${token}`);
+  await kv.delete(`${KV_KEY.SESSION}${token}`);
 }

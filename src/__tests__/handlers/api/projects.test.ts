@@ -1,10 +1,10 @@
 /**
  * Projects API Handlers Tests
  *
- * Tests for project management endpoints.
+ * Tests for project management endpoints using D1.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
   handleListProjectsPublic,
@@ -16,16 +16,27 @@ import {
   handleReorderProjects,
 } from '../../../handlers/api/projects';
 import { createProject, getProject, listProjects } from '../../../dao/project.dao';
-import { KV_PREFIX } from '../../../types';
 
 describe('Projects API Handlers', () => {
+  beforeAll(async () => {
+    await env.DB.exec('PRAGMA foreign_keys = ON');
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', icon TEXT NOT NULL DEFAULT '', icon_type TEXT NOT NULL DEFAULT 'svg' CHECK(icon_type IN ('svg', 'image')), icon_alt TEXT, description TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+    await env.DB.exec(
+      'CREATE INDEX IF NOT EXISTS idx_projects_sort_order ON projects(sort_order ASC)'
+    );
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS content_pieces (id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE, type TEXT NOT NULL CHECK(type IN ('image', 'iframe')), url TEXT NOT NULL DEFAULT '', description TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0)"
+    );
+    await env.DB.exec(
+      'CREATE INDEX IF NOT EXISTS idx_content_pieces_project ON content_pieces(project_id, sort_order ASC)'
+    );
+  });
+
   beforeEach(async () => {
-    // Clean up all project related keys
-    const projectKeys = await env.KV.list({ prefix: KV_PREFIX.PROJECT });
-    for (const key of projectKeys.keys) {
-      await env.KV.delete(key.name);
-    }
-    await env.KV.delete(KV_PREFIX.INDEX_PROJECTS);
+    await env.DB.exec('DELETE FROM content_pieces');
+    await env.DB.exec('DELETE FROM projects');
   });
 
   describe('handleListProjectsPublic', () => {
@@ -38,14 +49,14 @@ describe('Projects API Handlers', () => {
     });
 
     it('should return all projects sorted by order', async () => {
-      await createProject(env.KV, {
+      await createProject(env.DB, {
         title: 'Project 1',
         icon: '<svg></svg>',
         iconType: 'svg',
         description: 'First project',
         contentPieces: [],
       });
-      await createProject(env.KV, {
+      await createProject(env.DB, {
         title: 'Project 2',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -80,7 +91,7 @@ describe('Projects API Handlers', () => {
     });
 
     it('should return all projects with full data', async () => {
-      await createProject(env.KV, {
+      await createProject(env.DB, {
         title: 'Admin Project',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -117,7 +128,7 @@ describe('Projects API Handlers', () => {
     });
 
     it('should return project by ID', async () => {
-      const created = await createProject(env.KV, {
+      const created = await createProject(env.DB, {
         title: 'Test Project',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -261,7 +272,7 @@ describe('Projects API Handlers', () => {
     });
 
     it('should update project title', async () => {
-      const created = await createProject(env.KV, {
+      const created = await createProject(env.DB, {
         title: 'Original Title',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -284,7 +295,7 @@ describe('Projects API Handlers', () => {
     });
 
     it('should update content pieces', async () => {
-      const created = await createProject(env.KV, {
+      const created = await createProject(env.DB, {
         title: 'Test',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -312,7 +323,7 @@ describe('Projects API Handlers', () => {
     });
 
     it('should return 400 for invalid iconType', async () => {
-      const created = await createProject(env.KV, {
+      const created = await createProject(env.DB, {
         title: 'Test',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -339,8 +350,8 @@ describe('Projects API Handlers', () => {
       expect(response.status).toBe(404);
     });
 
-    it('should delete project from KV', async () => {
-      const created = await createProject(env.KV, {
+    it('should delete project', async () => {
+      const created = await createProject(env.DB, {
         title: 'To Delete',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -354,12 +365,12 @@ describe('Projects API Handlers', () => {
       const data = (await response.json()) as { success: boolean };
       expect(data.success).toBe(true);
 
-      const deleted = await getProject(env.KV, created.id);
+      const deleted = await getProject(env.DB, created.id);
       expect(deleted).toBeNull();
     });
 
     it('should remove project from list', async () => {
-      const created = await createProject(env.KV, {
+      const created = await createProject(env.DB, {
         title: 'To Delete',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -369,7 +380,7 @@ describe('Projects API Handlers', () => {
 
       await handleDeleteProject(env, created.id);
 
-      const projects = await listProjects(env.KV);
+      const projects = await listProjects(env.DB);
       expect(projects).toHaveLength(0);
     });
   });
@@ -390,21 +401,21 @@ describe('Projects API Handlers', () => {
     });
 
     it('should reorder projects', async () => {
-      const p1 = await createProject(env.KV, {
+      const p1 = await createProject(env.DB, {
         title: 'Project 1',
         icon: '<svg></svg>',
         iconType: 'svg',
         description: '',
         contentPieces: [],
       });
-      const p2 = await createProject(env.KV, {
+      const p2 = await createProject(env.DB, {
         title: 'Project 2',
         icon: '<svg></svg>',
         iconType: 'svg',
         description: '',
         contentPieces: [],
       });
-      const p3 = await createProject(env.KV, {
+      const p3 = await createProject(env.DB, {
         title: 'Project 3',
         icon: '<svg></svg>',
         iconType: 'svg',
@@ -424,7 +435,7 @@ describe('Projects API Handlers', () => {
       expect(response.status).toBe(200);
 
       // Verify order
-      const projects = await listProjects(env.KV);
+      const projects = await listProjects(env.DB);
       expect(projects[0].title).toBe('Project 3');
       expect(projects[1].title).toBe('Project 1');
       expect(projects[2].title).toBe('Project 2');

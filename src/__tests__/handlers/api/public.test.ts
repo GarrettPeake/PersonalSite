@@ -1,31 +1,58 @@
 /**
  * Public API Handlers Tests
  *
- * Tests for public API endpoints (posts listing, get post, tracking).
+ * Tests for public API endpoints (posts listing, get post, tracking) against D1.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { handleListPosts, handleGetPost, handleTrack } from '../../../handlers/api/public';
-import { createDraft } from '../../../dao/draft.dao';
-import { publishDraft } from '../../../dao/post.dao';
 import { createTrackingSlug, getTrackingSlug } from '../../../dao/tracking.dao';
-import { KV_PREFIX } from '../../../types';
 
 describe('Public API Handlers', () => {
-  beforeEach(async () => {
-    // Clean up all related keys
-    const prefixes = [KV_PREFIX.POST, KV_PREFIX.POST_SLUG, KV_PREFIX.DRAFT, KV_PREFIX.TRACKING, 'trackrate:'];
-    for (const prefix of prefixes) {
-      const keys = await env.KV.list({ prefix });
-      for (const key of keys.keys) {
-        await env.KV.delete(key.name);
-      }
-    }
-    await env.KV.delete(KV_PREFIX.INDEX_POSTS);
-    await env.KV.delete(KV_PREFIX.INDEX_DRAFTS);
-    await env.KV.delete(KV_PREFIX.INDEX_TRACKING);
+  beforeAll(async () => {
+    // Create posts table
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', slug TEXT NOT NULL UNIQUE, content TEXT NOT NULL DEFAULT '', description TEXT, published_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+    await env.DB.exec('CREATE INDEX IF NOT EXISTS idx_posts_published_at ON posts(published_at DESC)');
+
+    // Create tracking tables
+    await env.DB.exec('PRAGMA foreign_keys = ON');
+    await env.DB.exec("CREATE TABLE IF NOT EXISTS tracking_slugs (slug TEXT PRIMARY KEY, tag TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)");
+    await env.DB.exec('CREATE INDEX IF NOT EXISTS idx_tracking_slugs_created_at ON tracking_slugs(created_at DESC)');
+    await env.DB.exec("CREATE TABLE IF NOT EXISTS tracking_events (id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT NOT NULL REFERENCES tracking_slugs(slug) ON DELETE CASCADE, timestamp TEXT NOT NULL, page TEXT NOT NULL, referrer TEXT, user_agent TEXT)");
+    await env.DB.exec('CREATE INDEX IF NOT EXISTS idx_tracking_events_slug ON tracking_events(slug, timestamp ASC)');
   });
+
+  beforeEach(async () => {
+    await env.DB.exec('DELETE FROM posts');
+    await env.DB.exec('DELETE FROM tracking_events');
+    await env.DB.exec('DELETE FROM tracking_slugs');
+    // Clean up rate limit keys in KV
+    const keys = await env.KV.list({ prefix: 'trackrate:' });
+    for (const key of keys.keys) {
+      await env.KV.delete(key.name);
+    }
+  });
+
+  // Helper to insert a post directly
+  async function insertPost(overrides: Partial<{ id: string; title: string; slug: string; content: string; description: string | null; publishedAt: string }> = {}) {
+    const id = overrides.id ?? crypto.randomUUID();
+    const now = new Date().toISOString();
+    await env.DB.prepare(
+      'INSERT INTO posts (id, title, slug, content, description, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(
+      id,
+      overrides.title ?? 'Test Post',
+      overrides.slug ?? 'test-post',
+      overrides.content ?? 'Test content',
+      overrides.description ?? null,
+      overrides.publishedAt ?? now,
+      now
+    ).run();
+    return { id, publishedAt: overrides.publishedAt ?? now };
+  }
 
   describe('handleListPosts', () => {
     it('should return empty array when no posts exist', async () => {
@@ -37,13 +64,12 @@ describe('Public API Handlers', () => {
     });
 
     it('should return posts with description if provided', async () => {
-      const draft = await createDraft(env.KV, {
+      await insertPost({
         title: 'Test Post',
         slug: 'test-post',
         content: 'This is the full content.',
         description: 'A short description for the listing.',
       });
-      await publishDraft(env.KV, draft.id);
 
       const response = await handleListPosts(env);
 
@@ -54,29 +80,27 @@ describe('Public API Handlers', () => {
       expect(data[0].description).toBe('A short description for the listing.');
     });
 
-    it('should return undefined description if not provided', async () => {
-      const draft = await createDraft(env.KV, {
+    it('should return null description if not provided', async () => {
+      await insertPost({
         title: 'Test Post',
         slug: 'test-post',
         content: 'This is the full content.',
       });
-      await publishDraft(env.KV, draft.id);
 
       const response = await handleListPosts(env);
 
       expect(response.status).toBe(200);
-      const data = await response.json() as Array<{ title: string; description?: string }>;
+      const data = await response.json() as Array<{ title: string; description?: string | null }>;
       expect(data).toHaveLength(1);
-      expect(data[0].description).toBeUndefined();
+      expect(data[0].description).toBeFalsy();
     });
 
     it('should not include full content in list response', async () => {
-      const draft = await createDraft(env.KV, {
+      await insertPost({
         title: 'Test Post',
         slug: 'test-post',
         content: 'Full content here',
       });
-      await publishDraft(env.KV, draft.id);
 
       const response = await handleListPosts(env);
 
@@ -91,13 +115,9 @@ describe('Public API Handlers', () => {
     });
 
     it('should return posts in order (newest first)', async () => {
-      const draft1 = await createDraft(env.KV, { title: 'Post 1', slug: 'post-1', content: 'C1' });
-      const draft2 = await createDraft(env.KV, { title: 'Post 2', slug: 'post-2', content: 'C2' });
-      const draft3 = await createDraft(env.KV, { title: 'Post 3', slug: 'post-3', content: 'C3' });
-
-      await publishDraft(env.KV, draft1.id);
-      await publishDraft(env.KV, draft2.id);
-      await publishDraft(env.KV, draft3.id);
+      await insertPost({ title: 'Post 1', slug: 'post-1', content: 'C1', publishedAt: '2024-01-01T00:00:00.000Z' });
+      await insertPost({ title: 'Post 2', slug: 'post-2', content: 'C2', publishedAt: '2024-02-01T00:00:00.000Z' });
+      await insertPost({ title: 'Post 3', slug: 'post-3', content: 'C3', publishedAt: '2024-03-01T00:00:00.000Z' });
 
       const response = await handleListPosts(env);
       const data = await response.json() as Array<{ title: string }>;
@@ -118,12 +138,11 @@ describe('Public API Handlers', () => {
     });
 
     it('should return post by slug', async () => {
-      const draft = await createDraft(env.KV, {
+      await insertPost({
         title: 'My Post',
         slug: 'my-post',
         content: 'Post content',
       });
-      await publishDraft(env.KV, draft.id);
 
       const response = await handleGetPost(env, 'my-post');
 
@@ -135,12 +154,11 @@ describe('Public API Handlers', () => {
     });
 
     it('should include full content in response', async () => {
-      const draft = await createDraft(env.KV, {
+      await insertPost({
         title: 'Post',
         slug: 'post',
         content: 'Full content here',
       });
-      await publishDraft(env.KV, draft.id);
 
       const response = await handleGetPost(env, 'post');
       const data = await response.json() as { content: string };
@@ -185,7 +203,7 @@ describe('Public API Handlers', () => {
     });
 
     it('should record event for valid slug', async () => {
-      await createTrackingSlug(env.KV, 'Test', 'test1');
+      await createTrackingSlug(env.DB, 'Test', 'test1');
 
       const request = new Request('http://localhost/api/track', {
         method: 'POST',
@@ -206,7 +224,7 @@ describe('Public API Handlers', () => {
       const data = await response.json() as { ok: boolean };
       expect(data.ok).toBe(true);
 
-      const tracking = await getTrackingSlug(env.KV, 'test1');
+      const tracking = await getTrackingSlug(env.DB, 'test1');
       expect(tracking!.events).toHaveLength(1);
       expect(tracking!.events[0].page).toBe('/blog/my-post');
       expect(tracking!.events[0].referrer).toBe('https://google.com');
@@ -243,7 +261,7 @@ describe('Public API Handlers', () => {
     });
 
     it('should truncate long page and referrer fields', async () => {
-      await createTrackingSlug(env.KV, 'Test', 'trunc');
+      await createTrackingSlug(env.DB, 'Test', 'trunc');
       const longPage = 'x'.repeat(5000);
       const longReferrer = 'r'.repeat(5000);
 
@@ -260,7 +278,7 @@ describe('Public API Handlers', () => {
       const response = await handleTrack(request, env);
       expect(response.status).toBe(200);
 
-      const tracking = await getTrackingSlug(env.KV, 'trunc');
+      const tracking = await getTrackingSlug(env.DB, 'trunc');
       expect(tracking!.events[0].page.length).toBe(2048);
       expect(tracking!.events[0].referrer!.length).toBe(2048);
     });

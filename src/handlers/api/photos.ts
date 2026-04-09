@@ -48,7 +48,7 @@ const PUBLIC_CACHE = 'public, max-age=60, s-maxage=300';
  */
 export async function handleListPhotosPublic(env: Env): Promise<Response> {
   try {
-    const photos = await listPhotos(env.KV);
+    const photos = await listPhotos(env.DB);
 
     // Return only public-facing data
     const publicPhotos = photos.map((photo) => ({
@@ -74,7 +74,7 @@ export async function handleListPhotosPublic(env: Env): Promise<Response> {
  */
 export async function handleAdminListPhotos(env: Env): Promise<Response> {
   try {
-    const photos = await listPhotos(env.KV);
+    const photos = await listPhotos(env.DB);
     return jsonResponse(photos, corsHeaders);
   } catch (error) {
     console.error('Error listing photos:', error);
@@ -87,7 +87,7 @@ export async function handleAdminListPhotos(env: Env): Promise<Response> {
  */
 export async function handleAdminGetPhoto(env: Env, id: string): Promise<Response> {
   try {
-    const photo = await getPhoto(env.KV, id);
+    const photo = await getPhoto(env.DB, id);
 
     if (!photo) {
       return jsonResponse({ error: 'Photo not found' }, corsHeaders, 404);
@@ -187,8 +187,8 @@ export async function handleCreatePhoto(request: Request, env: Env): Promise<Res
     // Construct the public URL
     const url = `https://files.gpeake.com/${filename}`;
 
-    // Create photo record in KV
-    const photo = await createPhoto(env.KV, {
+    // Create photo record in D1
+    const photo = await createPhoto(env.DB, {
       url,
       filename,
       location: typeof location === 'string' ? location : '',
@@ -229,7 +229,7 @@ export async function handleUpdatePhoto(
     }
 
     // Use provided publishedAt or preserve existing
-    const existing = await getPhoto(env.KV, id);
+    const existing = await getPhoto(env.DB, id);
     if (!existing) {
       return jsonResponse({ error: 'Photo not found' }, corsHeaders, 404);
     }
@@ -238,7 +238,7 @@ export async function handleUpdatePhoto(
       ? body.publishedAt
       : existing.publishedAt;
 
-    const photo = await updatePhoto(env.KV, id, {
+    const photo = await updatePhoto(env.DB, id, {
       location: body.location,
       description: body.description,
       publishedAt,
@@ -263,7 +263,7 @@ export async function handleUpdatePhoto(
 export async function handleDeletePhoto(env: Env, id: string): Promise<Response> {
   try {
     // Get photo to find filename for R2 cleanup
-    const photo = await getPhoto(env.KV, id);
+    const photo = await getPhoto(env.DB, id);
 
     if (!photo) {
       return jsonResponse({ error: 'Photo not found' }, corsHeaders, 404);
@@ -277,8 +277,8 @@ export async function handleDeletePhoto(env: Env, id: string): Promise<Response>
       // Continue with KV deletion even if R2 fails
     }
 
-    // Delete from KV
-    const deleted = await deletePhoto(env.KV, id);
+    // Delete from D1
+    const deleted = await deletePhoto(env.DB, id);
 
     if (!deleted) {
       return jsonResponse({ error: 'Failed to delete photo' }, corsHeaders, 500);

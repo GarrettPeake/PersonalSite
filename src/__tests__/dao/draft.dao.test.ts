@@ -1,10 +1,10 @@
 /**
  * Draft DAO Tests
  *
- * Comprehensive tests for draft CRUD operations and sharing functionality.
+ * Tests for draft CRUD operations and sharing functionality against D1.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
   getDraft,
@@ -16,25 +16,23 @@ import {
   getDraftByShareToken,
   revokeShareToken,
 } from '../../dao/draft.dao';
-import { KV_PREFIX } from '../../types';
 
 describe('Draft DAO', () => {
+  beforeAll(async () => {
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS drafts (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', slug TEXT NOT NULL DEFAULT '', content TEXT NOT NULL DEFAULT '', description TEXT, share_token TEXT UNIQUE, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+    await env.DB.exec("CREATE INDEX IF NOT EXISTS idx_drafts_updated_at ON drafts(updated_at DESC)");
+    await env.DB.exec("CREATE INDEX IF NOT EXISTS idx_drafts_share_token ON drafts(share_token)");
+  });
+
   beforeEach(async () => {
-    // Clean up all draft-related keys before each test
-    const keys = await env.KV.list({ prefix: KV_PREFIX.DRAFT });
-    for (const key of keys.keys) {
-      await env.KV.delete(key.name);
-    }
-    const shareKeys = await env.KV.list({ prefix: KV_PREFIX.SHARE });
-    for (const key of shareKeys.keys) {
-      await env.KV.delete(key.name);
-    }
-    await env.KV.delete(KV_PREFIX.INDEX_DRAFTS);
+    await env.DB.exec('DELETE FROM drafts');
   });
 
   describe('createDraft', () => {
     it('should create a draft with generated ID and timestamps', async () => {
-      const draft = await createDraft(env.KV, {
+      const draft = await createDraft(env.DB, {
         title: 'Test Draft',
         slug: 'test-draft',
         content: 'This is test content',
@@ -49,46 +47,59 @@ describe('Draft DAO', () => {
       expect(new Date(draft.createdAt).getTime()).toBeGreaterThan(0);
     });
 
-    it('should add draft ID to index', async () => {
-      const draft = await createDraft(env.KV, {
+    it('should store draft in D1', async () => {
+      const draft = await createDraft(env.DB, {
         title: 'Test Draft',
         slug: 'test-draft',
         content: 'Content',
       });
 
-      const indexData = await env.KV.get(KV_PREFIX.INDEX_DRAFTS);
-      const index = JSON.parse(indexData!);
-      expect(index).toContain(draft.id);
+      const stored = await getDraft(env.DB, draft.id);
+      expect(stored).not.toBeNull();
+      expect(stored!.title).toBe('Test Draft');
     });
 
-    it('should store draft in KV', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'Test Draft',
-        slug: 'test-draft',
+    it('should handle optional description', async () => {
+      const draft = await createDraft(env.DB, {
+        title: 'Draft with desc',
+        slug: 'draft-desc',
         content: 'Content',
+        description: 'A description',
       });
 
-      const stored = await env.KV.get(`${KV_PREFIX.DRAFT}${draft.id}`);
-      expect(stored).toBeDefined();
-      const parsed = JSON.parse(stored!);
-      expect(parsed.title).toBe('Test Draft');
+      expect(draft.description).toBe('A description');
+      const stored = await getDraft(env.DB, draft.id);
+      expect(stored!.description).toBe('A description');
+    });
+
+    it('should handle optional shareToken', async () => {
+      const draft = await createDraft(env.DB, {
+        title: 'Draft with token',
+        slug: 'draft-token',
+        content: 'Content',
+        shareToken: 'pre-set-token',
+      });
+
+      expect(draft.shareToken).toBe('pre-set-token');
+      const stored = await getDraft(env.DB, draft.id);
+      expect(stored!.shareToken).toBe('pre-set-token');
     });
   });
 
   describe('getDraft', () => {
     it('should return null for non-existent draft', async () => {
-      const draft = await getDraft(env.KV, 'non-existent-id');
+      const draft = await getDraft(env.DB, 'non-existent-id');
       expect(draft).toBeNull();
     });
 
     it('should return draft by ID', async () => {
-      const created = await createDraft(env.KV, {
+      const created = await createDraft(env.DB, {
         title: 'Test Draft',
         slug: 'test-draft',
         content: 'Content',
       });
 
-      const retrieved = await getDraft(env.KV, created.id);
+      const retrieved = await getDraft(env.DB, created.id);
       expect(retrieved).not.toBeNull();
       expect(retrieved!.id).toBe(created.id);
       expect(retrieved!.title).toBe('Test Draft');
@@ -97,37 +108,61 @@ describe('Draft DAO', () => {
 
   describe('listDrafts', () => {
     it('should return empty array when no drafts exist', async () => {
-      const drafts = await listDrafts(env.KV);
+      const drafts = await listDrafts(env.DB);
       expect(drafts).toEqual([]);
     });
 
-    it('should return all drafts in order (newest first)', async () => {
-      await createDraft(env.KV, { title: 'Draft 1', slug: 'draft-1', content: 'Content 1' });
-      await createDraft(env.KV, { title: 'Draft 2', slug: 'draft-2', content: 'Content 2' });
-      await createDraft(env.KV, { title: 'Draft 3', slug: 'draft-3', content: 'Content 3' });
+    it('should return all drafts ordered by updatedAt DESC', async () => {
+      // Insert with explicit timestamps to control order
+      await env.DB.prepare(
+        'INSERT INTO drafts (id, title, slug, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind('d1', 'Draft 1', 'draft-1', 'Content 1', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z').run();
 
-      const drafts = await listDrafts(env.KV);
+      await env.DB.prepare(
+        'INSERT INTO drafts (id, title, slug, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind('d2', 'Draft 2', 'draft-2', 'Content 2', '2024-01-02T00:00:00Z', '2024-01-03T00:00:00Z').run();
+
+      await env.DB.prepare(
+        'INSERT INTO drafts (id, title, slug, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind('d3', 'Draft 3', 'draft-3', 'Content 3', '2024-01-03T00:00:00Z', '2024-01-02T00:00:00Z').run();
+
+      const drafts = await listDrafts(env.DB);
       expect(drafts).toHaveLength(3);
-      expect(drafts[0].title).toBe('Draft 3');
-      expect(drafts[1].title).toBe('Draft 2');
+      // Ordered by updated_at DESC: d2 (Jan 3), d3 (Jan 2), d1 (Jan 1)
+      expect(drafts[0].title).toBe('Draft 2');
+      expect(drafts[1].title).toBe('Draft 3');
       expect(drafts[2].title).toBe('Draft 1');
+    });
+
+    it('should not include content field in summaries', async () => {
+      await createDraft(env.DB, {
+        title: 'Draft',
+        slug: 'draft',
+        content: 'Some long content here',
+      });
+
+      const drafts = await listDrafts(env.DB);
+      expect(drafts).toHaveLength(1);
+      expect(drafts[0].title).toBe('Draft');
+      // content should not be present in the summary
+      expect((drafts[0] as Record<string, unknown>).content).toBeUndefined();
     });
   });
 
   describe('updateDraft', () => {
     it('should return null for non-existent draft', async () => {
-      const result = await updateDraft(env.KV, 'non-existent', { title: 'New Title' });
+      const result = await updateDraft(env.DB, 'non-existent', { title: 'New Title' });
       expect(result).toBeNull();
     });
 
     it('should update draft fields', async () => {
-      const created = await createDraft(env.KV, {
+      const created = await createDraft(env.DB, {
         title: 'Original Title',
         slug: 'original-slug',
         content: 'Original content',
       });
 
-      const updated = await updateDraft(env.KV, created.id, {
+      const updated = await updateDraft(env.DB, created.id, {
         title: 'Updated Title',
         content: 'Updated content',
       });
@@ -139,7 +174,7 @@ describe('Draft DAO', () => {
     });
 
     it('should update updatedAt timestamp', async () => {
-      const created = await createDraft(env.KV, {
+      const created = await createDraft(env.DB, {
         title: 'Draft',
         slug: 'draft',
         content: 'Content',
@@ -150,20 +185,20 @@ describe('Draft DAO', () => {
       // Small delay to ensure different timestamp
       await new Promise((r) => setTimeout(r, 10));
 
-      const updated = await updateDraft(env.KV, created.id, { title: 'New Title' });
+      const updated = await updateDraft(env.DB, created.id, { title: 'New Title' });
       expect(new Date(updated!.updatedAt).getTime()).toBeGreaterThan(
         new Date(originalUpdatedAt).getTime()
       );
     });
 
     it('should preserve fields not in update', async () => {
-      const created = await createDraft(env.KV, {
+      const created = await createDraft(env.DB, {
         title: 'Title',
         slug: 'slug',
         content: 'Content',
       });
 
-      const updated = await updateDraft(env.KV, created.id, { title: 'New Title' });
+      const updated = await updateDraft(env.DB, created.id, { title: 'New Title' });
       expect(updated!.slug).toBe('slug');
       expect(updated!.content).toBe('Content');
       expect(updated!.createdAt).toBe(created.createdAt);
@@ -172,122 +207,98 @@ describe('Draft DAO', () => {
 
   describe('deleteDraft', () => {
     it('should return false for non-existent draft', async () => {
-      const result = await deleteDraft(env.KV, 'non-existent');
+      const result = await deleteDraft(env.DB, 'non-existent');
       expect(result).toBe(false);
     });
 
-    it('should delete draft from KV', async () => {
-      const created = await createDraft(env.KV, {
+    it('should delete draft from D1', async () => {
+      const created = await createDraft(env.DB, {
         title: 'Draft',
         slug: 'draft',
         content: 'Content',
       });
 
-      const result = await deleteDraft(env.KV, created.id);
+      const result = await deleteDraft(env.DB, created.id);
       expect(result).toBe(true);
 
-      const retrieved = await getDraft(env.KV, created.id);
+      const retrieved = await getDraft(env.DB, created.id);
       expect(retrieved).toBeNull();
     });
 
-    it('should remove draft from index', async () => {
-      const created = await createDraft(env.KV, {
+    it('should delete draft with share token', async () => {
+      const created = await createDraft(env.DB, {
         title: 'Draft',
         slug: 'draft',
         content: 'Content',
       });
 
-      await deleteDraft(env.KV, created.id);
+      const token = await createShareToken(env.DB, created.id);
+      await deleteDraft(env.DB, created.id);
 
-      const indexData = await env.KV.get(KV_PREFIX.INDEX_DRAFTS);
-      const index = JSON.parse(indexData!);
-      expect(index).not.toContain(created.id);
-    });
-
-    it('should delete share token when draft is deleted', async () => {
-      const created = await createDraft(env.KV, {
-        title: 'Draft',
-        slug: 'draft',
-        content: 'Content',
-      });
-
-      const token = await createShareToken(env.KV, created.id);
-      await deleteDraft(env.KV, created.id);
-
-      const shareData = await env.KV.get(`${KV_PREFIX.SHARE}${token}`);
-      expect(shareData).toBeNull();
+      // Share token should no longer resolve
+      const byToken = await getDraftByShareToken(env.DB, token);
+      expect(byToken).toBeNull();
     });
   });
 
   describe('createShareToken', () => {
     it('should throw for non-existent draft', async () => {
-      await expect(createShareToken(env.KV, 'non-existent')).rejects.toThrow('Draft not found');
+      await expect(createShareToken(env.DB, 'non-existent')).rejects.toThrow('Draft not found');
     });
 
     it('should create share token and update draft', async () => {
-      const created = await createDraft(env.KV, {
+      const created = await createDraft(env.DB, {
         title: 'Draft',
         slug: 'draft',
         content: 'Content',
       });
 
-      const token = await createShareToken(env.KV, created.id);
+      const token = await createShareToken(env.DB, created.id);
       expect(token).toBeDefined();
       expect(token.length).toBeGreaterThan(0);
 
-      const updated = await getDraft(env.KV, created.id);
+      const updated = await getDraft(env.DB, created.id);
       expect(updated!.shareToken).toBe(token);
     });
 
-    it('should create share token lookup in KV', async () => {
-      const created = await createDraft(env.KV, {
-        title: 'Draft',
-        slug: 'draft',
-        content: 'Content',
-      });
-
-      const token = await createShareToken(env.KV, created.id);
-      const draftId = await env.KV.get(`${KV_PREFIX.SHARE}${token}`);
-      expect(draftId).toBe(created.id);
-    });
-
     it('should replace old share token when creating new one', async () => {
-      const created = await createDraft(env.KV, {
+      const created = await createDraft(env.DB, {
         title: 'Draft',
         slug: 'draft',
         content: 'Content',
       });
 
-      const oldToken = await createShareToken(env.KV, created.id);
-      const newToken = await createShareToken(env.KV, created.id);
+      const oldToken = await createShareToken(env.DB, created.id);
+      const newToken = await createShareToken(env.DB, created.id);
 
       expect(newToken).not.toBe(oldToken);
 
-      // Old token should be deleted
-      const oldLookup = await env.KV.get(`${KV_PREFIX.SHARE}${oldToken}`);
+      // Old token should no longer work
+      const oldLookup = await getDraftByShareToken(env.DB, oldToken);
       expect(oldLookup).toBeNull();
 
       // New token should work
-      const newLookup = await env.KV.get(`${KV_PREFIX.SHARE}${newToken}`);
-      expect(newLookup).toBe(created.id);
+      const newLookup = await getDraftByShareToken(env.DB, newToken);
+      expect(newLookup).not.toBeNull();
+      expect(newLookup!.id).toBe(created.id);
     });
   });
 
   describe('getDraftByShareToken', () => {
     it('should return null for non-existent token', async () => {
-      const draft = await getDraftByShareToken(env.KV, 'non-existent');
+      const draft = await getDraftByShareToken(env.DB, 'non-existent');
       expect(draft).toBeNull();
     });
 
     it('should return draft by share token', async () => {
-      const created = await createDraft(env.KV, {
+      const created = await createDraft(env.DB, {
         title: 'Shared Draft',
         slug: 'shared-draft',
         content: 'Shared content',
       });
 
-      const token = await createShareToken(env.KV, created.id);
-      const retrieved = await getDraftByShareToken(env.KV, token);
+      const token = await createShareToken(env.DB, created.id);
+      const retrieved = await getDraftByShareToken(env.DB, token);
 
       expect(retrieved).not.toBeNull();
       expect(retrieved!.id).toBe(created.id);
@@ -297,55 +308,41 @@ describe('Draft DAO', () => {
 
   describe('revokeShareToken', () => {
     it('should do nothing for draft without share token', async () => {
-      const created = await createDraft(env.KV, {
+      const created = await createDraft(env.DB, {
         title: 'Draft',
         slug: 'draft',
         content: 'Content',
       });
 
       // Should not throw
-      await revokeShareToken(env.KV, created.id);
+      await revokeShareToken(env.DB, created.id);
     });
 
     it('should remove share token from draft', async () => {
-      const created = await createDraft(env.KV, {
+      const created = await createDraft(env.DB, {
         title: 'Draft',
         slug: 'draft',
         content: 'Content',
       });
 
-      await createShareToken(env.KV, created.id);
-      await revokeShareToken(env.KV, created.id);
+      await createShareToken(env.DB, created.id);
+      await revokeShareToken(env.DB, created.id);
 
-      const updated = await getDraft(env.KV, created.id);
-      expect(updated!.shareToken).toBeUndefined();
-    });
-
-    it('should delete share token lookup', async () => {
-      const created = await createDraft(env.KV, {
-        title: 'Draft',
-        slug: 'draft',
-        content: 'Content',
-      });
-
-      const token = await createShareToken(env.KV, created.id);
-      await revokeShareToken(env.KV, created.id);
-
-      const lookup = await env.KV.get(`${KV_PREFIX.SHARE}${token}`);
-      expect(lookup).toBeNull();
+      const updated = await getDraft(env.DB, created.id);
+      expect(updated!.shareToken).toBeNull();
     });
 
     it('should make share token unusable', async () => {
-      const created = await createDraft(env.KV, {
+      const created = await createDraft(env.DB, {
         title: 'Draft',
         slug: 'draft',
         content: 'Content',
       });
 
-      const token = await createShareToken(env.KV, created.id);
-      await revokeShareToken(env.KV, created.id);
+      const token = await createShareToken(env.DB, created.id);
+      await revokeShareToken(env.DB, created.id);
 
-      const retrieved = await getDraftByShareToken(env.KV, token);
+      const retrieved = await getDraftByShareToken(env.DB, token);
       expect(retrieved).toBeNull();
     });
   });

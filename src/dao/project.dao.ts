@@ -1,11 +1,63 @@
 /**
  * Project Data Access Object
  *
- * Manages projects displayed on the home page.
+ * Manages projects displayed on the home page using D1.
  */
 
-import { KV_PREFIX, Project, ProjectCreateInput, ProjectUpdateInput } from '../types';
-import { getIndex, addToIndex, removeFromIndex } from './base';
+import { queryOne, queryAll } from './base';
+import { Project, ProjectCreateInput, ProjectUpdateInput, ContentPiece } from '../types';
+
+const PROJECT_COLUMNS = 'id, title, icon, icon_type as iconType, icon_alt as iconAlt, description, sort_order as "order", created_at as createdAt, updated_at as updatedAt';
+const CONTENT_PIECE_COLUMNS = 'id, type, url, description, sort_order as "order"';
+
+// ============================================================================
+// Internal helpers
+// ============================================================================
+
+interface ContentPieceRow {
+  id: string;
+  type: 'image' | 'iframe';
+  url: string;
+  description: string;
+  order: number;
+  project_id: string;
+}
+
+/**
+ * Fetch content pieces for a single project
+ */
+async function getContentPieces(db: D1Database, projectId: string): Promise<ContentPiece[]> {
+  return queryAll<ContentPiece>(
+    db,
+    `SELECT ${CONTENT_PIECE_COLUMNS} FROM content_pieces WHERE project_id = ? ORDER BY sort_order ASC`,
+    [projectId]
+  );
+}
+
+/**
+ * Fetch all content pieces grouped by project_id
+ */
+async function getAllContentPieces(db: D1Database): Promise<Map<string, ContentPiece[]>> {
+  const rows = await queryAll<ContentPieceRow>(
+    db,
+    `SELECT id, project_id, type, url, description, sort_order as "order" FROM content_pieces ORDER BY project_id, sort_order ASC`
+  );
+  const map = new Map<string, ContentPiece[]>();
+  for (const row of rows) {
+    const projectId = row.project_id;
+    if (!map.has(projectId)) {
+      map.set(projectId, []);
+    }
+    map.get(projectId)!.push({
+      id: row.id,
+      type: row.type,
+      url: row.url,
+      description: row.description,
+      order: row.order,
+    });
+  }
+  return map;
+}
 
 // ============================================================================
 // Project CRUD Operations
@@ -14,54 +66,77 @@ import { getIndex, addToIndex, removeFromIndex } from './base';
 /**
  * Get a project by ID
  */
-export async function getProject(kv: KVNamespace, id: string): Promise<Project | null> {
-  const data = await kv.get(`${KV_PREFIX.PROJECT}${id}`);
-  if (!data) return null;
-  return JSON.parse(data);
+export async function getProject(db: D1Database, id: string): Promise<Project | null> {
+  const row = await queryOne<Omit<Project, 'contentPieces'>>(
+    db,
+    `SELECT ${PROJECT_COLUMNS} FROM projects WHERE id = ?`,
+    [id]
+  );
+  if (!row) return null;
+
+  const contentPieces = await getContentPieces(db, id);
+  return { ...row, contentPieces };
 }
 
 /**
  * List all projects sorted by order (ascending)
  */
-export async function listProjects(kv: KVNamespace): Promise<Project[]> {
-  const ids = await getIndex(kv, KV_PREFIX.INDEX_PROJECTS);
-  const results = await Promise.all(ids.map(id => getProject(kv, id)));
-  const projects = results.filter((project): project is Project => project !== null);
+export async function listProjects(db: D1Database): Promise<Project[]> {
+  const rows = await queryAll<Omit<Project, 'contentPieces'>>(
+    db,
+    `SELECT ${PROJECT_COLUMNS} FROM projects ORDER BY sort_order ASC`
+  );
 
-  // Sort by order ascending
-  projects.sort((a, b) => a.order - b.order);
+  const contentMap = await getAllContentPieces(db);
 
-  return projects;
-}
-
-/**
- * Get the next available order value
- */
-async function getNextOrder(kv: KVNamespace): Promise<number> {
-  const projects = await listProjects(kv);
-  if (projects.length === 0) return 0;
-  return Math.max(...projects.map((p) => p.order)) + 1;
+  return rows.map((row) => ({
+    ...row,
+    contentPieces: contentMap.get(row.id) || [],
+  }));
 }
 
 /**
  * Create a new project
  */
 export async function createProject(
-  kv: KVNamespace,
+  db: D1Database,
   data: ProjectCreateInput
 ): Promise<Project> {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
-  const order = await getNextOrder(kv);
 
-  // Ensure content pieces have IDs and order
-  const contentPieces = data.contentPieces.map((piece, index) => ({
+  // Calculate next sort_order
+  const maxRow = await queryOne<{ maxOrder: number | null }>(
+    db,
+    'SELECT MAX(sort_order) as maxOrder FROM projects'
+  );
+  const order = (maxRow?.maxOrder ?? -1) + 1;
+
+  // Normalize content pieces with IDs and order
+  const contentPieces: ContentPiece[] = data.contentPieces.map((piece, index) => ({
     ...piece,
     id: piece.id || crypto.randomUUID(),
     order: piece.order ?? index,
   }));
 
-  const project: Project = {
+  // Build batch statements
+  const statements: D1PreparedStatement[] = [
+    db.prepare(
+      'INSERT INTO projects (id, title, icon, icon_type, icon_alt, description, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(id, data.title, data.icon, data.iconType, data.iconAlt ?? null, data.description, order, now, now),
+  ];
+
+  for (const piece of contentPieces) {
+    statements.push(
+      db.prepare(
+        'INSERT INTO content_pieces (id, project_id, type, url, description, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(piece.id, id, piece.type, piece.url, piece.description, piece.order)
+    );
+  }
+
+  await db.batch(statements);
+
+  return {
     id,
     title: data.title,
     icon: data.icon,
@@ -73,25 +148,22 @@ export async function createProject(
     createdAt: now,
     updatedAt: now,
   };
-
-  await kv.put(`${KV_PREFIX.PROJECT}${id}`, JSON.stringify(project));
-  await addToIndex(kv, KV_PREFIX.INDEX_PROJECTS, id);
-
-  return project;
 }
 
 /**
  * Update a project
  */
 export async function updateProject(
-  kv: KVNamespace,
+  db: D1Database,
   id: string,
   data: ProjectUpdateInput
 ): Promise<Project | null> {
-  const existing = await getProject(kv, id);
+  const existing = await getProject(db, id);
   if (!existing) return null;
 
-  // If content pieces are being updated, ensure they have IDs and order
+  const now = new Date().toISOString();
+
+  // Normalize content pieces if provided
   let contentPieces = existing.contentPieces;
   if (data.contentPieces !== undefined) {
     contentPieces = data.contentPieces.map((piece, index) => ({
@@ -110,23 +182,45 @@ export async function updateProject(
     description: data.description ?? existing.description,
     contentPieces,
     order: data.order ?? existing.order,
-    updatedAt: new Date().toISOString(),
+    updatedAt: now,
   };
 
-  await kv.put(`${KV_PREFIX.PROJECT}${id}`, JSON.stringify(updated));
+  // Build batch statements
+  const statements: D1PreparedStatement[] = [
+    db.prepare(
+      'UPDATE projects SET title = ?, icon = ?, icon_type = ?, icon_alt = ?, description = ?, sort_order = ?, updated_at = ? WHERE id = ?'
+    ).bind(updated.title, updated.icon, updated.iconType, updated.iconAlt ?? null, updated.description, updated.order, now, id),
+  ];
+
+  // Replace content pieces if provided
+  if (data.contentPieces !== undefined) {
+    statements.push(
+      db.prepare('DELETE FROM content_pieces WHERE project_id = ?').bind(id)
+    );
+    for (const piece of contentPieces) {
+      statements.push(
+        db.prepare(
+          'INSERT INTO content_pieces (id, project_id, type, url, description, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(piece.id, id, piece.type, piece.url, piece.description, piece.order)
+      );
+    }
+  }
+
+  await db.batch(statements);
+
   return updated;
 }
 
 /**
  * Delete a project
+ *
+ * CASCADE on content_pieces handles child row cleanup.
  */
-export async function deleteProject(kv: KVNamespace, id: string): Promise<boolean> {
-  const project = await getProject(kv, id);
-  if (!project) return false;
+export async function deleteProject(db: D1Database, id: string): Promise<boolean> {
+  const existing = await getProject(db, id);
+  if (!existing) return false;
 
-  await kv.delete(`${KV_PREFIX.PROJECT}${id}`);
-  await removeFromIndex(kv, KV_PREFIX.INDEX_PROJECTS, id);
-
+  await db.prepare('DELETE FROM projects WHERE id = ?').bind(id).run();
   return true;
 }
 
@@ -134,25 +228,23 @@ export async function deleteProject(kv: KVNamespace, id: string): Promise<boolea
  * Reorder projects by providing an array of IDs in the desired order
  */
 export async function reorderProjects(
-  kv: KVNamespace,
+  db: D1Database,
   orderedIds: string[]
 ): Promise<Project[]> {
-  const projects: Project[] = [];
+  const now = new Date().toISOString();
 
+  // Build batch of UPDATE statements for each valid ID
+  const statements: D1PreparedStatement[] = [];
   for (let i = 0; i < orderedIds.length; i++) {
-    const id = orderedIds[i];
-    const project = await getProject(kv, id);
-    if (!project) continue;
-
-    const updated: Project = {
-      ...project,
-      order: i,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await kv.put(`${KV_PREFIX.PROJECT}${id}`, JSON.stringify(updated));
-    projects.push(updated);
+    statements.push(
+      db.prepare('UPDATE projects SET sort_order = ?, updated_at = ? WHERE id = ?')
+        .bind(i, now, orderedIds[i])
+    );
   }
 
-  return projects;
+  if (statements.length > 0) {
+    await db.batch(statements);
+  }
+
+  return listProjects(db);
 }

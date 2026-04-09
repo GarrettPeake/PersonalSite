@@ -1,11 +1,10 @@
 /**
  * Tracking Data Access Object
  *
- * Manages tracking slugs for link tracking and analytics.
+ * Manages tracking slugs for link tracking and analytics using D1.
  */
 
-import { KV_PREFIX } from '../types';
-import { getIndex, addToIndex, removeFromIndex } from './base';
+import { queryOne, queryAll, execute } from './base';
 import { generateRandomSlug } from '../lib/utils';
 
 // ============================================================================
@@ -45,39 +44,57 @@ const MAX_EVENTS = 10000;
  * Get a tracking slug with its events
  */
 export async function getTrackingSlug(
-  kv: KVNamespace,
+  db: D1Database,
   slug: string
 ): Promise<TrackingSlug | null> {
-  const data = await kv.get(`${KV_PREFIX.TRACKING}${slug}`);
-  if (!data) return null;
-  return JSON.parse(data);
+  const row = await queryOne<{ slug: string; tag: string; createdAt: string }>(
+    db,
+    'SELECT slug, tag, created_at as createdAt FROM tracking_slugs WHERE slug = ?',
+    [slug]
+  );
+  if (!row) return null;
+
+  const events = await queryAll<TrackingEvent>(
+    db,
+    'SELECT timestamp, page, referrer, user_agent as userAgent FROM tracking_events WHERE slug = ? ORDER BY timestamp ASC',
+    [slug]
+  );
+
+  // Strip null values from optional fields to match interface (undefined instead of null)
+  const cleanEvents = events.map(e => ({
+    timestamp: e.timestamp,
+    page: e.page,
+    ...(e.referrer != null ? { referrer: e.referrer } : {}),
+    ...(e.userAgent != null ? { userAgent: e.userAgent } : {}),
+  }));
+
+  return {
+    slug: row.slug,
+    tag: row.tag,
+    createdAt: row.createdAt,
+    events: cleanEvents,
+  };
 }
 
 /**
  * List all tracking slugs (returns summaries without full events array)
  */
-export async function listTrackingSlugs(kv: KVNamespace): Promise<TrackingSlugSummary[]> {
-  const slugs = await getIndex(kv, KV_PREFIX.INDEX_TRACKING);
-
-  const results = await Promise.all(
-    slugs.map(slug => getTrackingSlug(kv, slug))
+export async function listTrackingSlugs(db: D1Database): Promise<TrackingSlugSummary[]> {
+  return queryAll<TrackingSlugSummary>(
+    db,
+    `SELECT ts.slug, ts.tag, ts.created_at as createdAt, COUNT(te.id) as eventCount
+     FROM tracking_slugs ts
+     LEFT JOIN tracking_events te ON ts.slug = te.slug
+     GROUP BY ts.slug
+     ORDER BY ts.created_at DESC`
   );
-
-  return results
-    .filter((t): t is TrackingSlug => t !== null)
-    .map(({ slug, tag, createdAt, events }) => ({
-      slug,
-      tag,
-      createdAt,
-      eventCount: events.length,
-    }));
 }
 
 /**
  * Create a new tracking slug
  */
 export async function createTrackingSlug(
-  kv: KVNamespace,
+  db: D1Database,
   tag: string,
   customSlug?: string
 ): Promise<TrackingSlug> {
@@ -90,34 +107,30 @@ export async function createTrackingSlug(
   }
 
   // Check if slug exists
-  const existing = await getTrackingSlug(kv, slug);
+  const existing = await queryOne(db, 'SELECT slug FROM tracking_slugs WHERE slug = ?', [slug]);
   if (existing) {
     throw new Error(`Slug "${slug}" already exists`);
   }
 
-  const tracking: TrackingSlug = {
-    slug,
-    tag,
-    createdAt: new Date().toISOString(),
-    events: [],
-  };
+  const createdAt = new Date().toISOString();
 
-  await kv.put(`${KV_PREFIX.TRACKING}${slug}`, JSON.stringify(tracking));
-  await addToIndex(kv, KV_PREFIX.INDEX_TRACKING, slug);
+  await execute(
+    db,
+    'INSERT INTO tracking_slugs (slug, tag, created_at) VALUES (?, ?, ?)',
+    [slug, tag, createdAt]
+  );
 
-  return tracking;
+  return { slug, tag, createdAt, events: [] };
 }
 
 /**
  * Delete a tracking slug
  */
-export async function deleteTrackingSlug(kv: KVNamespace, slug: string): Promise<boolean> {
-  const tracking = await getTrackingSlug(kv, slug);
-  if (!tracking) return false;
+export async function deleteTrackingSlug(db: D1Database, slug: string): Promise<boolean> {
+  const existing = await queryOne(db, 'SELECT slug FROM tracking_slugs WHERE slug = ?', [slug]);
+  if (!existing) return false;
 
-  await kv.delete(`${KV_PREFIX.TRACKING}${slug}`);
-  await removeFromIndex(kv, KV_PREFIX.INDEX_TRACKING, slug);
-
+  await execute(db, 'DELETE FROM tracking_slugs WHERE slug = ?', [slug]);
   return true;
 }
 
@@ -129,25 +142,41 @@ export async function deleteTrackingSlug(kv: KVNamespace, slug: string): Promise
  * Record a tracking event
  */
 export async function recordTrackingEvent(
-  kv: KVNamespace,
+  db: D1Database,
   slug: string,
   event: Omit<TrackingEvent, 'timestamp'>
 ): Promise<TrackingSlug | null> {
-  const tracking = await getTrackingSlug(kv, slug);
-  if (!tracking) return null;
+  // Check slug exists
+  const existing = await queryOne(db, 'SELECT slug FROM tracking_slugs WHERE slug = ?', [slug]);
+  if (!existing) return null;
 
-  const newEvent: TrackingEvent = {
-    ...event,
-    timestamp: new Date().toISOString(),
-  };
+  const timestamp = new Date().toISOString();
 
-  tracking.events.push(newEvent);
+  // Insert the event
+  await execute(
+    db,
+    'INSERT INTO tracking_events (slug, timestamp, page, referrer, user_agent) VALUES (?, ?, ?, ?, ?)',
+    [slug, timestamp, event.page, event.referrer ?? null, event.userAgent ?? null]
+  );
 
-  // Cap events array to prevent unbounded growth
-  while (tracking.events.length > MAX_EVENTS) {
-    tracking.events.shift();
+  // Enforce MAX_EVENTS cap
+  const countRow = await queryOne<{ cnt: number }>(
+    db,
+    'SELECT COUNT(*) as cnt FROM tracking_events WHERE slug = ?',
+    [slug]
+  );
+  const count = countRow?.cnt ?? 0;
+
+  if (count > MAX_EVENTS) {
+    const excess = count - MAX_EVENTS;
+    await execute(
+      db,
+      `DELETE FROM tracking_events WHERE id IN (
+        SELECT id FROM tracking_events WHERE slug = ? ORDER BY timestamp ASC LIMIT ?
+      )`,
+      [slug, excess]
+    );
   }
 
-  await kv.put(`${KV_PREFIX.TRACKING}${slug}`, JSON.stringify(tracking));
-  return tracking;
+  return getTrackingSlug(db, slug);
 }

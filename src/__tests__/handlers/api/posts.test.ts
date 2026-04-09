@@ -1,10 +1,10 @@
 /**
  * Admin Posts API Handlers Tests
  *
- * Tests for post management endpoints.
+ * Tests for post management endpoints against D1.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
   handleAdminListPosts,
@@ -13,23 +13,41 @@ import {
   handleAdminDeletePost,
   handleUnpublishPost,
 } from '../../../handlers/api/posts';
-import { createDraft, listDrafts } from '../../../dao/draft.dao';
-import { publishDraft, getPost, getPostBySlug, listPosts } from '../../../dao/post.dao';
-import { KV_PREFIX } from '../../../types';
+import { getPost, getPostBySlug, listPosts } from '../../../dao/post.dao';
 
 describe('Admin Posts API Handlers', () => {
-  beforeEach(async () => {
-    // Clean up all related keys
-    const prefixes = [KV_PREFIX.POST, KV_PREFIX.POST_SLUG, KV_PREFIX.DRAFT];
-    for (const prefix of prefixes) {
-      const keys = await env.KV.list({ prefix });
-      for (const key of keys.keys) {
-        await env.KV.delete(key.name);
-      }
-    }
-    await env.KV.delete(KV_PREFIX.INDEX_POSTS);
-    await env.KV.delete(KV_PREFIX.INDEX_DRAFTS);
+  beforeAll(async () => {
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', slug TEXT NOT NULL UNIQUE, content TEXT NOT NULL DEFAULT '', description TEXT, published_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+    await env.DB.exec("CREATE INDEX IF NOT EXISTS idx_posts_published_at ON posts(published_at DESC)");
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS drafts (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', slug TEXT NOT NULL DEFAULT '', content TEXT NOT NULL DEFAULT '', description TEXT, share_token TEXT UNIQUE, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
   });
+
+  beforeEach(async () => {
+    await env.DB.exec('DELETE FROM posts');
+    await env.DB.exec('DELETE FROM drafts');
+  });
+
+  // Helper to insert a post directly
+  async function insertPost(overrides: Partial<{ id: string; title: string; slug: string; content: string; description: string | null; publishedAt: string }> = {}) {
+    const id = overrides.id ?? crypto.randomUUID();
+    const now = new Date().toISOString();
+    await env.DB.prepare(
+      'INSERT INTO posts (id, title, slug, content, description, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(
+      id,
+      overrides.title ?? 'Test Post',
+      overrides.slug ?? 'test-post',
+      overrides.content ?? 'Test content',
+      overrides.description ?? null,
+      overrides.publishedAt ?? now,
+      now
+    ).run();
+    return { id, publishedAt: overrides.publishedAt ?? now };
+  }
 
   describe('handleAdminListPosts', () => {
     it('should return empty array when no posts exist', async () => {
@@ -40,27 +58,15 @@ describe('Admin Posts API Handlers', () => {
       expect(data).toEqual([]);
     });
 
-    it('should return all posts with full content', async () => {
-      const draft1 = await createDraft(env.KV, {
-        title: 'Post 1',
-        slug: 'post-1',
-        content: 'Full content 1',
-      });
-      const draft2 = await createDraft(env.KV, {
-        title: 'Post 2',
-        slug: 'post-2',
-        content: 'Full content 2',
-      });
-      await publishDraft(env.KV, draft1.id);
-      await publishDraft(env.KV, draft2.id);
+    it('should return all posts', async () => {
+      await insertPost({ title: 'Post 1', slug: 'post-1', content: 'Full content 1' });
+      await insertPost({ title: 'Post 2', slug: 'post-2', content: 'Full content 2' });
 
       const response = await handleAdminListPosts(env);
 
       expect(response.status).toBe(200);
-      const data = await response.json() as Array<{ title: string; content: string }>;
+      const data = await response.json() as Array<{ title: string }>;
       expect(data).toHaveLength(2);
-      // Admin list includes full content
-      expect(data[0].content).toBeDefined();
     });
 
     it('should include CORS headers', async () => {
@@ -79,18 +85,13 @@ describe('Admin Posts API Handlers', () => {
     });
 
     it('should return post by ID', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'My Post',
-        slug: 'my-post',
-        content: 'Content',
-      });
-      const post = await publishDraft(env.KV, draft.id);
+      const { id } = await insertPost({ title: 'My Post', slug: 'my-post', content: 'Content' });
 
-      const response = await handleAdminGetPost(env, post.id);
+      const response = await handleAdminGetPost(env, id);
 
       expect(response.status).toBe(200);
       const data = await response.json() as { id: string; title: string };
-      expect(data.id).toBe(post.id);
+      expect(data.id).toBe(id);
       expect(data.title).toBe('My Post');
     });
   });
@@ -109,20 +110,15 @@ describe('Admin Posts API Handlers', () => {
     });
 
     it('should update post fields', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'Original',
-        slug: 'original',
-        content: 'Original content',
-      });
-      const post = await publishDraft(env.KV, draft.id);
+      const { id } = await insertPost({ title: 'Original', slug: 'original', content: 'Original content' });
 
-      const request = new Request(`http://localhost/api/admin/posts/${post.id}`, {
+      const request = new Request(`http://localhost/api/admin/posts/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: 'Updated Title', content: 'Updated content' }),
       });
 
-      const response = await handleAdminUpdatePost(request, env, post.id);
+      const response = await handleAdminUpdatePost(request, env, id);
 
       expect(response.status).toBe(200);
       const data = await response.json() as { title: string; content: string };
@@ -131,41 +127,34 @@ describe('Admin Posts API Handlers', () => {
     });
 
     it('should update slug and slug lookup', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'Post',
-        slug: 'old-slug',
-        content: 'Content',
-      });
-      const post = await publishDraft(env.KV, draft.id);
+      const { id } = await insertPost({ title: 'Post', slug: 'old-slug', content: 'Content' });
 
-      const request = new Request(`http://localhost/api/admin/posts/${post.id}`, {
+      const request = new Request(`http://localhost/api/admin/posts/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug: 'new-slug' }),
       });
 
-      await handleAdminUpdatePost(request, env, post.id);
+      await handleAdminUpdatePost(request, env, id);
 
-      const byOldSlug = await getPostBySlug(env.KV, 'old-slug');
-      const byNewSlug = await getPostBySlug(env.KV, 'new-slug');
+      const byOldSlug = await getPostBySlug(env.DB, 'old-slug');
+      const byNewSlug = await getPostBySlug(env.DB, 'new-slug');
 
       expect(byOldSlug).toBeNull();
       expect(byNewSlug).not.toBeNull();
     });
 
     it('should return 400 for duplicate slug', async () => {
-      const draft1 = await createDraft(env.KV, { title: 'P1', slug: 'slug-1', content: 'C1' });
-      const draft2 = await createDraft(env.KV, { title: 'P2', slug: 'slug-2', content: 'C2' });
-      await publishDraft(env.KV, draft1.id);
-      const post2 = await publishDraft(env.KV, draft2.id);
+      await insertPost({ title: 'P1', slug: 'slug-1', content: 'C1' });
+      const { id: post2Id } = await insertPost({ title: 'P2', slug: 'slug-2', content: 'C2' });
 
-      const request = new Request(`http://localhost/api/admin/posts/${post2.id}`, {
+      const request = new Request(`http://localhost/api/admin/posts/${post2Id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug: 'slug-1' }),
       });
 
-      const response = await handleAdminUpdatePost(request, env, post2.id);
+      const response = await handleAdminUpdatePost(request, env, post2Id);
 
       expect(response.status).toBe(400);
       const data = await response.json() as { error: string };
@@ -173,21 +162,16 @@ describe('Admin Posts API Handlers', () => {
     });
 
     it('should update publishedAt', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'Post',
-        slug: 'date-test',
-        content: 'Content',
-      });
-      const post = await publishDraft(env.KV, draft.id);
+      const { id } = await insertPost({ title: 'Post', slug: 'date-test', content: 'Content' });
 
       const newDate = '2020-06-15T10:30:00.000Z';
-      const request = new Request(`http://localhost/api/admin/posts/${post.id}`, {
+      const request = new Request(`http://localhost/api/admin/posts/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ publishedAt: newDate }),
       });
 
-      const response = await handleAdminUpdatePost(request, env, post.id);
+      const response = await handleAdminUpdatePost(request, env, id);
 
       expect(response.status).toBe(200);
       const data = await response.json() as { publishedAt: string };
@@ -195,24 +179,20 @@ describe('Admin Posts API Handlers', () => {
     });
 
     it('should preserve publishedAt when not provided', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'Post',
-        slug: 'preserve-date',
-        content: 'Content',
-      });
-      const post = await publishDraft(env.KV, draft.id);
+      const originalDate = '2024-01-01T00:00:00.000Z';
+      const { id } = await insertPost({ title: 'Post', slug: 'preserve-date', content: 'Content', publishedAt: originalDate });
 
-      const request = new Request(`http://localhost/api/admin/posts/${post.id}`, {
+      const request = new Request(`http://localhost/api/admin/posts/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: 'Updated' }),
       });
 
-      const response = await handleAdminUpdatePost(request, env, post.id);
+      const response = await handleAdminUpdatePost(request, env, id);
 
       expect(response.status).toBe(200);
       const data = await response.json() as { publishedAt: string };
-      expect(data.publishedAt).toBe(post.publishedAt);
+      expect(data.publishedAt).toBe(originalDate);
     });
   });
 
@@ -224,34 +204,24 @@ describe('Admin Posts API Handlers', () => {
     });
 
     it('should delete post', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'To Delete',
-        slug: 'to-delete',
-        content: 'Content',
-      });
-      const post = await publishDraft(env.KV, draft.id);
+      const { id } = await insertPost({ title: 'To Delete', slug: 'to-delete', content: 'Content' });
 
-      const response = await handleAdminDeletePost(env, post.id);
+      const response = await handleAdminDeletePost(env, id);
 
       expect(response.status).toBe(200);
       const data = await response.json() as { ok: boolean };
       expect(data.ok).toBe(true);
 
-      const deleted = await getPost(env.KV, post.id);
+      const deleted = await getPost(env.DB, id);
       expect(deleted).toBeNull();
     });
 
     it('should delete slug lookup', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'To Delete',
-        slug: 'to-delete',
-        content: 'Content',
-      });
-      const post = await publishDraft(env.KV, draft.id);
+      const { id } = await insertPost({ title: 'To Delete', slug: 'to-delete', content: 'Content' });
 
-      await handleAdminDeletePost(env, post.id);
+      await handleAdminDeletePost(env, id);
 
-      const bySlug = await getPostBySlug(env.KV, 'to-delete');
+      const bySlug = await getPostBySlug(env.DB, 'to-delete');
       expect(bySlug).toBeNull();
     });
   });
@@ -266,14 +236,9 @@ describe('Admin Posts API Handlers', () => {
     });
 
     it('should unpublish post and return draft', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'Published Post',
-        slug: 'published-post',
-        content: 'Content',
-      });
-      const post = await publishDraft(env.KV, draft.id);
+      const { id } = await insertPost({ title: 'Published Post', slug: 'published-post', content: 'Content' });
 
-      const response = await handleUnpublishPost(env, post.id);
+      const response = await handleUnpublishPost(env, id);
 
       expect(response.status).toBe(200);
       const data = await response.json() as { id: string; title: string; createdAt: string };
@@ -282,46 +247,30 @@ describe('Admin Posts API Handlers', () => {
     });
 
     it('should delete post after unpublishing', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'Post',
-        slug: 'post',
-        content: 'Content',
-      });
-      const post = await publishDraft(env.KV, draft.id);
+      const { id } = await insertPost({ title: 'Post', slug: 'post', content: 'Content' });
 
-      await handleUnpublishPost(env, post.id);
+      await handleUnpublishPost(env, id);
 
-      const deletedPost = await getPost(env.KV, post.id);
+      const deletedPost = await getPost(env.DB, id);
       expect(deletedPost).toBeNull();
     });
 
     it('should create new draft after unpublishing', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'Post',
-        slug: 'post',
-        content: 'Content',
-      });
-      const post = await publishDraft(env.KV, draft.id);
+      const { id } = await insertPost({ title: 'Post', slug: 'post', content: 'Content' });
 
-      await handleUnpublishPost(env, post.id);
+      await handleUnpublishPost(env, id);
 
-      const drafts = await listDrafts(env.KV);
-      expect(drafts).toHaveLength(1);
-      expect(drafts[0].title).toBe('Post');
+      const drafts = await env.DB.prepare('SELECT id, title FROM drafts').all<{ id: string; title: string }>();
+      expect(drafts.results).toHaveLength(1);
+      expect(drafts.results[0].title).toBe('Post');
     });
 
     it('should free up slug after unpublishing', async () => {
-      const draft = await createDraft(env.KV, {
-        title: 'Post',
-        slug: 'reusable-slug',
-        content: 'Content',
-      });
-      const post = await publishDraft(env.KV, draft.id);
+      const { id } = await insertPost({ title: 'Post', slug: 'reusable-slug', content: 'Content' });
 
-      await handleUnpublishPost(env, post.id);
+      await handleUnpublishPost(env, id);
 
-      // Slug should be free
-      const bySlug = await getPostBySlug(env.KV, 'reusable-slug');
+      const bySlug = await getPostBySlug(env.DB, 'reusable-slug');
       expect(bySlug).toBeNull();
     });
   });

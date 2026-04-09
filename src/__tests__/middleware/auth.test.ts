@@ -17,7 +17,7 @@ import {
   clearSessionCookie,
 } from '../../middleware/auth';
 import { createSession } from '../../dao/session.dao';
-import { KV_PREFIX } from '../../types';
+import { KV_KEY } from '../../types';
 
 // Extend env type for testing
 type TestEnv = typeof env & {
@@ -31,7 +31,7 @@ describe('Auth Middleware', () => {
 
   beforeEach(async () => {
     // Clean up sessions
-    const keys = await env.KV.list({ prefix: KV_PREFIX.SESSION });
+    const keys = await env.KV.list({ prefix: KV_KEY.SESSION });
     for (const key of keys.keys) {
       await env.KV.delete(key.name);
     }
@@ -157,7 +157,7 @@ describe('Auth Middleware', () => {
         token,
         expiresAt: new Date(Date.now() - 1000).toISOString(),
       };
-      await env.KV.put(`${KV_PREFIX.SESSION}${token}`, JSON.stringify(expiredSession));
+      await env.KV.put(`${KV_KEY.SESSION}${token}`, JSON.stringify(expiredSession));
 
       const request = new Request('http://localhost/', {
         headers: { Cookie: `gp_session=${token}` },
@@ -200,7 +200,7 @@ describe('Auth Middleware', () => {
       const result = await login('admin', 'correctpassword', testEnv);
       expect(result.token).toBeDefined();
 
-      const sessionData = await env.KV.get(`${KV_PREFIX.SESSION}${result.token}`);
+      const sessionData = await env.KV.get(`${KV_KEY.SESSION}${result.token}`);
       expect(sessionData).not.toBeNull();
     });
   });
@@ -214,7 +214,7 @@ describe('Auth Middleware', () => {
 
       await logout(request, env);
 
-      const sessionData = await env.KV.get(`${KV_PREFIX.SESSION}${session.token}`);
+      const sessionData = await env.KV.get(`${KV_KEY.SESSION}${session.token}`);
       expect(sessionData).toBeNull();
     });
 

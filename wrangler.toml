@@ -26,6 +26,12 @@ preview_id = "255ea6f6b3514decb5483765d99cf66a"
 binding = "R2"
 bucket_name = "gpeake-files"
 
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "personal-site"
+database_id = "9ed05dc5-17fa-4422-a09e-e5fb2c75f86d"
+
 # Analytics Engine binding
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"

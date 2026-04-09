@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { handleLogin, handleLogout } from '../../../handlers/api/auth';
 import { hashPassword } from '../../../middleware/auth';
-import { KV_PREFIX } from '../../../types';
+import { KV_KEY } from '../../../types';
 
 // Extend env type for testing
 type TestEnv = typeof env & {
@@ -22,7 +22,7 @@ describe('Auth API Handlers', () => {
 
   beforeEach(async () => {
     // Clean up sessions
-    const keys = await env.KV.list({ prefix: KV_PREFIX.SESSION });
+    const keys = await env.KV.list({ prefix: KV_KEY.SESSION });
     for (const key of keys.keys) {
       await env.KV.delete(key.name);
     }
@@ -173,7 +173,7 @@ describe('Auth API Handlers', () => {
 
       await handleLogin(request, testEnv);
 
-      const sessions = await env.KV.list({ prefix: KV_PREFIX.SESSION });
+      const sessions = await env.KV.list({ prefix: KV_KEY.SESSION });
       expect(sessions.keys.length).toBeGreaterThan(0);
     });
 
@@ -235,7 +235,7 @@ describe('Auth API Handlers', () => {
       const token = tokenMatch![1];
 
       // Verify session exists
-      const sessionsBefore = await env.KV.list({ prefix: KV_PREFIX.SESSION });
+      const sessionsBefore = await env.KV.list({ prefix: KV_KEY.SESSION });
       expect(sessionsBefore.keys.length).toBe(1);
 
       // Then logout
@@ -246,7 +246,7 @@ describe('Auth API Handlers', () => {
       await handleLogout(logoutRequest, testEnv);
 
       // Verify session is deleted
-      const sessionsAfter = await env.KV.list({ prefix: KV_PREFIX.SESSION });
+      const sessionsAfter = await env.KV.list({ prefix: KV_KEY.SESSION });
       expect(sessionsAfter.keys.length).toBe(0);
     });
 

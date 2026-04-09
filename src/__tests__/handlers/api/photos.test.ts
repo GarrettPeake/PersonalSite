@@ -4,7 +4,7 @@
  * Tests for photo management endpoints.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
   handleListPhotosPublic,
@@ -14,16 +14,16 @@ import {
   handleDeletePhoto,
 } from '../../../handlers/api/photos';
 import { createPhoto, getPhoto, listPhotos } from '../../../dao/photo.dao';
-import { KV_PREFIX } from '../../../types';
 
 describe('Photos API Handlers', () => {
+  beforeAll(async () => {
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS photos (id TEXT PRIMARY KEY, url TEXT NOT NULL, filename TEXT NOT NULL, location TEXT NOT NULL DEFAULT '', description TEXT NOT NULL DEFAULT '', published_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+  });
+
   beforeEach(async () => {
-    // Clean up all photo related keys
-    const photoKeys = await env.KV.list({ prefix: KV_PREFIX.PHOTO });
-    for (const key of photoKeys.keys) {
-      await env.KV.delete(key.name);
-    }
-    await env.KV.delete(KV_PREFIX.INDEX_PHOTOS);
+    await env.DB.exec('DELETE FROM photos');
   });
 
   describe('handleListPhotosPublic', () => {
@@ -36,13 +36,13 @@ describe('Photos API Handlers', () => {
     });
 
     it('should return all photos with public fields only', async () => {
-      await createPhoto(env.KV, {
+      await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/1.jpg',
         filename: 'photos/1.jpg',
         location: 'Tokyo',
         description: 'Cherry blossoms',
       });
-      await createPhoto(env.KV, {
+      await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/2.jpg',
         filename: 'photos/2.jpg',
         location: 'Paris',
@@ -93,7 +93,7 @@ describe('Photos API Handlers', () => {
     });
 
     it('should return all photos with full data', async () => {
-      await createPhoto(env.KV, {
+      await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/1.jpg',
         filename: 'photos/1.jpg',
         location: 'Tokyo',
@@ -125,7 +125,7 @@ describe('Photos API Handlers', () => {
     });
 
     it('should return photo by ID', async () => {
-      const created = await createPhoto(env.KV, {
+      const created = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'New York',
@@ -155,7 +155,7 @@ describe('Photos API Handlers', () => {
     });
 
     it('should update location and description', async () => {
-      const created = await createPhoto(env.KV, {
+      const created = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'Original Location',
@@ -180,7 +180,7 @@ describe('Photos API Handlers', () => {
     });
 
     it('should return 400 for missing fields', async () => {
-      const created = await createPhoto(env.KV, {
+      const created = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'Location',
@@ -208,8 +208,8 @@ describe('Photos API Handlers', () => {
       expect(response.status).toBe(404);
     });
 
-    it('should delete photo from KV', async () => {
-      const created = await createPhoto(env.KV, {
+    it('should delete photo from D1', async () => {
+      const created = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'Location',
@@ -222,12 +222,12 @@ describe('Photos API Handlers', () => {
       const data = (await response.json()) as { success: boolean };
       expect(data.success).toBe(true);
 
-      const deleted = await getPhoto(env.KV, created.id);
+      const deleted = await getPhoto(env.DB, created.id);
       expect(deleted).toBeNull();
     });
 
     it('should remove photo from list', async () => {
-      const created = await createPhoto(env.KV, {
+      const created = await createPhoto(env.DB, {
         url: 'https://files.gpeake.com/photos/test.jpg',
         filename: 'photos/test.jpg',
         location: 'Location',
@@ -236,7 +236,7 @@ describe('Photos API Handlers', () => {
 
       await handleDeletePhoto(env, created.id);
 
-      const photos = await listPhotos(env.KV);
+      const photos = await listPhotos(env.DB);
       expect(photos).toHaveLength(0);
     });
   });

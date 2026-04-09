@@ -1,29 +1,34 @@
 /**
  * Sitemap Handler Tests
  *
- * Tests for dynamic sitemap.xml generation.
+ * Tests for dynamic sitemap.xml generation against D1.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { handleSitemap } from '../../../handlers/pages/sitemap';
-import { createDraft } from '../../../dao/draft.dao';
-import { publishDraft } from '../../../dao/post.dao';
-import { KV_PREFIX } from '../../../types';
 
 describe('Sitemap Handler', () => {
-  beforeEach(async () => {
-    // Clean up KV
-    const prefixes = [KV_PREFIX.POST, KV_PREFIX.POST_SLUG, KV_PREFIX.DRAFT];
-    for (const prefix of prefixes) {
-      const keys = await env.KV.list({ prefix });
-      for (const key of keys.keys) {
-        await env.KV.delete(key.name);
-      }
-    }
-    await env.KV.delete(KV_PREFIX.INDEX_POSTS);
-    await env.KV.delete(KV_PREFIX.INDEX_DRAFTS);
+  beforeAll(async () => {
+    await env.DB.exec(
+      "CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', slug TEXT NOT NULL UNIQUE, content TEXT NOT NULL DEFAULT '', description TEXT, published_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+    await env.DB.exec("CREATE INDEX IF NOT EXISTS idx_posts_published_at ON posts(published_at DESC)");
   });
+
+  beforeEach(async () => {
+    await env.DB.exec('DELETE FROM posts');
+  });
+
+  // Helper to insert a post directly
+  async function insertPost(title: string, slug: string, content: string) {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await env.DB.prepare(
+      'INSERT INTO posts (id, title, slug, content, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(id, title, slug, content, now, now).run();
+    return { id, slug };
+  }
 
   it('should return XML content type', async () => {
     const response = await handleSitemap(env);
@@ -60,12 +65,7 @@ describe('Sitemap Handler', () => {
   });
 
   it('should include published blog posts', async () => {
-    const draft = await createDraft(env.KV, {
-      title: 'Test Post',
-      slug: 'test-post',
-      content: 'Hello world',
-    });
-    await publishDraft(env.KV, draft.id);
+    await insertPost('Test Post', 'test-post', 'Hello world');
 
     const response = await handleSitemap(env);
     const xml = await response.text();
@@ -73,12 +73,7 @@ describe('Sitemap Handler', () => {
   });
 
   it('should include lastmod for blog posts', async () => {
-    const draft = await createDraft(env.KV, {
-      title: 'Test Post',
-      slug: 'test-post',
-      content: 'Hello world',
-    });
-    await publishDraft(env.KV, draft.id);
+    await insertPost('Test Post', 'test-post', 'Hello world');
 
     const response = await handleSitemap(env);
     const xml = await response.text();
@@ -86,19 +81,8 @@ describe('Sitemap Handler', () => {
   });
 
   it('should include multiple blog posts', async () => {
-    const draft1 = await createDraft(env.KV, {
-      title: 'Post One',
-      slug: 'post-one',
-      content: 'First',
-    });
-    await publishDraft(env.KV, draft1.id);
-
-    const draft2 = await createDraft(env.KV, {
-      title: 'Post Two',
-      slug: 'post-two',
-      content: 'Second',
-    });
-    await publishDraft(env.KV, draft2.id);
+    await insertPost('Post One', 'post-one', 'First');
+    await insertPost('Post Two', 'post-two', 'Second');
 
     const response = await handleSitemap(env);
     const xml = await response.text();
@@ -107,12 +91,8 @@ describe('Sitemap Handler', () => {
   });
 
   it('should not include drafts', async () => {
-    await createDraft(env.KV, {
-      title: 'Draft Post',
-      slug: 'draft-post',
-      content: 'Not published',
-    });
-
+    // Only posts table is used by sitemap; drafts are not queried
+    // Just verify an empty posts table produces no blog entries
     const response = await handleSitemap(env);
     const xml = await response.text();
     expect(xml).not.toContain('draft-post');

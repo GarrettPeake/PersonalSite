@@ -16,22 +16,15 @@ const PUBLIC_CACHE = 'public, max-age=60, s-maxage=300';
  * GET /api/posts - List all published posts
  */
 export async function handleListPosts(env: Env): Promise<Response> {
-  const posts = await listPosts(env.KV);
-  const summaries = posts.map(({ title, slug, publishedAt, updatedAt, description }) => ({
-    title,
-    slug,
-    publishedAt,
-    updatedAt,
-    description,
-  }));
-  return jsonResponse(summaries, { ...corsHeaders, 'Cache-Control': PUBLIC_CACHE });
+  const posts = await listPosts(env.DB);
+  return jsonResponse(posts, { ...corsHeaders, 'Cache-Control': PUBLIC_CACHE });
 }
 
 /**
  * GET /api/posts/:slug - Get a single post by slug
  */
 export async function handleGetPost(env: Env, slug: string): Promise<Response> {
-  const post = await getPostBySlug(env.KV, slug);
+  const post = await getPostBySlug(env.DB, slug);
   if (!post) {
     return jsonResponse({ error: 'Post not found' }, corsHeaders, 404);
   }
@@ -80,9 +73,9 @@ export async function handleTrack(
   const rawUA = request.headers.get('user-agent') || undefined;
   const userAgent = rawUA ? rawUA.slice(0, MAX_USER_AGENT_LENGTH) : undefined;
 
-  const tracking = await getTrackingSlug(env.KV, body.slug);
+  const tracking = await getTrackingSlug(env.DB, body.slug);
   if (tracking) {
-    await recordTrackingEvent(env.KV, body.slug, {
+    await recordTrackingEvent(env.DB, body.slug, {
       page,
       referrer,
       userAgent,

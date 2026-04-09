@@ -1,11 +1,13 @@
 /**
  * Photo Data Access Object
  *
- * Manages photo metadata for the photography gallery.
+ * Manages photo metadata for the photography gallery using D1.
  */
 
-import { KV_PREFIX, Photo, PhotoCreateInput, PhotoUpdateInput } from '../types';
-import { getIndex, addToIndex, removeFromIndex } from './base';
+import { queryOne, queryAll, execute } from './base';
+import { Photo, PhotoCreateInput, PhotoUpdateInput } from '../types';
+
+const PHOTO_COLUMNS = 'id, url, filename, location, description, published_at as publishedAt, updated_at as updatedAt';
 
 // ============================================================================
 // Photo CRUD Operations
@@ -14,36 +16,34 @@ import { getIndex, addToIndex, removeFromIndex } from './base';
 /**
  * Get a photo by ID
  */
-export async function getPhoto(kv: KVNamespace, id: string): Promise<Photo | null> {
-  const data = await kv.get(`${KV_PREFIX.PHOTO}${id}`);
-  if (!data) return null;
-  return JSON.parse(data);
+export async function getPhoto(db: D1Database, id: string): Promise<Photo | null> {
+  return queryOne<Photo>(db, `SELECT ${PHOTO_COLUMNS} FROM photos WHERE id = ?`, [id]);
 }
 
 /**
  * List all photos (newest first by publishedAt)
  */
-export async function listPhotos(kv: KVNamespace): Promise<Photo[]> {
-  const ids = await getIndex(kv, KV_PREFIX.INDEX_PHOTOS);
-  const results = await Promise.all(ids.map(id => getPhoto(kv, id)));
-  const photos = results.filter((photo): photo is Photo => photo !== null);
-
-  photos.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-
-  return photos;
+export async function listPhotos(db: D1Database): Promise<Photo[]> {
+  return queryAll<Photo>(db, `SELECT ${PHOTO_COLUMNS} FROM photos ORDER BY published_at DESC`);
 }
 
 /**
  * Create a new photo
  */
 export async function createPhoto(
-  kv: KVNamespace,
+  db: D1Database,
   data: PhotoCreateInput
 ): Promise<Photo> {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  const photo: Photo = {
+  await execute(
+    db,
+    'INSERT INTO photos (id, url, filename, location, description, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [id, data.url, data.filename, data.location, data.description, now, now]
+  );
+
+  return {
     id,
     url: data.url,
     filename: data.filename,
@@ -52,47 +52,45 @@ export async function createPhoto(
     publishedAt: now,
     updatedAt: now,
   };
-
-  await kv.put(`${KV_PREFIX.PHOTO}${id}`, JSON.stringify(photo));
-  await addToIndex(kv, KV_PREFIX.INDEX_PHOTOS, id);
-
-  return photo;
 }
 
 /**
- * Update photo metadata (location and description only)
+ * Update photo metadata (location, description, and publishedAt)
  */
 export async function updatePhoto(
-  kv: KVNamespace,
+  db: D1Database,
   id: string,
   data: PhotoUpdateInput
 ): Promise<Photo | null> {
-  const existing = await getPhoto(kv, id);
+  const existing = await getPhoto(db, id);
   if (!existing) return null;
 
-  const updated: Photo = {
+  const now = new Date().toISOString();
+
+  await execute(
+    db,
+    'UPDATE photos SET location = ?, description = ?, published_at = ?, updated_at = ? WHERE id = ?',
+    [data.location, data.description, data.publishedAt, now, id]
+  );
+
+  return {
     ...existing,
     location: data.location,
     description: data.description,
     publishedAt: data.publishedAt,
-    updatedAt: new Date().toISOString(),
+    updatedAt: now,
   };
-
-  await kv.put(`${KV_PREFIX.PHOTO}${id}`, JSON.stringify(updated));
-  return updated;
 }
 
 /**
  * Delete a photo
  *
- * Note: This only removes the KV metadata. R2 file cleanup should be handled separately.
+ * Note: This only removes the D1 record. R2 file cleanup should be handled separately.
  */
-export async function deletePhoto(kv: KVNamespace, id: string): Promise<boolean> {
-  const photo = await getPhoto(kv, id);
-  if (!photo) return false;
+export async function deletePhoto(db: D1Database, id: string): Promise<boolean> {
+  const existing = await getPhoto(db, id);
+  if (!existing) return false;
 
-  await kv.delete(`${KV_PREFIX.PHOTO}${id}`);
-  await removeFromIndex(kv, KV_PREFIX.INDEX_PHOTOS, id);
-
+  await execute(db, 'DELETE FROM photos WHERE id = ?', [id]);
   return true;
 }
