@@ -263,6 +263,7 @@ class GpPhotoModal extends HTMLElement {
     this._isOpen = false;
     this.removeAttribute("open");
     document.body.style.overflow = "";
+    this.dispatchEvent(new CustomEvent("photo-modal-close", { bubbles: true, composed: true }));
   }
 }
 

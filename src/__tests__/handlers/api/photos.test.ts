@@ -8,6 +8,7 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
   handleListPhotosPublic,
+  handleGetPhotoPublic,
   handleAdminListPhotos,
   handleAdminGetPhoto,
   handleUpdatePhoto,
@@ -67,8 +68,8 @@ describe('Photos API Handlers', () => {
       expect(data[0].filename).toBeUndefined();
       expect(data[0].updatedAt).toBeUndefined();
 
-      // Should NOT include internal ID in public response
-      expect(data[0].id).toBeUndefined();
+      // Should include ID for deep-linking
+      expect(data[0].id).toBeDefined();
 
       // Should include public fields
       expect(data[0].url).toBeDefined();
@@ -80,6 +81,48 @@ describe('Photos API Handlers', () => {
     it('should include CORS headers', async () => {
       const response = await handleListPhotosPublic(env);
       expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
+    });
+  });
+
+  describe('handleGetPhotoPublic', () => {
+    it('should return 404 for non-existent photo', async () => {
+      const response = await handleGetPhotoPublic(env, 'nonexistent');
+      expect(response.status).toBe(404);
+    });
+
+    it('should return photo with public fields only', async () => {
+      const photo = await createPhoto(env.DB, {
+        url: 'https://files.gpeake.com/photos/1.jpg',
+        filename: 'photos/1.jpg',
+        location: 'Tokyo',
+        description: 'Cherry blossoms',
+      });
+
+      const response = await handleGetPhotoPublic(env, photo.id);
+      expect(response.status).toBe(200);
+
+      const data = await response.json() as Record<string, unknown>;
+      expect(data.id).toBe(photo.id);
+      expect(data.url).toBe('https://files.gpeake.com/photos/1.jpg');
+      expect(data.location).toBe('Tokyo');
+      expect(data.description).toBe('Cherry blossoms');
+      expect(data.publishedAt).toBeDefined();
+
+      // Should NOT include private fields
+      expect(data.filename).toBeUndefined();
+      expect(data.updatedAt).toBeUndefined();
+    });
+
+    it('should include Cache-Control header', async () => {
+      const photo = await createPhoto(env.DB, {
+        url: 'https://files.gpeake.com/photos/1.jpg',
+        filename: 'photos/1.jpg',
+        location: 'Test',
+        description: 'Test',
+      });
+
+      const response = await handleGetPhotoPublic(env, photo.id);
+      expect(response.headers.get('Cache-Control')).toContain('public');
     });
   });
 

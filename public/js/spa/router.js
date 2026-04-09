@@ -31,6 +31,7 @@ class SPARouter {
     this.shelfPanel = null;
     this._popstateHandler = null;
     this._blogModalCloseHandler = null;
+    this._photoModalCloseHandler = null;
     this._clickHandler = null;
     this._resizeHandler = null;
   }
@@ -63,12 +64,12 @@ class SPARouter {
 
     // Parse initial URL and set section
     const path = window.location.pathname;
-    const { section: initialSection, slug: initialBlogSlug, token: initialDraftToken } = this.resolveRoute(path);
+    const { section: initialSection, slug: initialBlogSlug, token: initialDraftToken, photoId: initialPhotoId } = this.resolveRoute(path);
 
     // Bind popstate for browser back/forward
     this._popstateHandler = (e) => {
       const path = window.location.pathname;
-      const { section, slug, token } = this.resolveRoute(path);
+      const { section, slug, token, photoId } = this.resolveRoute(path);
 
       // Close blog modal if we navigated away from a blog post on desktop
       if (this.layoutMode === 'desktop' && !slug) {
@@ -78,10 +79,22 @@ class SPARouter {
         }
       }
 
+      // Close photo modal if we navigated away from a photo
+      if (!photoId) {
+        const photoModal = document.querySelector('gp-photo-modal');
+        if (photoModal && photoModal.hasAttribute('open')) {
+          photoModal.removeAttribute('open');
+          photoModal._isOpen = false;
+          document.body.style.overflow = '';
+        }
+      }
+
       if (section === 'blog-post') {
         this.showBlogPost(slug, false);
       } else if (section === 'draft-preview') {
         this.showDraftPreview(token, false);
+      } else if (photoId) {
+        this.showPhotoById(photoId, false);
       } else {
         this.showSection(section, false);
       }
@@ -98,6 +111,14 @@ class SPARouter {
       };
       document.addEventListener('blog-modal-close', this._blogModalCloseHandler);
     }
+
+    // Listen for photo modal close events
+    this._photoModalCloseHandler = () => {
+      if (window.location.pathname.startsWith('/photography/')) {
+        history.pushState({ section: 'photography' }, '', '/photography');
+      }
+    };
+    document.addEventListener('photo-modal-close', this._photoModalCloseHandler);
 
     // Intercept nav link clicks
     this.setupNavigation();
@@ -121,7 +142,8 @@ class SPARouter {
         this.enableTransitions();
       });
     } else {
-      this.showSection(initialSection, false).then(() => {
+      const sectionParams = initialPhotoId ? { photoId: initialPhotoId } : {};
+      this.showSection(initialSection, false, sectionParams).then(() => {
         document.documentElement.removeAttribute('data-initial-section');
         this.enableTransitions();
         // Desktop: if this was a direct link to a blog post, open modal
@@ -136,7 +158,7 @@ class SPARouter {
 
     // Replace state with section info
     history.replaceState(
-      { section: initialSection, slug: initialBlogSlug, token: initialDraftToken },
+      { section: initialSection, slug: initialBlogSlug, token: initialDraftToken, photoId: initialPhotoId },
       '',
       window.location.pathname
     );
@@ -152,6 +174,10 @@ class SPARouter {
     if (this._blogModalCloseHandler) {
       document.removeEventListener('blog-modal-close', this._blogModalCloseHandler);
       this._blogModalCloseHandler = null;
+    }
+    if (this._photoModalCloseHandler) {
+      document.removeEventListener('photo-modal-close', this._photoModalCloseHandler);
+      this._photoModalCloseHandler = null;
     }
     if (this._clickHandler) {
       document.removeEventListener('click', this._clickHandler);
@@ -207,6 +233,12 @@ class SPARouter {
       const newPath = this.redirects[path];
       history.replaceState(null, '', newPath);
       return this.resolveRoute(newPath);
+    }
+
+    // Photography deep-link: /photography/:photoId
+    const photoMatch = path.match(/^\/photography\/(.+)$/);
+    if (photoMatch) {
+      return { section: 'photography', slug: null, token: null, photoId: photoMatch[1] };
     }
 
     // Blog post: /blog/:slug
@@ -283,7 +315,7 @@ class SPARouter {
       url = url.slice(0, -1);
     }
 
-    const { section, slug, token } = this.resolveRoute(url);
+    const { section, slug, token, photoId } = this.resolveRoute(url);
 
     if (section === 'not-found' && !url.startsWith('/draft') && !url.startsWith('/blog')) {
       // Not an SPA route, do normal navigation
@@ -325,7 +357,7 @@ class SPARouter {
     return toIndex > fromIndex ? 'forward' : 'backward';
   }
 
-  async showSection(name, animate = true) {
+  async showSection(name, animate = true, params = {}) {
     if (this.currentSection === name || this.isTransitioning) return;
 
     this.isTransitioning = true;
@@ -334,7 +366,7 @@ class SPARouter {
 
     // Load section if not already loaded
     if (!this.loadedSections[name]) {
-      await this.loadSection(name);
+      await this.loadSection(name, params);
     }
 
     // Get section elements
@@ -588,6 +620,41 @@ class SPARouter {
     const blogModal = document.querySelector('gp-blog-modal');
     if (blogModal && blogModal.hasAttribute('open')) {
       blogModal.close();
+    }
+  }
+
+  /** Open a photo by ID — ensures photography section is loaded, then opens the modal */
+  async showPhotoById(photoId, pushState = true) {
+    if (this.currentSection !== 'photography') {
+      await this.showSection('photography', false, { photoId });
+    } else {
+      // Section already loaded — fetch directly from API
+      const photoModal = document.querySelector('gp-photo-modal');
+      if (photoModal) {
+        try {
+          const res = await fetch(`/api/photos/${encodeURIComponent(photoId)}`);
+          if (res.ok) {
+            const photo = await res.json();
+            photoModal.open({
+              imageSrc: photo.url || null,
+              location: photo.location || '',
+              description: photo.description || ''
+            });
+          }
+        } catch (err) {
+          console.error('Failed to load photo:', err);
+        }
+      }
+    }
+
+    if (pushState) {
+      history.pushState({ section: 'photography', photoId }, '', `/photography/${photoId}`);
+    }
+
+    // Track page view
+    const tracker = document.querySelector('gp-tracker');
+    if (tracker && tracker.trackPageView) {
+      tracker.trackPageView(`/photography/${photoId}`);
     }
   }
 }

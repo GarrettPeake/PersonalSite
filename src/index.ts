@@ -42,6 +42,7 @@ import {
 } from './handlers/api/tracking';
 import {
   handleListPhotosPublic,
+  handleGetPhotoPublic,
   handleAdminListPhotos,
   handleAdminGetPhoto,
   handleCreatePhoto,
@@ -110,7 +111,7 @@ export default {
     // Static routes we know are valid:
     const knownStaticRoutes = ['/', '/projects', '/blog', '/about', '/photography'];
     // Dynamic route patterns we accept (can't verify content without KV lookup):
-    const knownDynamicPrefixes = ['/blog/', '/draft/share/'];
+    const knownDynamicPrefixes = ['/blog/', '/draft/share/', '/photography/'];
 
     const isKnownRoute =
       knownStaticRoutes.includes(path) ||
@@ -209,6 +210,12 @@ async function resolveApiRoute(request: Request, env: Env, path: string, method:
     // GET /api/photos - List all photos (public)
     if (path === '/api/photos' && method === 'GET') {
       return handleListPhotosPublic(env);
+    }
+
+    // GET /api/photos/:id - Get single photo (public)
+    if (path.match(/^\/api\/photos\/[^/]+$/) && method === 'GET') {
+      const id = path.replace('/api/photos/', '');
+      return handleGetPhotoPublic(env, id);
     }
 
     // GET /api/projects - List all projects (public)
