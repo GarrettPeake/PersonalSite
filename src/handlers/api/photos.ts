@@ -52,6 +52,7 @@ export async function handleListPhotosPublic(env: Env): Promise<Response> {
 
     // Return only public-facing data
     const publicPhotos = photos.map((photo) => ({
+      id: photo.id,
       url: photo.url,
       location: photo.location,
       description: photo.description,
@@ -62,6 +63,30 @@ export async function handleListPhotosPublic(env: Env): Promise<Response> {
   } catch (error) {
     console.error('Error listing photos:', error);
     return jsonResponse({ error: 'Failed to list photos' }, corsHeaders, 500);
+  }
+}
+
+/**
+ * GET /api/photos/:id - Get single photo (public)
+ */
+export async function handleGetPhotoPublic(env: Env, id: string): Promise<Response> {
+  try {
+    const photo = await getPhoto(env.DB, id);
+
+    if (!photo) {
+      return jsonResponse({ error: 'Photo not found' }, corsHeaders, 404);
+    }
+
+    return jsonResponse({
+      id: photo.id,
+      url: photo.url,
+      location: photo.location,
+      description: photo.description,
+      publishedAt: photo.publishedAt,
+    }, { ...corsHeaders, 'Cache-Control': PUBLIC_CACHE });
+  } catch (error) {
+    console.error('Error getting photo:', error);
+    return jsonResponse({ error: 'Failed to get photo' }, corsHeaders, 500);
   }
 }
 

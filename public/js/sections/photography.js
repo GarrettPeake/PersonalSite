@@ -17,8 +17,28 @@ const template = `
   </div>
 `;
 
-async function init(container) {
+async function init(container, params = {}) {
   const photoGrid = container.querySelector('#spa-photo-grid');
+
+  // Deep-link: fetch single photo immediately in parallel with grid load
+  if (params.photoId) {
+    const photoPromise = fetch(`/api/photos/${encodeURIComponent(params.photoId)}`)
+      .then(res => res.ok ? res.json() : null)
+      .catch(() => null);
+
+    // Open the modal as soon as the single-photo response arrives (don't wait for grid)
+    photoPromise.then(photo => {
+      if (!photo) return;
+      const photoModal = document.querySelector('gp-photo-modal');
+      if (photoModal) {
+        photoModal.open({
+          imageSrc: photo.url || null,
+          location: photo.location || '',
+          description: photo.description || ''
+        });
+      }
+    });
+  }
 
   try {
     const res = await fetch('/api/photos');
@@ -46,7 +66,7 @@ function renderPhotoGrid(container) {
   }
 
   photoGrid.innerHTML = photos.map(photo => `
-    <div class="photo-item" role="button" tabindex="0" aria-label="${escapeAttr(photo.description || photo.location || 'View photo')}" data-location="${escapeAttr(photo.location)}" data-description="${escapeAttr(photo.description)}">
+    <div class="photo-item" role="button" tabindex="0" aria-label="${escapeAttr(photo.description || photo.location || 'View photo')}" data-id="${escapeAttr(photo.id)}" data-location="${escapeAttr(photo.location)}" data-description="${escapeAttr(photo.description)}">
       <img src="${escapeAttr(photo.url)}" alt="${escapeAttr(photo.description || 'Photo')}" loading="lazy">
     </div>
   `).join('');
@@ -58,17 +78,22 @@ function initPhotoGallery(container) {
 
   if (!photoGrid || !photoModal) return;
 
-  function openPhoto(photoItem) {
+  function openPhoto(photoItem, pushState = true) {
     const img = photoItem.querySelector('img');
     const imageSrc = img ? img.src : null;
     const location = photoItem.dataset.location || '';
     const description = photoItem.dataset.description || '';
+    const photoId = photoItem.dataset.id || '';
 
     photoModal.open({
       imageSrc,
       location,
       description
     });
+
+    if (pushState && photoId) {
+      history.pushState({ section: 'photography', photoId }, '', `/photography/${photoId}`);
+    }
   }
 
   photoGrid.addEventListener('click', (e) => {
