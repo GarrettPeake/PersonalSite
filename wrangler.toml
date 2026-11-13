@@ -1,6 +1,8 @@
 name = "gpeake-site"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
+# Better Auth and the SAML libraries (admin sign-in through GAuth) need Node APIs.
+compatibility_flags = ["nodejs_compat"]
 
 [observability]
 [observability.logs]
@@ -36,3 +38,12 @@ database_id = "9ed05dc5-17fa-4422-a09e-e5fb2c75f86d"
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"
 dataset = "page_views"
+
+# Admin sign-in through GAuth (src/auth/gauth.ts). BETTER_AUTH_SECRET is a secret.
+# The admin lives on APP_ORIGIN only (www./portfolio. redirect there). The certificates
+# are public, copied from https://auth.gpeake.com/saml/metadata; list both old and new
+# during a GAuth key rotation. .dev.vars overrides all three for a local GAuth.
+[vars]
+APP_ORIGIN = "https://gpeake.com"
+GAUTH_ORIGIN = "https://auth.gpeake.com"
+GAUTH_CERTS = "-----BEGIN CERTIFICATE-----\nMIIETzCCAregAwIBAgIUQTIyLSxY+lMKtuSPlsypAZWXWRIwDQYJKoZIhvcNAQEL\nBQAwNzEYMBYGA1UEAwwPYXV0aC5ncGVha2UuY29tMRswGQYDVQQKDBJHQXV0aCBT\nQU1MIHNpZ25pbmcwHhcNMjYxMTA5MDIxMDMxWhcNMzExMTA5MDIxMDMxWjA3MRgw\nFgYDVQQDDA9hdXRoLmdwZWFrZS5jb20xGzAZBgNVBAoMEkdBdXRoIFNBTUwgc2ln\nbmluZzCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAKobG6FczKAEssZd\npHx6uw1F5htqb8daARRvo8VZvHQdoLzohPMGki8VNfAMbRakqjun0enh4yOihhVZ\nDSrJjr9YQa5AY5feghGtHDk4THqHVOiniZ47kFP+bHQrKinD4kcwL48UnUi2a0Ic\naMA25VFhWBCKdoKBMPCFL/eBZ5VdTw/LDyHGW9rQSwsIzF1RlOnkOZyAXqjw5XLM\nLEFETjww0s/3nzluYK6NlI5D+f2qU+WzIuRaSJqGO4S35X8q2iNei63yXU5cTCrr\n9nndaa65LoP0GDt3PnWHVpZ0q5riqJ9FkGG0+w/iNRZv9iihE7pVtMR+O2ssQmJc\nqm6o0dnFQ0WBFlfnkIBS5mj8BOLaQ3X1aMojlvkTpdqVBTBB8Et9ywEjuRB3D27g\nqS0urDLbnNTrraLjUowcOUWsK8lcMldCubuujjyBCCJeKjz9xsdVTAs1KFfD8ITt\nJYPF5aF2WGOMj4lPGWlOIgsH/1oE4grTNBP+kbSLQmZ4/mGIIwIDAQABo1MwUTAd\nBgNVHQ4EFgQUsasqlt3BMFxnUpF3/lwtS8+rHFkwHwYDVR0jBBgwFoAUsasqlt3B\nMFxnUpF3/lwtS8+rHFkwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOC\nAYEAHA9475KmGxmg5CotZKyYwI+LKC6SMR4nwWrJyz4G3x+We2L2+zOXnF6waDIq\nPU1L6e8cT+cOurn4d9m3GgL4wN4Xy+H2EgPP979TdXPmTD00MNY1SMMoIoW7fwkP\ncTLROsPgTBDY+v9OzkGgRwmoG3EJZjsw+i5kMmglBoT3zaPaxb6t+lBoTdZEmwEV\ng0Fs1dgC0PNpJlBxVF9qKz4g9XsyknViQxpZVKJ6wL5fi4xir5m0RB8PsHFlAYcS\nDwOojRno/0I+pGhPf9qR6/4H+GKIu+vC6qsbhfJTTbwCrbETwp/uB+J9x1mCmXSb\nrIa3P4kaiM1jQweM8ZXOg79f2PvwyCBG/ldbmKbLcd38sDtcFFuOeoLE+BhE4A7z\nPS7Gx9QCNg8Ige4W3Hlmq0/L8snW4KmUSWqw8m6uUUDRiZjEWg9RAcEqnzha9GIm\nsxnaPezdf3oLRHkF3lt8I0TkFeYGDHJsZ6UFJdhcjSD1bQUQQlfE3WRgktlyR/Zh\no6Y+\n-----END CERTIFICATE-----"

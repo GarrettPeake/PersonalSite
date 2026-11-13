@@ -20,11 +20,15 @@
   "license": "ISC",
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.0.0",
-    "@cloudflare/vitest-pool-workers": "^0.8.0",
+    "@cloudflare/vitest-pool-workers": "^0.12.21",
     "@cloudflare/workers-types": "^4.20260113.0",
     "typescript": "^5.9.3",
     "vite": "^6.0.0",
     "vitest": "^3.0.0",
     "wrangler": "^4.58.0"
+  },
+  "dependencies": {
+    "@better-auth/sso": "1.7.18",
+    "better-auth": "1.7.18"
   }
 }

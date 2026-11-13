@@ -5,7 +5,8 @@ import { escapeHtml, formatDateShort as formatDate } from '/js/utils.js';
 // Logout handler
 document.getElementById('logout-btn').addEventListener('click', async () => {
   await fetch('/api/auth/logout', { method: 'POST' });
-  window.location.href = '/admin/login';
+  // Home, not an admin page: opening one signs straight back in through GAuth.
+  window.location.href = '/';
 });
 
 // Load dashboard data
@@ -19,7 +20,7 @@ async function loadDashboard() {
 
     if (!draftsRes.ok || !postsRes.ok || !trackingRes.ok) {
       // Probably not authenticated
-      window.location.href = '/admin/login';
+      window.location.href = '/admin/login?next=' + encodeURIComponent(location.pathname + location.search);
       return;
     }
 

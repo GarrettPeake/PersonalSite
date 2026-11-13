@@ -22,7 +22,7 @@ Personal website for Garrett Peake, built on Cloudflare Workers with a neo-bruta
 - **Projects** portfolio with drag-and-drop reorder
 - **CMS-editable about page** with live preview
 - **Recruiter tracking** via short links (`/s/:slug`) with event timelines
-- **Admin dashboard** with session-based auth
+- **Admin dashboard**, signed in through GAuth (passkeys)
 - **Dark/light theme** with mountain peak iconography
 
 ## Development
@@ -53,9 +53,10 @@ npm run test:coverage # Tests with coverage
 
 Set via `wrangler secret put <name>`:
 
-- `ADMIN_USERNAME`
-- `ADMIN_PASSWORD_HASH` (format: `$simple$<salt>$<sha256>`)
-- `SESSION_SECRET`
+- `BETTER_AUTH_SECRET` (signs admin sessions; `openssl rand -hex 32`)
+
+Admin sign-in is GAuth only (see CLAUDE.md, Authentication). `wrangler.toml` holds `APP_ORIGIN`, `GAUTH_ORIGIN`
+and GAuth's public certificate(s); the auth tables are D1 migrations in `migrations/`.
 
 ## Architecture
 

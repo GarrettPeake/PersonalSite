@@ -8,6 +8,7 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { env, createExecutionContext } from 'cloudflare:test';
 import worker from '../index';
+import { migrate } from './support/auth';
 
 // Mock the page handlers
 vi.mock('../handlers/pages/tracking', () => ({
@@ -24,7 +25,7 @@ vi.mock('../handlers/pages/sitemap', () => ({
   })),
 }));
 
-// Mock auth - use partial mock to keep real login/logout but mock isAuthenticated
+// Mock auth - use partial mock to keep real logout but mock isAuthenticated
 vi.mock('../middleware/auth', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../middleware/auth')>();
   return {
@@ -263,6 +264,7 @@ describe('Router', () => {
 
 describe('API Route Matching', () => {
   beforeAll(async () => {
+    await migrate();
     // Create D1 tables needed by non-mocked API handlers
     await env.DB.exec(
       "CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', slug TEXT NOT NULL UNIQUE, content TEXT NOT NULL DEFAULT '', description TEXT, published_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
@@ -302,17 +304,17 @@ describe('API Route Matching', () => {
   });
 
   describe('Auth endpoints', () => {
-    it('should match POST /api/auth/login', async () => {
-      const request = new Request('http://localhost/api/auth/login', {
+    it('has no password login any more', async () => {
+      const request = new Request('https://gpeake.com/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Origin: 'https://gpeake.com' },
         body: JSON.stringify({ username: 'test', password: 'test' }),
       });
       const ctx = createExecutionContext();
       const response = await worker.fetch(request, env, ctx);
 
-      // Will return 401 since credentials are invalid
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(404);
+      expect(response.headers.get('Set-Cookie')).toBeNull();
     });
 
     it('should match POST /api/auth/logout', async () => {

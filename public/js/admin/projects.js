@@ -58,7 +58,7 @@ async function loadProjects() {
 
     if (!res.ok) {
       if (res.status === 401) {
-        window.location.href = '/admin/login';
+        window.location.href = '/admin/login?next=' + encodeURIComponent(location.pathname + location.search);
         return;
       }
       throw new Error('Failed to load projects');
@@ -643,7 +643,8 @@ async function uploadFile(file) {
 // Logout handler
 document.getElementById('logout-btn').addEventListener('click', async () => {
   await fetch('/api/auth/logout', { method: 'POST' });
-  window.location.href = '/admin/login';
+  // Home, not an admin page: opening one signs straight back in through GAuth.
+  window.location.href = '/';
 });
 
 // Keyboard handlers

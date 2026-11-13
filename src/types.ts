@@ -2,7 +2,7 @@
  * Environment bindings available to the Worker
  */
 export interface Env {
-  // KV Namespace (sessions only)
+  // KV Namespace (rate limiting)
   KV: KVNamespace;
 
   // D1 Database for all structured data
@@ -18,19 +18,16 @@ export interface Env {
   ASSETS: Fetcher;
 
   // Environment variables
+  /** Where the admin lives (its sessions and GAuth registration), e.g. https://gpeake.com. */
+  APP_ORIGIN: string;
+  /** GAuth, the passkey sign-in (src/auth/gauth.ts). */
+  GAUTH_ORIGIN: string;
+  /** GAuth's signing certificate(s), PEM; public. List old and new during a key rotation. */
+  GAUTH_CERTS: string;
 
   // Secrets (set via wrangler secret put)
-  ADMIN_USERNAME: string;
-  ADMIN_PASSWORD_HASH: string;
-  SESSION_SECRET: string;
+  BETTER_AUTH_SECRET: string;
 }
-
-/**
- * KV key prefix (sessions only — all other data is in D1)
- */
-export const KV_KEY = {
-  SESSION: 'session:',
-} as const;
 
 // ============================================================================
 // Page Content Types

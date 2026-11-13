@@ -1,144 +1,104 @@
 /**
- * Authentication Middleware
+ * Admin authentication: GAuth sign-in (src/auth/gauth.ts) with Better Auth sessions.
  *
- * Handles admin authentication via session cookies.
- * Uses bcrypt-compatible password verification.
+ * Better Auth and the SAML libraries are imported on demand, never at the top of
+ * the Worker, so public pages never load them and a problem in sign-in can't
+ * take the site down.
  */
 
 import { Env } from '../types';
-import { createSession, getSession, deleteSession } from '../dao/session.dao';
 
-const SESSION_COOKIE = 'gp_session';
-const SESSION_TTL = 60 * 60 * 24 * 7; // 7 days
+type Auth = import('../auth/gauth').Auth;
 
-/**
- * Verify password against bcrypt hash
- * Simple implementation that works in Workers environment
- */
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  // For simplicity, we'll use a basic comparison with Web Crypto
-  // In production, you'd want a proper bcrypt implementation
-  // This expects hash to be stored as: $simple$<salt>$<hash>
+/** Each Set-Cookie on a response (the runtime has getSetCookie; these types predate it). */
+const setCookies = (headers: Headers): string[] => (headers as Headers & { getSetCookie(): string[] }).getSetCookie();
 
-  if (hash.startsWith('$simple$')) {
-    const parts = hash.split('$');
-    if (parts.length !== 4) return false;
-
-    const salt = parts[2];
-    const storedHash = parts[3];
-
-    const encoder = new TextEncoder();
-    const data = encoder.encode(salt + password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const computedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    return timingSafeCompare(computedHash, storedHash);
+/** GAuth sign-in, or null when it can't be set up (a missing secret, say). */
+export async function loadAuth(env: Env): Promise<Auth | null> {
+  try {
+    const { getAuth } = await import('../auth/gauth');
+    return getAuth(env);
+  } catch (error) {
+    console.error('GAuth sign-in unavailable', String(error));
+    return null;
   }
-
-  // Fallback: direct comparison (for development only)
-  return password === hash;
 }
 
-/**
- * Generate a password hash for storage
- */
-export async function hashPassword(password: string): Promise<string> {
-  const salt = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
-  const encoder = new TextEncoder();
-  const data = encoder.encode(salt + password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-  return `$simple$${salt}$${hash}`;
+/** Whether the request carries a Better Auth session cookie (`__Secure-` prefixed in production). */
+export function hasSessionCookie(request: Request): boolean {
+  return (request.headers.get('Cookie') ?? '').includes('better-auth.session_token=');
 }
 
-/**
- * Extract session token from request cookies
- */
-export function getSessionToken(request: Request): string | null {
-  const cookieHeader = request.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  const cookies = cookieHeader.split(';').map(c => c.trim());
-  for (const cookie of cookies) {
-    const [name, value] = cookie.split('=');
-    if (name === SESSION_COOKIE) {
-      return value;
-    }
-  }
-  return null;
-}
-
-/**
- * Check if request is authenticated
- */
+/** Whether the request is from the signed-in owner (a GAuth session with the owner role). */
 export async function isAuthenticated(request: Request, env: Env): Promise<boolean> {
-  const token = getSessionToken(request);
-  if (!token) return false;
-
-  const session = await getSession(env.KV, token);
-  return session !== null;
-}
-
-/**
- * Login handler - validates credentials and creates session
- */
-export async function login(
-  username: string,
-  password: string,
-  env: Env
-): Promise<{ success: boolean; token?: string; error?: string }> {
-  // Check credentials
-  if (username !== env.ADMIN_USERNAME) {
-    return { success: false, error: 'Invalid credentials' };
-  }
-
-  const valid = await verifyPassword(password, env.ADMIN_PASSWORD_HASH);
-  if (!valid) {
-    return { success: false, error: 'Invalid credentials' };
-  }
-
-  // Create session
-  const session = await createSession(env.KV, SESSION_TTL);
-  return { success: true, token: session.token };
-}
-
-/**
- * Logout handler - deletes session
- */
-export async function logout(request: Request, env: Env): Promise<void> {
-  const token = getSessionToken(request);
-  if (token) {
-    await deleteSession(env.KV, token);
+  // Without a session cookie there's nothing to check, so don't pay to load Better Auth.
+  if (!hasSessionCookie(request)) return false;
+  const auth = await loadAuth(env);
+  if (!auth) return false;
+  try {
+    const { isOwner } = await import('../auth/gauth');
+    return await isOwner(auth, request.headers);
+  } catch (error) {
+    console.error('Session check failed', String(error));
+    return false;
   }
 }
 
-/**
- * Create Set-Cookie header for session
- */
-export function createSessionCookie(token: string, maxAge: number = SESSION_TTL): string {
-  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
+/** Better Auth's own endpoints (/api/auth/*): GAuth's answers, sign-out, the session. */
+export async function handleAuthRequest(request: Request, env: Env): Promise<Response> {
+  const auth = await loadAuth(env);
+  if (!auth) return Response.json({ error: 'Sign-in unavailable' }, { status: 503 });
+  return auth.handler(request);
 }
 
 /**
- * Create Set-Cookie header to clear session
+ * Send the browser to GAuth to sign in, coming back to `callbackPath`.
+ *
+ * Starts the sign-in on the server (it's Better Auth's POST /sign-in/sso), so
+ * opening an admin page goes to GAuth in one redirect with no page in between.
+ * Returns null if sign-in can't start.
  */
-export function clearSessionCookie(): string {
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`;
+export async function startSignIn(request: Request, env: Env, callbackPath: string): Promise<Response | null> {
+  const auth = await loadAuth(env);
+  if (!auth) return null;
+  const headers = new Headers({ 'Content-Type': 'application/json', Origin: env.APP_ORIGIN });
+  for (const name of ['Cookie', 'CF-Connecting-IP', 'User-Agent']) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  const response = await auth.handler(
+    new Request(`${env.APP_ORIGIN}/api/auth/sign-in/sso`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        providerId: 'gauth',
+        callbackURL: callbackPath,
+        // Better Auth adds ?error=<code>; /admin/login shows it instead of redirecting again.
+        errorCallbackURL: '/admin/login',
+      }),
+    }),
+  );
+  const data = response.ok ? ((await response.json().catch(() => null)) as { url?: unknown } | null) : null;
+  if (typeof data?.url !== 'string') {
+    console.error('Starting GAuth sign-in failed', response.status);
+    return null;
+  }
+  const redirect = new Headers({ Location: data.url, 'Cache-Control': 'no-store' });
+  // The relay state cookie ties GAuth's answer to this browser.
+  for (const cookie of setCookies(response.headers)) redirect.append('Set-Cookie', cookie);
+  return new Response(null, { status: 302, headers: redirect });
 }
 
-/**
- * Constant-time string comparison to prevent timing attacks.
- * Returns false immediately if lengths differ (length is not secret).
- */
-function timingSafeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-
-  const encoder = new TextEncoder();
-  const bufA = encoder.encode(a);
-  const bufB = encoder.encode(b);
-
-  return crypto.subtle.timingSafeEqual(bufA, bufB);
+/** End the session (Better Auth's sign-out), returning its cookie-clearing headers. */
+export async function signOut(request: Request, env: Env): Promise<Headers> {
+  const out = new Headers();
+  if (!hasSessionCookie(request)) return out;
+  const auth = await loadAuth(env);
+  if (!auth) return out;
+  const headers = new Headers({ Origin: env.APP_ORIGIN });
+  const cookie = request.headers.get('Cookie');
+  if (cookie) headers.set('Cookie', cookie);
+  const response = await auth.handler(new Request(`${env.APP_ORIGIN}/api/auth/sign-out`, { method: 'POST', headers }));
+  for (const value of setCookies(response.headers)) out.append('Set-Cookie', value);
+  return out;
 }

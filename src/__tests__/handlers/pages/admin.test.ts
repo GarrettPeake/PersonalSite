@@ -1,195 +1,138 @@
 /**
  * Admin Page Handler Tests
  *
- * Tests for admin page auth guard.
+ * Opening an admin page without a session goes straight to GAuth and comes
+ * back to that page; failures show a page instead of redirecting forever.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { env } from 'cloudflare:test';
-import { handleAdmin } from '../../../handlers/pages/admin';
-import { createSession } from '../../../dao/session.dao';
-import { KV_KEY } from '../../../types';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
+import { adminPath, handleAdmin } from '../../../handlers/pages/admin';
+import type { Env } from '../../../types';
+import { APP, migrate, sessionCookie, testEnv } from '../../support/auth';
 
-// Mock ASSETS.fetch
 const mockAssetsFetch = vi.fn(() => Promise.resolve(new Response('admin page')));
 
+let bindings: Env;
+function open(path: string, cookie?: string, env: Env = bindings) {
+  const url = new URL(path, APP);
+  const request = new Request(url, cookie ? { headers: { Cookie: cookie } } : {});
+  return handleAdmin(request, env, url.pathname);
+}
+const cookies = (res: Response) => (res.headers as Headers & { getSetCookie(): string[] }).getSetCookie();
+
 describe('Admin Page Handler', () => {
-  let testEnv: typeof env & { ASSETS: { fetch: typeof mockAssetsFetch } };
-
-  beforeEach(async () => {
-    // Clean up sessions
-    const keys = await env.KV.list({ prefix: KV_KEY.SESSION });
-    for (const key of keys.keys) {
-      await env.KV.delete(key.name);
-    }
-
-    testEnv = {
-      ...env,
-      ASSETS: { fetch: mockAssetsFetch },
-    } as typeof env & { ASSETS: { fetch: typeof mockAssetsFetch } };
-
+  beforeAll(migrate);
+  beforeEach(() => {
+    bindings = { ...testEnv(), ASSETS: { fetch: mockAssetsFetch } } as unknown as Env;
     mockAssetsFetch.mockClear();
   });
 
-  describe('Login page access', () => {
-    it('should allow access to /admin/login without auth', async () => {
-      const request = new Request('http://localhost/admin/login');
-      await handleAdmin(request, testEnv, '/admin/login');
-
-      expect(mockAssetsFetch).toHaveBeenCalled();
+  describe('without a session', () => {
+    it('sends every admin page straight to GAuth', async () => {
+      for (const path of ['/admin', '/admin/', '/admin/posts', '/admin/editor?id=abc']) {
+        const res = await open(path);
+        expect(res.status, path).toBe(302);
+        expect(res.headers.get('Location'), path).toMatch(/^https:\/\/auth\.gpeake\.com\/saml\/sso\?SAMLRequest=/);
+        expect(mockAssetsFetch).not.toHaveBeenCalled();
+      }
     });
 
-    it('should allow access to /admin/login.html without auth', async () => {
-      const request = new Request('http://localhost/admin/login.html');
-      await handleAdmin(request, testEnv, '/admin/login.html');
-
-      expect(mockAssetsFetch).toHaveBeenCalled();
-    });
-  });
-
-  describe('Protected pages - unauthenticated', () => {
-    it('should redirect /admin/ to login', async () => {
-      const request = new Request('http://localhost/admin/');
-      const response = await handleAdmin(request, testEnv, '/admin/');
-
-      expect(response.status).toBe(302);
-      expect(response.headers.get('Location')).toBe('http://localhost/admin/login');
+    it('/admin/login goes straight to GAuth too: there is no login page', async () => {
+      const res = await open('/admin/login?next=%2Fadmin%2Fphotos');
+      expect(res.status).toBe(302);
+      expect(res.headers.get('Location')).toMatch(/^https:\/\/auth\.gpeake\.com\/saml\/sso\?/);
     });
 
-    it('should redirect /admin/posts to login', async () => {
-      const request = new Request('http://localhost/admin/posts');
-      const response = await handleAdmin(request, testEnv, '/admin/posts');
-
-      expect(response.status).toBe(302);
-      expect(response.headers.get('Location')).toBe('http://localhost/admin/login');
+    it('ties the sign-in to this browser and counts the try', async () => {
+      const set = cookies(await open('/admin/posts'));
+      expect(set.some((c) => /relay_state=/.test(c))).toBe(true);
+      expect(set.some((c) => /^gp_signin_tries=1;/.test(c))).toBe(true);
     });
 
-    it('should redirect /admin/drafts to login', async () => {
-      const request = new Request('http://localhost/admin/drafts');
-      const response = await handleAdmin(request, testEnv, '/admin/drafts');
-
-      expect(response.status).toBe(302);
-      expect(response.headers.get('Location')).toBe('http://localhost/admin/login');
+    it('after three quick tries, waits for a click instead of looping', async () => {
+      const res = await open('/admin/posts', 'gp_signin_tries=3');
+      expect(res.status).toBe(200);
+      const html = await res.text();
+      expect(html).toContain('Signing in didn&#39;t complete.');
+      expect(html).toContain('href="/admin/login?retry=1&#38;next=%2Fadmin%2Fposts"');
+      // The click starts over.
+      const retry = await open('/admin/login?retry=1&next=%2Fadmin%2Fposts', 'gp_signin_tries=3');
+      expect(retry.status).toBe(302);
+      expect(cookies(retry).some((c) => /^gp_signin_tries=1;/.test(c))).toBe(true);
     });
 
-    it('should redirect /admin/editor to login', async () => {
-      const request = new Request('http://localhost/admin/editor');
-      const response = await handleAdmin(request, testEnv, '/admin/editor');
+    it('shows what GAuth said went wrong, without redirecting again', async () => {
+      const res = await open('/admin/login?error=no_role');
+      expect(res.status).toBe(200);
+      expect(await res.text()).toContain('doesn&#39;t have the owner role');
 
-      expect(response.status).toBe(302);
+      const other = await open('/admin/posts?error=account_not_linked');
+      expect(other.status).toBe(200);
+      expect(await other.text()).toContain('(account_not_linked)');
     });
 
-    it('should redirect /admin/tracking to login', async () => {
-      const request = new Request('http://localhost/admin/tracking');
-      const response = await handleAdmin(request, testEnv, '/admin/tracking');
-
-      expect(response.status).toBe(302);
-    });
-  });
-
-  describe('Protected pages - authenticated', () => {
-    it('should allow access to /admin/ with valid session', async () => {
-      const session = await createSession(testEnv.KV, 3600);
-      const request = new Request('http://localhost/admin/', {
-        headers: { Cookie: `gp_session=${session.token}` },
-      });
-
-      await handleAdmin(request, testEnv, '/admin/');
-
-      expect(mockAssetsFetch).toHaveBeenCalled();
+    it('never echoes markup from the error code', async () => {
+      const res = await open('/admin/login?error=%3Cscript%3Ealert(1)%3C%2Fscript%3E');
+      const html = await res.text();
+      expect(html).not.toContain('<script>alert');
     });
 
-    it('should allow access to /admin/posts with valid session', async () => {
-      const session = await createSession(testEnv.KV, 3600);
-      const request = new Request('http://localhost/admin/posts', {
-        headers: { Cookie: `gp_session=${session.token}` },
-      });
-
-      await handleAdmin(request, testEnv, '/admin/posts');
-
-      expect(mockAssetsFetch).toHaveBeenCalled();
-    });
-
-    it('should allow access to /admin/drafts with valid session', async () => {
-      const session = await createSession(testEnv.KV, 3600);
-      const request = new Request('http://localhost/admin/drafts', {
-        headers: { Cookie: `gp_session=${session.token}` },
-      });
-
-      await handleAdmin(request, testEnv, '/admin/drafts');
-
-      expect(mockAssetsFetch).toHaveBeenCalled();
-    });
-
-    it('should allow access to /admin/editor with valid session', async () => {
-      const session = await createSession(testEnv.KV, 3600);
-      const request = new Request('http://localhost/admin/editor', {
-        headers: { Cookie: `gp_session=${session.token}` },
-      });
-
-      await handleAdmin(request, testEnv, '/admin/editor');
-
-      expect(mockAssetsFetch).toHaveBeenCalled();
-    });
-
-    it('should allow access to /admin/tracking with valid session', async () => {
-      const session = await createSession(testEnv.KV, 3600);
-      const request = new Request('http://localhost/admin/tracking', {
-        headers: { Cookie: `gp_session=${session.token}` },
-      });
-
-      await handleAdmin(request, testEnv, '/admin/tracking');
-
-      expect(mockAssetsFetch).toHaveBeenCalled();
+    it('says sign-in is unavailable (503) when it is not configured', async () => {
+      const broken = { ...bindings, BETTER_AUTH_SECRET: '' } as Env;
+      const res = await open('/admin/posts', undefined, broken);
+      expect(res.status).toBe(503);
+      expect(await res.text()).toContain('Sign-in is unavailable right now.');
     });
   });
 
-  describe('Session validation', () => {
-    it('should redirect with invalid session token', async () => {
-      const request = new Request('http://localhost/admin/', {
-        headers: { Cookie: 'gp_session=invalid-token' },
-      });
-
-      const response = await handleAdmin(request, testEnv, '/admin/');
-
-      expect(response.status).toBe(302);
+  describe('with a session', () => {
+    it('serves admin pages to the owner', async () => {
+      const cookie = await sessionCookie(['owner']);
+      const res = await open('/admin/posts', cookie);
+      expect(await res.text()).toBe('admin page');
+      expect(mockAssetsFetch).toHaveBeenCalledOnce();
     });
 
-    it('should redirect with expired session', async () => {
-      // Create expired session
-      const token = crypto.randomUUID();
-      const expiredSession = {
-        token,
-        expiresAt: new Date(Date.now() - 1000).toISOString(),
-      };
-      await testEnv.KV.put(`${KV_KEY.SESSION}${token}`, JSON.stringify(expiredSession));
-
-      const request = new Request('http://localhost/admin/', {
-        headers: { Cookie: `gp_session=${token}` },
-      });
-
-      const response = await handleAdmin(request, testEnv, '/admin/');
-
-      expect(response.status).toBe(302);
+    it('clears the try count once in', async () => {
+      const cookie = await sessionCookie(['owner']);
+      const res = await open('/admin', `${cookie}; gp_signin_tries=2`);
+      expect(cookies(res).some((c) => /^gp_signin_tries=;.*Max-Age=0/.test(c))).toBe(true);
     });
 
-    it('should handle multiple cookies', async () => {
-      const session = await createSession(testEnv.KV, 3600);
-      const request = new Request('http://localhost/admin/', {
-        headers: { Cookie: `other=value; gp_session=${session.token}; another=test` },
-      });
-
-      await handleAdmin(request, testEnv, '/admin/');
-
-      expect(mockAssetsFetch).toHaveBeenCalled();
+    it('/admin/login sends the owner on to the page asked for', async () => {
+      const cookie = await sessionCookie(['owner']);
+      const res = await open('/admin/login?next=%2Fadmin%2Feditor%3Fid%3Dabc', cookie);
+      expect(res.status).toBe(302);
+      expect(res.headers.get('Location')).toBe(`${APP}/admin/editor?id=abc`);
     });
 
-    it('should handle missing cookie header', async () => {
-      const request = new Request('http://localhost/admin/');
+    it('does not let a session without the owner role in', async () => {
+      const cookie = await sessionCookie(['editor']);
+      const res = await open('/admin/posts', cookie);
+      expect(res.status).toBe(302);
+      expect(res.headers.get('Location')).toMatch(/^https:\/\/auth\.gpeake\.com\//);
+      expect(mockAssetsFetch).not.toHaveBeenCalled();
+    });
+  });
 
-      const response = await handleAdmin(request, testEnv, '/admin/');
+  it('keeps the admin on one address', async () => {
+    const request = new Request('https://www.gpeake.com/admin/posts?x=1');
+    const res = await handleAdmin(request, bindings, '/admin/posts');
+    expect(res.status).toBe(302);
+    expect(res.headers.get('Location')).toBe(`${APP}/admin/posts?x=1`);
+  });
 
-      expect(response.status).toBe(302);
+  describe('adminPath', () => {
+    it('keeps admin pages and nothing else', () => {
+      expect(adminPath('/admin/editor?id=1')).toBe('/admin/editor?id=1');
+      expect(adminPath('/admin')).toBe('/admin');
+      expect(adminPath(null)).toBe('/admin');
+      expect(adminPath('//evil.example/admin')).toBe('/admin');
+      expect(adminPath('https://evil.example/admin')).toBe('/admin');
+      expect(adminPath('/administrator')).toBe('/admin');
+      expect(adminPath('/admin\\..\\x')).toBe('/admin');
+      expect(adminPath('/admin/login?next=/admin/x')).toBe('/admin');
+      expect(adminPath('/')).toBe('/admin');
     });
   });
 });

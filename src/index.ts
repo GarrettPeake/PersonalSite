@@ -13,7 +13,7 @@ import { handleSitemap } from './handlers/pages/sitemap';
 
 // API handlers
 import { handleListPosts, handleGetPost, handleTrack } from './handlers/api/public';
-import { handleLogin, handleLogout } from './handlers/api/auth';
+import { handleLogout } from './handlers/api/auth';
 import {
   handleListDrafts,
   handleCreateDraft,
@@ -65,7 +65,7 @@ import {
 } from './handlers/api/pages';
 
 // Utilities
-import { isAuthenticated } from './middleware/auth';
+import { handleAuthRequest, isAuthenticated } from './middleware/auth';
 import { jsonResponse, corsHeaders, getCorsHeaders, handleCorsPreflightResponse, requireJsonContentType, addSecurityHeaders } from './lib/response';
 
 export default {
@@ -238,14 +238,18 @@ async function resolveApiRoute(request: Request, env: Env, path: string, method:
     // Auth Endpoints
     // =========================================================================
 
-    // POST /api/auth/login
-    if (path === '/api/auth/login' && method === 'POST') {
-      return handleLogin(request, env);
-    }
-
     // POST /api/auth/logout
     if (path === '/api/auth/logout' && method === 'POST') {
       return handleLogout(request, env);
+    }
+
+    // Better Auth: GAuth's answers (/api/auth/sso/saml2/sp/acs/gauth), the
+    // service provider metadata, sessions. Only on the admin's own address.
+    if (path.startsWith('/api/auth/')) {
+      if (new URL(request.url).origin !== env.APP_ORIGIN) {
+        return jsonResponse({ error: 'Not found' }, corsHeaders, 404);
+      }
+      return handleAuthRequest(request, env);
     }
 
     // =========================================================================

@@ -31,8 +31,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Mobile-responsive layouts with hamburger menus
 - [x] Tracking redirect page (`/s/:slug`)
 - [x] Public API endpoints (`GET /api/posts`, `GET /api/posts/:slug`, `POST /api/track`)
-- [x] Admin authentication (session-based with cookies)
-- [x] Admin login page with neo-brutalist mountain scene theme toggle
+- [x] Admin sign-in through GAuth (passkeys, https://auth.gpeake.com): any admin page without a session redirects straight to GAuth and back
 - [x] Admin dashboard with stats
 - [x] Admin editor UI with split-pane live preview
 - [x] Admin posts list page (proper HTML tables)
@@ -77,10 +76,9 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Static Open Graph and Twitter Card meta tags for social sharing
 - [x] Canonical link tag for SEO
 - [x] Security headers on all Worker responses (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security, Referrer-Policy, Permissions-Policy)
-- [x] CSRF protection via Content-Type: application/json validation on login and all admin JSON endpoints (`requireJsonContentType` helper)
+- [x] CSRF protection via Content-Type: application/json validation on all admin JSON endpoints (`requireJsonContentType` helper)
 - [x] XSS fixes in client and server markdown renderers (processLinks, processInlineCode, image src, Banner macro args)
 - [x] Skip navigation links on public SPA and all admin pages (WCAG 2.4.1 compliance, `.skip-link` CSS in base.css)
-- [x] Admin login form uses `method="post" action="/api/auth/login"` for defense-in-depth
 - [x] Theme toggle button has `type="button"` to prevent implicit form submission
 - [x] Mobile touch targets meet 44x44px minimum (hamburger menu, footer social icons, project open-link buttons)
 - [x] Optimized Space Grotesk font loading (removed unused 400/500 weights)
@@ -89,7 +87,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 - [x] Magic byte validation on file uploads (JPEG, PNG, GIF, WebP, PDF, MP4, WebM, QuickTime)
 - [x] Request body size limit (1MB) on JSON endpoints via `isBodyTooLarge` helper in `parseJsonBody`
 - [x] PNG and WebP metadata stripping on photo upload (`stripPngMetadata`, `stripWebpMetadata` in exif.ts)
-- [x] D1 migration: all entity storage moved from KV to D1 (SQLite), KV retained only for sessions and rate limiting
+- [x] D1 migration: all entity storage moved from KV to D1 (SQLite), KV retained only for rate limiting
 
 ### Not Yet Implemented
 
@@ -102,7 +100,8 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 | Frontend | Vanilla HTML, CSS, JS with Web Components |
 | Backend | Cloudflare Workers (TypeScript) |
 | Storage | Cloudflare D1 (SQLite) |
-| Sessions | Cloudflare KV (TTL-based expiry for sessions and rate limiting) |
+| Auth | GAuth (SAML) via Better Auth + @better-auth/sso; sessions in D1 |
+| Rate limiting | Cloudflare KV (TTL-based) |
 | Files | Cloudflare R2 (`gpeake-files` bucket) |
 | Analytics | Workers Analytics Engine |
 
@@ -110,7 +109,7 @@ Personal website for Garrett Peake built on Cloudflare Workers with a neo-brutal
 
 ```
 DB        → env.DB       (D1 database: personal-site, id: 9ed05dc5-17fa-4422-a09e-e5fb2c75f86d)
-KV        → env.KV       (namespace: gpeake-data — sessions and rate limiting only)
+KV        → env.KV       (namespace: gpeake-data — rate limiting only)
 R2        → env.R2       (bucket: gpeake-files)
 ANALYTICS → env.ANALYTICS (dataset: page_views)
 ASSETS    → env.ASSETS   (static file serving)
@@ -133,14 +132,12 @@ All entity data is stored in a D1 (SQLite) database. Schema defined in `scripts/
 
 Foreign keys use `ON DELETE CASCADE`: deleting a project cascades to its content_pieces, deleting a tracking slug cascades to its events.
 
-## KV Keys (Sessions and Rate Limiting Only)
+## KV Keys (Rate Limiting Only)
 
 KV is used only for data that benefits from TTL-based auto-expiry:
 
 | Key Pattern | Purpose |
 |-------------|---------|
-| `session:{token}` | Auth session data (7-day TTL) |
-| `ratelimit:{ip}` | Login rate limiting (TTL-based) |
 | `trackrate:{ip}` | Tracking rate limiting (TTL-based) |
 
 ## Routing
@@ -185,14 +182,13 @@ SPA client-side routes (handled by `router.js`):
 │   │   ├── draft.dao.ts  # Draft CRUD + sharing operations
 │   │   ├── post.dao.ts   # Post CRUD + publish/unpublish
 │   │   ├── tracking.dao.ts # Tracking CRUD + events
-│   │   ├── session.dao.ts  # Session CRUD
 │   │   ├── photo.dao.ts  # Photo CRUD operations
 │   │   ├── project.dao.ts # Project CRUD + reorder operations
 │   │   └── page.dao.ts   # Page content CRUD (about page, etc.)
 │   ├── /handlers
 │   │   ├── /api
 │   │   │   ├── public.ts    # GET /api/posts, POST /api/track
-│   │   │   ├── auth.ts      # POST /api/auth/login|logout
+│   │   │   ├── auth.ts      # POST /api/auth/logout
 │   │   │   ├── drafts.ts    # /api/admin/drafts/* endpoints
 │   │   │   ├── posts.ts     # /api/admin/posts/* endpoints
 │   │   │   ├── tracking.ts  # /api/admin/tracking/* endpoints
@@ -213,7 +209,7 @@ SPA client-side routes (handled by `router.js`):
 │   │   ├── utils.ts      # Shared utilities (escapeHtml, escapeJs, generateRandomSlug)
 │   │   └── exif.ts       # Image metadata stripping (JPEG, PNG, WebP)
 │   ├── /middleware
-│   │   └── auth.ts       # Authentication helpers (login, session, cookies)
+│   │   └── auth.ts       # Session check, GAuth sign-in start, sign-out (loads src/auth/gauth.ts on demand)
 │   └── /__tests__
 │       ├── router.test.ts # Router unit tests
 │       ├── /dao
@@ -221,7 +217,6 @@ SPA client-side routes (handled by `router.js`):
 │       │   ├── draft.dao.test.ts
 │       │   ├── post.dao.test.ts
 │       │   ├── tracking.dao.test.ts
-│       │   ├── session.dao.test.ts
 │       │   ├── photo.dao.test.ts
 │       │   └── project.dao.test.ts
 │       ├── /handlers
@@ -251,7 +246,6 @@ SPA client-side routes (handled by `router.js`):
     ├── index.html        # SPA shell (serves all public routes)
     ├── /admin
     │   ├── index.html    # Admin dashboard
-    │   ├── login.html    # Admin login page
     │   ├── editor.html   # Post/draft editor with live preview
     │   ├── posts.html    # Published posts list
     │   ├── drafts.html   # Drafts list
@@ -274,7 +268,6 @@ SPA client-side routes (handled by `router.js`):
     │   │   ├── about.js      # About section (static content)
     │   │   └── photography.js # Photography section (photo grid)
     │   └── /admin
-    │       ├── login.js      # Login form handling
     │       ├── dashboard.js  # Dashboard stats and recent items
     │       ├── editor.js     # Markdown editor with toolbar and auto-save
     │       ├── posts.js      # Posts list management
@@ -294,7 +287,7 @@ SPA client-side routes (handled by `router.js`):
     │   ├── admin.css         # Admin-specific layout (sidebar, header)
     │   └── /pages
     │       ├── home.css           # Home page three-panel layout
-    │       ├── login.css          # Admin login page styles
+    │       ├── login.css          # Styles for the admin sign-in problem page
     │       ├── admin-dashboard.css # Admin dashboard styles
     │       ├── admin-editor.css   # Editor page styles
     │       ├── admin-posts.css    # Posts list styles
@@ -325,9 +318,12 @@ npm run test:coverage # Run tests with coverage report
 ## Secrets Required
 
 Set via `wrangler secret put <name>`:
-- `ADMIN_USERNAME` - Admin login username
-- `ADMIN_PASSWORD_HASH` - Password hash (use `$simple$<salt>$<sha256>` format or plain for dev)
-- `SESSION_SECRET` - Random string for session signing
+- `BETTER_AUTH_SECRET` - Signs admin session cookies (`openssl rand -hex 32`)
+
+Vars in `wrangler.toml`: `APP_ORIGIN` (the admin's one address, https://gpeake.com), `GAUTH_ORIGIN`, `GAUTH_CERTS`
+(GAuth's public signing certificate(s) from https://auth.gpeake.com/saml/metadata; list old and new during a key
+rotation). For local work, `.dev.vars` points all three at a local GAuth (`pnpm dev` in ~/Projects/GAuth, port 8797),
+plus a `BETTER_AUTH_SECRET`. Auth tables are D1 migrations in `migrations/` (`wrangler d1 migrations apply personal-site`).
 
 ## API Endpoints
 
@@ -347,8 +343,8 @@ Set via `wrangler secret put <name>`:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/login` | Login, sets session cookie |
-| POST | `/api/auth/logout` | Logout, clears session cookie |
+| POST | `/api/auth/logout` | Ends the session (admin scripts then go to `/`) |
+| * | `/api/auth/*` | Better Auth: GAuth's SAML answers (`/api/auth/sso/saml2/sp/acs/gauth`), SP metadata; only on `APP_ORIGIN` |
 
 ### Admin (requires auth)
 
@@ -654,11 +650,10 @@ This separation ensures:
 The backend is organized into modular, testable components:
 
 **Data Access Objects (`src/dao/`)**
-All DAOs use D1 (`env.DB`) except session.dao.ts which uses KV (`env.KV`) for TTL-based expiry:
+All DAOs use D1 (`env.DB`):
 - `draft.dao.ts`: Draft operations + sharing (`getDraft`, `listDrafts`, `createDraft`, `updateDraft`, `deleteDraft`, `createShareToken`, `getDraftByShareToken`) — D1
 - `post.dao.ts`: Post operations + publishing (`getPost`, `getPostBySlug`, `listPosts`, `updatePost`, `deletePost`, `publishDraft`, `unpublishPost`) — D1. `listPosts` returns `Omit<Post, 'content'>[]`.
 - `tracking.dao.ts`: Tracking operations + events (`getTrackingSlug`, `listTrackingSlugs`, `createTrackingSlug`, `deleteTrackingSlug`, `recordTrackingEvent`) — D1. Events normalized into `tracking_events` table.
-- `session.dao.ts`: Session operations (`createSession`, `getSession`, `deleteSession`) — KV (uses TTL auto-expiry)
 - `photo.dao.ts`: Photo operations (`getPhoto`, `listPhotos`, `createPhoto`, `updatePhoto`, `deletePhoto`) — D1
 - `project.dao.ts`: Project operations + reorder (`getProject`, `listProjects`, `createProject`, `updateProject`, `deleteProject`, `reorderProjects`) — D1. Content pieces normalized into `content_pieces` table. Reorder uses D1 batch transaction.
 - `page.dao.ts`: Page content operations (`getPageContent`, `updatePageContent`) — D1
@@ -748,10 +743,17 @@ Params object may contain `{ slug }` for blog-post or `{ token }` for draft-prev
 - Projects render as vertical expandable cards
 - Nav links intercepted by router (no page reloads)
 
-### Authentication (`src/middleware/auth.ts`)
-- Session-based with HTTP-only cookies
-- Sessions stored in KV with TTL (7 days default)
-- Simple SHA-256 password hashing (format: `$simple$<salt>$<hash>`)
+### Authentication (`src/auth/gauth.ts`, `src/middleware/auth.ts`, `src/handlers/pages/admin.ts`)
+- GAuth (passkey SAML IdP at https://auth.gpeake.com) is the only way in; no passwords. Better Auth +
+  @better-auth/sso 1.7.18 are the service provider, GAuth the only provider (`providersLimit: 0`).
+- Only GAuth users with the `owner` role for this site get a session; roles/email/name are copied at every sign-in.
+- Sessions last 12 hours, never refreshed (D1 `session` table); cookies are host-only on gpeake.com (never
+  `crossSubDomainCookies`: this is the parent domain of every other site).
+- Opening any `/admin` page without a session redirects straight to GAuth (the sign-in starts server-side) and back
+  to that page. `/admin/login?next=` is what admin scripts open on a 401. A GAuth error (`?error=`), or three
+  redirects within a minute (`gp_signin_tries` cookie), shows a page with a "Sign in with GAuth" link instead of
+  looping. www./portfolio. hosts redirect admin to `APP_ORIGIN`.
+- Better Auth is loaded with dynamic `import()` only for admin/auth requests, so public pages never evaluate it.
 
 ### Admin UI Pages
 - **Dashboard** (`/admin/`): Stats overview, recent drafts/posts
